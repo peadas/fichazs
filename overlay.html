@@ -7,7 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;600&family=Cinzel:wght@700;800&display=swap" rel="stylesheet">
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:transparent;font:16px/1.4 Barlow,system-ui,sans-serif;color:#eef0ee}
-#cv{position:fixed;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+#cv,#cv2{position:fixed;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+#cv2[hidden]{display:none}
 #chips{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;width:max-content;max-width:calc(100% - 24px);pointer-events:none}
 .chip{background:#0f1213ee;border:1px solid #8b9594;padding:10px 18px;text-align:center;max-width:min(92vw,560px);box-shadow:0 6px 20px #000a;animation:in .3s ease-out both;transition:opacity .5s,transform .5s}
 .chip.out{opacity:0;transform:translateY(-8px)}
@@ -27,8 +28,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:transparent;font:16px/
 </head>
 <body>
 <canvas id="cv" aria-hidden="true"></canvas>
+<canvas id="cv2" aria-hidden="true" hidden></canvas>
 <div id="chips" aria-live="polite"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
 <script src="engine.js"></script>
 <script type="module">
 import {loadOBR,ready} from "./obr.js";
@@ -36,14 +37,34 @@ const $=s=>document.querySelector(s);
 const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"";
 const CH=ENG.CH,HOLD=5500,CHIP_LIFE=9000;
 let OBR=null,received=0,idleTimer=0;
-const queue=[];let cur=null,raf=0;
+const queue=[];let cur=null,raf=0,raf2=0;
+
+/* ---------- three.js: tenta 3 CDNs, uma de cada vez, e só começa a rolar quando decidiu ---------- */
+const loadScript=u=>new Promise((ok,no)=>{const s=document.createElement("script");s.src=u;s.onload=ok;s.onerror=()=>{s.remove();no(new Error(u))};document.head.appendChild(s)});
+async function loadThree(){
+  for(const u of ["https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js","https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js","https://unpkg.com/three@0.128.0/build/three.min.js"]){
+    if(window.THREE)return true;
+    try{await Promise.race([loadScript(u),new Promise((_,no)=>setTimeout(()=>no(new Error("tempo")),7000))])}catch(e){console.warn("[ficha] three.js não carregou de",u)}
+  }
+  return !!window.THREE;
+}
+let threeOK=null,glFailed=false,ctxLost=false;
+loadThree().then(v=>{threeOK=v;pump()});
 
 /* ---------- 3D (mesmos dados e materiais da ficha) ---------- */
-let R,scene,cam,M,shTex,gl=false;
+let R,scene,cam,M,shTex,gl=false,vw=0,vh=0;
 function init3d(){
-  R=new THREE.WebGLRenderer({canvas:$("#cv"),alpha:true,antialias:true});
-  R.setPixelRatio(Math.min(2,devicePixelRatio));R.setClearColor(0x000000,0);
-  scene=new THREE.Scene();cam=new THREE.PerspectiveCamera(35,1,50,8000);
+  const canvas=$("#cv");let r=null;
+  for(const aa of [true,false]){           // sem antialias também serve (placas de vídeo fracas)
+    try{r=new THREE.WebGLRenderer({canvas,alpha:true,antialias:aa});break}catch(e){r=null}
+  }
+  if(!r)throw new Error("sem WebGL");
+  R=r;
+  let soft=false;                          // renderização por software (aceleração de hardware desligada): mais leve
+  try{const g=R.getContext(),x=g.getExtension("WEBGL_debug_renderer_info");if(x)soft=/swiftshader|llvmpipe|software|basic render/i.test(String(g.getParameter(x.UNMASKED_RENDERER_WEBGL)))}catch(e){}
+  R.setPixelRatio(soft?1:Math.min(2,devicePixelRatio||1));R.setClearColor(0x000000,0);
+  canvas.addEventListener("webglcontextlost",e=>{e.preventDefault();ctxLost=true});
+  scene=new THREE.Scene();cam=new THREE.PerspectiveCamera(35,1,50,30000);
   M={gold:new THREE.MeshStandardMaterial({color:0xd0a93f,metalness:.45,roughness:.3}),ena:new THREE.MeshStandardMaterial({color:0x08080a,metalness:.1,roughness:.25}),
     pv:new THREE.MeshPhysicalMaterial({color:0x14171c,metalness:.35,roughness:.25,clearcoat:1,clearcoatRoughness:.15}),
     rel:new THREE.MeshPhysicalMaterial({color:0xe9e3d3,metalness:.1,roughness:.3,clearcoat:.8})};
@@ -54,14 +75,18 @@ function init3d(){
   gr.addColorStop(0,"rgba(0,0,0,.9)");gr.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=gr;x.fillRect(0,0,64,64);shTex=new THREE.CanvasTexture(c);
   setView();gl=true;
 }
-/* câmera de cima; a arena é sempre a mesma, a tela só muda o zoom */
+/* câmera de cima; a arena é sempre a mesma, a tela só muda o zoom. Se a janela ainda não tem tamanho, tenta de novo depois */
 function setView(){
-  const w=innerWidth,h=innerHeight,k=Math.min(w/ENG.VIEW.w,h/ENG.VIEW.h);
+  const w=innerWidth||document.documentElement.clientWidth,h=innerHeight||document.documentElement.clientHeight;
+  if(!(w>1&&h>1))return false;
+  vw=w;vh=h;
+  const k=Math.min(w/ENG.VIEW.w,h/ENG.VIEW.h);
   R.setSize(w,h,false);cam.aspect=w/h;
   const H=(h/k/2)/Math.tan(cam.fov*Math.PI/360);
   cam.position.set(0,H,0);cam.up.set(0,0,-1);cam.lookAt(0,0,0);cam.updateProjectionMatrix();
+  return true;
 }
-addEventListener("resize",()=>{if(gl){setView();R.render(scene,cam)}});
+addEventListener("resize",()=>{if(gl&&setView())R.render(scene,cam)});
 const texC={};
 function numMat(n,pv){
   const key=n+(pv||"");
@@ -100,12 +125,55 @@ function makeDie(f,kind){
   });
   grp.add(new THREE.Mesh(mk(all),M[kind||"gold"]));
   grp.userData.s=ENG.RAD/a.mx;grp.scale.setScalar(grp.userData.s);
+  /* os dados ficam sempre no meio da arena, perto da câmera: nunca "somem" por corte de visão */
+  grp.traverse(o=>{o.frustumCulled=false});
   return grp;
 }
 function disposeGroup(c){
-  c.meshes.forEach(m=>{scene.remove(m);scene.remove(m.userData.sh);
-    m.traverse(o=>{if(o.isMesh&&o.geometry)o.geometry.dispose()});m.userData.sh.material.dispose();m.userData.sh.geometry.dispose()});
+  c.meshes.forEach(m=>{scene.remove(m);if(m.userData.sh){scene.remove(m.userData.sh);m.userData.sh.material.dispose();m.userData.sh.geometry.dispose()}
+    m.traverse(o=>{if(o.isMesh&&o.geometry)o.geometry.dispose()})});
   c.meshes=[];
+}
+
+/* ---------- reserva sem WebGL (aceleração de hardware desligada): dados desenhados em 2D ---------- */
+const SIDES={4:3,6:4,8:4,10:5,12:5,20:6};
+const KS={"":{f:"#0b0b0e",s:"#d0a93f",t:"#ecc962"},pv:{f:"#14171c",s:"#e9a23b",t:"#e9a23b"},rel:{f:"#e9e3d3",s:"#8c2f3a",t:"#8c2f3a"}};
+function play2d(p){
+  const cv=$("#cv2"),w=Math.max(2,innerWidth||800),h=Math.max(2,innerHeight||600),dpr=Math.min(2,devicePixelRatio||1);
+  cv.hidden=false;cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+  const x=cv.getContext("2d");
+  if(!x){cur=null;showChip(p);pump();return}
+  const n=p.list.length,rad=Math.max(20,Math.min(44,w/(n*2.6+1),h/7)),floor=h*.5+rad*.7;
+  const rnd=ENG.mulberry32(p.seed||1);
+  const ds=p.list.map(([nm,f],i)=>({f,k:KS[p.kinds[i]]||KS[""],res:p.res[i],x:w/2+(i-(n-1)/2)*rad*2.5+(rnd()-.5)*rad,y:-rad*(1+i*.8),
+    vx:(rnd()-.5)*110,vy:0,a:rnd()*6.283,w:(rnd()<.5?-1:1)*(9+rnd()*9),stop:1300+i*160+rnd()*350,n:1+Math.floor(rnd()*f),tn:0,done:false}));
+  const lastStop=Math.max(...ds.map(d=>d.stop));
+  cur={p,mode:"2d"};
+  const T0=performance.now();let last=T0,phase="roll",t1=0,al=1;
+  const poly=d=>{const S=SIDES[d.f],off=d.f===6?Math.PI/4:-Math.PI/2;x.beginPath();for(let i=0;i<S;i++){const q=off+i*2*Math.PI/S,px=Math.cos(q)*rad,py=Math.sin(q)*rad;i?x.lineTo(px,py):x.moveTo(px,py)}x.closePath()};
+  const frame=now=>{
+    raf2=0;
+    const dt=Math.min(.05,Math.max(0,(now-last)/1000)),t=now-T0;last=now;
+    x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);x.globalAlpha=al;
+    for(const d of ds){
+      if(!d.done){
+        d.vy+=2600*dt;d.y+=d.vy*dt;d.x+=d.vx*dt;d.a+=d.w*dt;d.w*=Math.pow(.4,dt);d.vx*=Math.pow(.3,dt);
+        if(d.x<rad){d.x=rad;d.vx=Math.abs(d.vx)}if(d.x>w-rad){d.x=w-rad;d.vx=-Math.abs(d.vx)}
+        if(d.y>floor){d.y=floor;d.vy=Math.abs(d.vy)<140?0:-d.vy*.45;d.w*=.85}
+        if(now-d.tn>85){d.n=1+Math.floor(Math.random()*d.f);d.tn=now}
+        if(t>=d.stop){d.done=true;d.n=d.res;d.vy=0;d.y=floor}
+      }else{d.a+=(Math.round(d.a/6.2832)*6.2832-d.a)*Math.min(1,dt*9)}
+      x.fillStyle="rgba(0,0,0,.35)";x.beginPath();x.ellipse(d.x,floor+rad*.85,rad*.9,rad*.2,0,0,7);x.fill();
+      x.save();x.translate(d.x,d.y);x.rotate(d.a);poly(d);x.fillStyle=d.k.f;x.fill();x.lineWidth=3;x.strokeStyle=d.k.s;x.lineJoin="round";x.stroke();
+      x.fillStyle=d.k.t;x.textAlign="center";x.textBaseline="middle";x.font=`italic 700 ${Math.round(rad*(d.n>9?.85:1.1))}px Georgia,serif`;x.fillText(d.n,0,rad*.05);x.restore();
+    }
+    x.globalAlpha=1;
+    if(phase==="roll"&&t>lastStop+350){phase="hold";t1=now;showChip(p)}
+    else if(phase==="hold"&&now-t1>=(queue.length?1300:HOLD)){phase="out";t1=now}
+    else if(phase==="out"){al=Math.max(0,1-(now-t1)/300);if(al<=0){x.clearRect(0,0,w,h);cv.hidden=true;cur=null;pump();return}}
+    raf2=requestAnimationFrame(frame);
+  };
+  raf2=requestAnimationFrame(frame);
 }
 
 /* ---------- resultado na tela ---------- */
@@ -134,20 +202,29 @@ function enqueue(raw,seq){
 }
 function pump(){
   if(cur)return;
+  if(threeOK===null)return;                 // ainda decidindo se o three.js carregou
   const p=queue.shift();if(!p)return maybeIdle();
   if(!p.anim){showChip(p);return pump()}
-  try{
-    if(!gl)init3d();
-    const sim=new ENG.Sim(p.list,p.seed),meshes=[];
-    p.list.forEach(([n,f],i)=>{
-      const m=makeDie(f,p.kinds[i]);
-      const sh=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:shTex,transparent:true,depthWrite:false}));
-      sh.rotation.x=-Math.PI/2;m.userData.sh=sh;scene.add(m,sh);meshes.push(m);
-    });
-    cur={p,sim,meshes,phase:"roll",acc:0,last:performance.now(),t0:0};
-    sync(cur);
-  }catch(e){console.warn("[ficha] 3D indisponível, mostrando só o resultado",e);if(cur)disposeGroup(cur);cur=null;showChip(p);return pump()}
-  if(!raf)raf=requestAnimationFrame(loop);
+  if(threeOK&&!glFailed){
+    const meshes=[];
+    try{
+      if(!gl)init3d();
+      setView();
+      const sim=new ENG.Sim(p.list,p.seed);
+      p.list.forEach(([n,f],i)=>{
+        const m=makeDie(f,p.kinds[i]);
+        const sh=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:shTex,transparent:true,depthWrite:false}));
+        sh.frustumCulled=false;sh.rotation.x=-Math.PI/2;m.userData.sh=sh;scene.add(m,sh);meshes.push(m);
+      });
+      cur={p,sim,meshes,phase:"roll",acc:0,last:performance.now(),t0:0};
+      sync(cur);
+    }catch(e){
+      console.warn("[ficha] 3D indisponível, usando os dados em 2D",e);
+      glFailed=true;disposeGroup({meshes});cur=null;
+    }
+    if(cur){if(!raf)raf=requestAnimationFrame(loop);return}
+  }
+  play2d(p);
 }
 function sync(c){
   c.sim.bodies.forEach((b,i)=>{
@@ -159,12 +236,14 @@ function sync(c){
 function loop(now){
   raf=0;
   const c=cur;
-  if(!c){if(gl)R.render(scene,cam);return}
+  if(!c||c.mode==="2d"){return}
   try{
-    const dt=Math.min(.05,(now-c.last)/1000);c.last=now;
+    if(ctxLost)throw new Error("o navegador perdeu o contexto do WebGL");
+    if(innerWidth!==vw||innerHeight!==vh)setView();        // a janela pode ganhar tamanho depois de abrir
+    const dt=Math.min(.1,Math.max(0,(now-c.last)/1000));c.last=now;
     if(c.phase==="roll"){
       c.acc+=dt;let n=0;
-      while(c.acc>=ENG.DT&&!c.sim.finished&&n++<24){c.sim.stepOnce();c.acc-=ENG.DT}
+      while(c.acc>=ENG.DT&&!c.sim.finished&&n++<40){c.sim.stepOnce();c.acc-=ENG.DT}
       sync(c);
       if(c.sim.finished){
         /* se este computador deu um resultado diferente do oficial (raríssimo), gira o dado até a face certa */
@@ -192,10 +271,11 @@ function loop(now){
     }
     R.render(scene,cam);
   }catch(e){
-    console.warn("[ficha] erro na animação",e);
-    const p=c.p;disposeGroup(c);cur=null;
-    if(c.phase==="roll"||c.phase==="snap")showChip(p);
-    pump();return;
+    console.warn("[ficha] erro na animação 3D",e);
+    glFailed=true;
+    const p=c.p,ph=c.phase;disposeGroup(c);cur=null;
+    if(ph==="roll"||ph==="snap")play2d(p);else pump();
+    return;
   }
   raf=requestAnimationFrame(loop);
 }
@@ -205,7 +285,7 @@ function maybeIdle(){
   if(cur||queue.length||chips.children.length)return;
   if(standalone){parent.postMessage({ordem:"overlay-done"},"*");return}
   if(!OBR)return;
-  OBR.broadcast.sendMessage(CH.idle,{seen:received,idle:true},{destination:"LOCAL"}).catch(()=>{});
+  OBR.broadcast.sendMessage(CH.idle,{seen:received,idle:true,mid},{destination:"LOCAL"}).catch(()=>{});
   clearTimeout(idleTimer);
   idleTimer=setTimeout(()=>{if(mid)OBR.modal.close(mid).catch(()=>{})},12000);   // garantia: fecha sozinha
 }
@@ -221,7 +301,7 @@ function maybeIdle(){
   if(!OBR||!(await ready(OBR)))OBR=null;
   if(OBR){
     OBR.broadcast.onMessage(CH.feed,ev=>{const d=ev.data||{};enqueue(d.p,+d.seq||0)});
-    OBR.broadcast.sendMessage(CH.idle,{seen:s0,idle:false},{destination:"LOCAL"}).catch(()=>{});
+    OBR.broadcast.sendMessage(CH.idle,{seen:s0,idle:false,mid},{destination:"LOCAL"}).catch(()=>{});
   }
   try{enqueue(ENG.unb64(qs.get("p")),s0)}catch(e){maybeIdle()}
 })();

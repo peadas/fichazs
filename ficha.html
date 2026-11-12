@@ -211,7 +211,6 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
     <button class="t" id="custbtn">Rolar dados</button>
     <button class="t" id="rmimg">Remover imagem</button>
     <button class="t" id="relbtn">Relações</button>
-    <button class="t" id="mesabtn" title="Fecha esta janela">Fechar</button>
     <button class="t" id="reset">Limpar ficha</button>
     <button class="t" id="bkexp" title="Baixa um arquivo com a sua ficha (backup)">Exportar</button>
     <button class="t" id="bkimp" title="Carrega uma ficha exportada">Importar</button>
@@ -766,7 +765,7 @@ var rollTitle="";
 /* dentro do Owlbear: a ficha sorteia a semente, descobre o resultado e manda para todos; os dados caem na mesa de cada jogador */
 function throwOBR(list,pv,rb,render){
   const X=window.OBRX;
-  if(!X||typeof ENG==="undefined"||typeof THREE==="undefined")return false;
+  if(!X||typeof ENG==="undefined")return false;
   const seed=window.crypto.getRandomValues(new Uint32Array(1))[0];
   let res=null,ms=3500;
   try{const sim=new ENG.Sim(list.map(([n,f])=>[n,f]),seed);res=sim.runAll();ms=Math.min(9000,sim.W.t*1000+600)}catch(e){res=null}
@@ -877,6 +876,7 @@ window.fichaRecarregar=()=>{
 </script>
 <script type="module">
 import {loadOBR,ready} from "./obr.js";
+import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js";
 (async()=>{
   if(document.documentElement.classList.contains("view"))return;
   const OBR=await loadOBR();
@@ -884,6 +884,30 @@ import {loadOBR,ready} from "./obr.js";
   let name="",color="#ecc962";
   try{name=await OBR.player.getName();color=await OBR.player.getColor()}catch(e){}
   window.OBRX={OBR,name,color};
+  if(window.__SHEETKEY!=="ficha-ordem")return;        // ficha de NPC não vai para a mesa
+
+  /* ao salvar, atualiza o meu cartão na mesa (direto daqui; não depende do segundo plano) */
+  let t=0;
+  const pub=async()=>{
+    try{const m=await OBR.player.getMetadata();if(!(m&&m[KEY]))return;      // só se eu entrei na mesa
+      await OBR.player.setMetadata({[KEY]:await buildEntry(name)})}
+    catch(e){console.warn("[mesa] não consegui atualizar o meu cartão",e)}
+  };
+  const sched=()=>{clearTimeout(t);t=setTimeout(pub,700)};
+  const orig=Storage.prototype.setItem;
+  Storage.prototype.setItem=function(k){const r=orig.apply(this,arguments);if(k===LS.sheet||k===LS.img)sched();return r};
+
+  /* o mestre editou a minha ficha com esta janela aberta: aplica aqui também */
+  OBR.broadcast.onMessage("ordem.mesa/edit",async ev=>{
+    try{
+      const d=ev.data||{};if(d.to!==OBR.player.id)return;
+      const from=(await OBR.party.getPlayers()).find(p=>p.connectionId===ev.connectionId);
+      if(!from||from.role!=="GM")return;
+      const sheet=await unpack(d.z);JSON.parse(sheet);
+      localStorage.setItem(LS.sheet,sheet);
+      if(window.fichaRecarregar)window.fichaRecarregar();
+    }catch(e){console.warn("[mesa] edição do mestre ignorada",e)}
+  });
 })();
 </script>
 <script>
@@ -891,11 +915,13 @@ import {loadOBR,ready} from "./obr.js";
 (function(){
   var ex=document.getElementById("bkexp"),im=document.getElementById("bkimp"),fi=document.getElementById("bkfile");
   if(!ex)return;
-  var mb=document.getElementById("mesabtn"),pop=new URLSearchParams(location.search).get("pop");
-  if(mb){
-    if(!pop)mb.hidden=true;
-    mb.onclick=function(){var X=window.OBRX;if(X)X.OBR.popover.close(pop).catch(function(){})};
-  }
+  var pop=new URLSearchParams(location.search).get("pop");
+  /* a janela fecha clicando fora dela (o Owlbear cuida disso) ou apertando Esc quando nada mais está aberto */
+  if(pop)document.addEventListener("keydown",function(e){
+    if(e.key!=="Escape")return;
+    var open=["rels","cust","roll","menu"].some(function(id){var n=document.getElementById(id);return n&&!n.hidden});
+    var X=window.OBRX;if(!open&&X)X.OBR.popover.close(pop).catch(function(){});
+  },true);
   /* se a ficha mudar em outra janela (ex.: o mestre ajustou o PV de um NPC), atualiza aqui */
   addEventListener("storage",function(e){if(e.key===window.__SHEETKEY&&window.fichaRecarregar)window.fichaRecarregar()});
   ex.onclick=function(){

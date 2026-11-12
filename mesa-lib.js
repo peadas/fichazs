@@ -4,7 +4,7 @@
 export const KEY="ordem.mesa/ficha";
 export const KEY_NPC="ordem.mesa/npcs";   // NPCs que o mestre mostrou na mesa
 export const LS={sheet:"ficha-ordem",img:"ficha-ordem-img",joined:"mesa-joined",collapsed:"mesa-collapsed"};
-const MAX=14000;   // folga sob o limite de metadados do Owlbear (~16 kB)
+const MAX=12000;   // folga sob o limite de metadados do Owlbear (~16 kB)
 
 const g=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const s=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
@@ -60,6 +60,22 @@ export async function buildEntry(fallbackName){
   return base;
 }
 
+/* ---- publicar / retirar a minha ficha da sala (usado pela tela da Mesa, pela ficha e pelo segundo plano) ---- */
+export async function publishMine(OBR,name){
+  let nm=name;if(nm==null){try{nm=await OBR.player.getName()}catch(e){nm=""}}
+  await OBR.player.setMetadata({[KEY]:await buildEntry(nm)});
+}
+export async function unpublishMine(OBR){await OBR.player.setMetadata({[KEY]:undefined})}
+/* "estou na mesa?": vale a marca salva OU já existir a minha ficha publicada na sala */
+export async function amJoined(OBR){
+  if(g(LS.joined)==="1")return true;
+  try{const m=await OBR.player.getMetadata();return !!(m&&m[KEY])}catch(e){return false}
+}
+/* o navegador deixa esta página guardar dados? (alguns bloqueiam em páginas dentro de outras) */
+export function storageOk(){
+  try{const k="mesa-probe";localStorage.setItem(k,"1");const ok=localStorage.getItem(k)==="1";localStorage.removeItem(k);return ok}catch(e){return false}
+}
+
 /* ================= NPCs (ficam no navegador do mestre; só os "mostrados" vão para a sala) ================= */
 export const npcs=()=>{try{const a=JSON.parse(g("mesa-npcs")||"[]");return Array.isArray(a)?a:[]}catch(e){return[]}};
 export const saveNpcs=a=>s("mesa-npcs",JSON.stringify(a));
@@ -96,7 +112,7 @@ export function npcsOf(players){
   return out;
 }
 
-/* ================= janelas grandes (popover centralizado; não some quando os dados caem) ================= */
+/* ================= janelas grandes (popover centralizado; clicar fora da janela fecha) ================= */
 async function openBig(OBR,id,rel,query,maxW,maxH){
   let vw=1280,vh=860;
   try{vw=await OBR.viewport.getWidth();vh=await OBR.viewport.getHeight()}catch(e){}
@@ -106,7 +122,7 @@ async function openBig(OBR,id,rel,query,maxW,maxH){
     await OBR.popover.open({id,url,width:Math.max(360,Math.min(maxW,vw-24)),height:Math.max(360,Math.min(maxH,vh-24)),
       anchorReference:"POSITION",anchorPosition:{left:Math.round(vw/2),top:Math.round(vh/2)},
       anchorOrigin:{horizontal:"CENTER",vertical:"CENTER"},transformOrigin:{horizontal:"CENTER",vertical:"CENTER"},
-      disableClickAway:true,marginThreshold:8});
+      disableClickAway:false,marginThreshold:8});
     try{await OBR.action.close()}catch(e){}
   }catch(e){console.warn("[mesa] não consegui abrir a janela",e)}
 }

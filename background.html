@@ -17,15 +17,23 @@ import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./me
 
   /* ===== dados ===== */
   const CH=ENG.CH;
-  let seq=0,open=false,mid="",lastAct=0;
+  let seq=0,open=false,mid="",lastAct=0,helloT=0,hello=false;
   const log=[];
   const feed=e=>OBR.broadcast.sendMessage(CH.feed,e,{destination:"LOCAL"}).catch(()=>{});
   async function openOverlay(e){
-    open=true;mid="ordem.ficha/overlay/"+Date.now();lastAct=Date.now();
+    const id="ordem.ficha/overlay/"+Date.now();
+    open=true;hello=false;mid=id;lastAct=Date.now();
     try{
-      await OBR.modal.open({id:mid,url:abs("overlay.html")+"?mid="+encodeURIComponent(mid)+"&s="+e.seq+"&p="+ENG.b64(e.p),
+      await OBR.modal.open({id,url:abs("overlay.html")+"?mid="+encodeURIComponent(id)+"&s="+e.seq+"&p="+ENG.b64(e.p),
         fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:true});
-    }catch(err){open=false;console.warn("[ficha] não consegui abrir a camada de dados",err)}
+    }catch(err){if(mid===id)open=false;console.warn("[ficha] não consegui abrir a camada de dados",err);return}
+    /* se a camada não der sinal de vida em 6 s (não carregou), fecha e tenta de novo uma vez */
+    clearTimeout(helloT);
+    helloT=setTimeout(()=>{
+      if(mid!==id||!open||hello)return;
+      OBR.modal.close(id).catch(()=>{});open=false;
+      if(!e.retry)openOverlay({...e,retry:1});
+    },6000);
   }
   OBR.broadcast.onMessage(CH.roll,ev=>{
     const p=ENG.clean(ev.data);if(!p)return;
@@ -35,7 +43,9 @@ import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./me
     if(open)feed(e);else openOverlay(e);
   });
   OBR.broadcast.onMessage(CH.idle,ev=>{
-    const d=ev.data||{},seen=+d.seen||0;lastAct=Date.now();
+    const d=ev.data||{},seen=+d.seen||0;
+    if(d.mid&&d.mid!==mid)return;                 // recado de uma camada antiga: não pode fechar a nova
+    hello=true;clearTimeout(helloT);lastAct=Date.now();
     const missing=log.filter(e=>e.seq>seen);
     if(missing.length){missing.forEach(feed);return}
     if(d.idle&&open){open=false;OBR.modal.close(mid).catch(()=>{})}
@@ -47,7 +57,9 @@ import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./me
   async function pubMine(force){
     const sg=sig();if(!force&&sg===last)return;
     last=sg;
-    if(store.get(LS.joined)!=="1"){await OBR.player.setMetadata({[KEY]:undefined});return}
+    const j=store.get(LS.joined);
+    if(j==="0"){const m=await OBR.player.getMetadata();if(m&&m[KEY])await OBR.player.setMetadata({[KEY]:undefined});return}
+    if(j!=="1")return;      // não sei (ou este navegador não divide o armazenamento com a janela da mesa): não mexo no que ela publicou
     let name="";try{name=await OBR.player.getName()}catch(e){}
     await OBR.player.setMetadata({[KEY]:await buildEntry(name)});
   }
