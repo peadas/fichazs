@@ -3,42 +3,70 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ficha do jogador — visão do mestre</title>
+<title>Ficha do jogador — mestre</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
 <style>
 html,body{margin:0;height:100%;background:#161a1b;color:#eef0ee;font:14px/1.3 Barlow,system-ui,sans-serif}
 body{display:flex;flex-direction:column}
-.bar{display:flex;gap:12px;align-items:center;padding:8px 14px;border-bottom:1px solid #3a4344;color:#9aa4a3}
-.bar b{color:#eef0ee;font-size:1rem}.bar .sp{flex:1}
-#warn{color:#e9a23b}
+.bar{display:flex;gap:12px;align-items:center;padding:8px 14px;border-bottom:1px solid #3a4344;color:#9aa4a3;background:#101415}
+.bar b{color:#f0d28a;font:700 1.15rem "Barlow Condensed",sans-serif;letter-spacing:.06em}
+.bar .sp{flex:1}
+#st{font-weight:600}#st.ok{color:#5fd38a}#st.err,#st.warn{color:#e9a23b}
+button{font:600 .9rem Barlow,sans-serif;color:#eef0ee;background:transparent;border:1px solid #8b9594;padding:6px 14px;cursor:pointer}
+button:hover{background:#232a2b}
 iframe{flex:1;width:100%;border:0;background:#161a1b}
 </style>
 </head>
 <body>
-<div class="bar"><b id="who">Ficha</b><span>somente leitura · atualiza ao vivo</span><span id="warn"></span><span class="sp"></span></div>
+<div class="bar"><b id="who">Ficha</b><span id="mode">você pode editar; o jogador recebe as mudanças</span><span id="st"></span><span class="sp"></span><button id="close">Fechar</button></div>
 <iframe id="f" title="Ficha do jogador"></iframe>
 <script type="module">
 import {loadOBR,ready} from "./obr.js";
-import {KEY,unpack} from "./mesa-lib.js";
-const qs=new URLSearchParams(location.search),pid=qs.get("p")||"";
+import {KEY,pack,unpack} from "./mesa-lib.js";
+const qs=new URLSearchParams(location.search),pid=qs.get("p")||"",pop=qs.get("pop")||"";
 const $=s=>document.querySelector(s),f=$("#f");
+let OBR=null,curSheet="",lastEdit=0,sendT=0,mode="";
+const status=(t,c)=>{$("#st").textContent=t||"";$("#st").className=c||""};
+
+/* a ficha (iframe) avisa aqui sempre que o mestre mexe em algo */
+window.__FICHA_RO=false;
+window.__FICHA_EDIT=sheet=>{
+  curSheet=sheet;lastEdit=Date.now();status("editando…","warn");
+  clearTimeout(sendT);sendT=setTimeout(send,600);
+};
+async function send(){
+  try{
+    const z=await pack(curSheet);
+    if(z.length>14000){status("Ficha grande demais para enviar ao jogador.","err");return}
+    await OBR.broadcast.sendMessage("ordem.mesa/edit",{to:pid,z,t:Date.now()});
+    status("salvo para o jogador ✓","ok");
+  }catch(e){console.warn("[mesa] falha ao enviar edição",e);status("não consegui salvar","err")}
+}
+$("#close").onclick=()=>{if(OBR&&pop)OBR.popover.close(pop).catch(()=>{})};
+
 (async()=>{
-  const OBR=await loadOBR();
-  if(!OBR||!(await ready(OBR))){$("#warn").textContent="Abra pelo Owlbear Rodeo.";return}
+  OBR=await loadOBR();
+  if(!OBR||!(await ready(OBR))){status("Abra pelo Owlbear Rodeo.","err");return}
+  const all=async()=>[{id:OBR.player.id,metadata:await OBR.player.getMetadata(),name:await OBR.player.getName()},...await OBR.party.getPlayers()];
   async function show(players){
     const p=players.find(x=>x.id===pid),e=p&&p.metadata&&p.metadata[KEY];
-    if(!e){$("#warn").textContent="O jogador saiu da mesa.";return}
+    if(!e){status("O jogador saiu da mesa.","warn");return}
     $("#who").textContent=e.nome||p.name||"Jogador";
     let sheet=null;if(e.z){try{sheet=await unpack(e.z)}catch(err){}}
-    $("#warn").textContent=sheet?"":"Ficha grande demais para enviar: mostrando só o resumo.";
-    if(!sheet)sheet=JSON.stringify({nome:e.nome,perfil:e.perfil,nivel:e.nivel,pv:e.pv,pvmax:e.pvmax,pd:e.pd,pdmax:e.pdmax});
-    window.__FICHA_VIEW={sheet,img:e.th||null};
-    const w=f.contentWindow;
-    if(!f.getAttribute("src"))f.src="ficha.html?view=1";
-    else if(w&&w.__viewSet){w.__viewSet(sheet,e.th||null);if(w.fichaRecarregar)w.fichaRecarregar()}
+    const ro=!sheet,m=ro?"ro":"edit";
+    if(ro){
+      sheet=JSON.stringify({nome:e.nome,perfil:e.perfil,nivel:e.nivel,pv:e.pv,pvmax:e.pvmax,pd:e.pd,pdmax:e.pdmax});
+      window.__FICHA_RO=true;$("#mode").textContent="só leitura";status("Ficha grande demais: mostrando só o resumo.","warn");
+    }else{window.__FICHA_RO=false;$("#mode").textContent="você pode editar; o jogador recebe as mudanças"}
+    if(sheet===curSheet&&m===mode)return;                                   // eco do que acabamos de enviar
+    if(Date.now()-lastEdit<3000){setTimeout(async()=>show(await all()),3200);return}   // não atrapalha quem está digitando
+    curSheet=sheet;window.__FICHA_VIEW={sheet,img:e.th||null};
+    if(!f.getAttribute("src")||m!==mode){mode=m;f.src="ficha.html?view=1"+(ro?"&ro=1":"")}
+    else{const w=f.contentWindow;if(w&&w.__viewSet){w.__viewSet(sheet,e.th||null);if(w.fichaRecarregar)w.fichaRecarregar()}}
   }
-  const all=async()=>[{id:OBR.player.id,metadata:await OBR.player.getMetadata(),name:await OBR.player.getName()},...await OBR.party.getPlayers()];
   show(await all());
   OBR.party.onChange(async()=>show(await all()));
+  OBR.player.onChange(async()=>show(await all()));
 })();
 </script>
 </body>

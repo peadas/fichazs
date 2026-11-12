@@ -1,6 +1,6 @@
 # Ficha Ordem Paranormal — extensão para Owlbear Rodeo
 
-Ficha de personagem com dados 3D que caem na mesa de todos, mais o painel **Mesa** (foto, PV e PD de quem entrou; só o mestre abre as fichas).
+Ficha de personagem com dados 3D que caem na mesa de todos, mais a **Mesa** (foto, PV e PD de quem entrou; só o mestre abre as fichas).
 Tudo estático: **sem Netlify, sem banco, sem servidor**. Funciona direto no GitHub Pages.
 
 ## Publicar no GitHub Pages
@@ -16,9 +16,9 @@ Tudo estático: **sem Netlify, sem banco, sem servidor**. Funciona direto no Git
 Avatar > Profile > Extensions > Add Extension > cole a URL do manifest. Cada jogador instala uma vez.
 
 ## Usar
-- Ícone **Ficha** na barra: abre a tela da **Mesa**. O jogador clica em **Entrar na mesa** (o personagem aparece em branco) e depois em **FICHA**, o botão pequeno no cartão dele: a ficha abre numa janela grande, para os dados girarem melhor. Foto, nome, PV e PD aparecem para todos conforme ele preenche.
-- Painel **Mesa** (canto da tela do Owlbear): a mesma lista, sempre visível.
-- **Mestre**: aba **Mesa** (clica num jogador e abre a ficha dele, somente leitura, ao vivo) e aba **NPCs**: cria NPCs com nome, PV e PD, ajusta PV/PD com − e +, abre a ficha completa do NPC e escolhe **Mostrar na mesa** para os jogadores o verem. NPCs ficam salvos no navegador do mestre.
+- Ícone na barra do Owlbear: abre a tela da **Mesa**. No topo há o botão **FICHA**, para jogador e mestre abrirem a própria ficha numa janela grande (não precisa entrar na mesa para isso).
+- **Jogador**: **Entrar na mesa** (o personagem aparece em branco) e preencha a ficha. Foto, nome, PV e PD aparecem para todos.
+- **Mestre**: aba **Mesa**: clique num jogador e a ficha dele abre bem grande, **editável** (as mudanças vão para o jogador sozinhas). Aba **NPCs**: cria NPCs com nome, PV e PD, ajusta com − e +, abre a ficha completa e escolhe **Mostrar na mesa**. NPCs ficam salvos no navegador do mestre.
 - **Exportar / Importar** (rodapé da ficha): backup da ficha em arquivo.
 
 ## O que mudou
@@ -26,4 +26,4 @@ Avatar > Profile > Extensions > Add Extension > cole a URL do manifest. Cada jog
 - O que a Mesa mostra é publicado nos metadados do jogador no Owlbear (some quando o jogador sai da sala).
 
 ## Arquivos
-`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + painel + publicação) · `overlay.html` + `engine.js` (dados 3D) · `mesa.html` (painel) · `gm.html` (visão do mestre) · `mesa-lib.js` · `obr.js` · `icon.svg`
+`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `gm.html` (ficha do jogador aberta pelo mestre) · `mesa-lib.js` · `obr.js` · `icon.svg`

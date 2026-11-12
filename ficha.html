@@ -146,7 +146,10 @@ button.t:hover{border-color:var(--hi)}
   .meta{margin-left:0}
 }
 @media (max-width:520px){.sheet{padding:16px 14px}.top{grid-template-columns:1fr}.attrs{justify-items:start}}
-html.view .tools,html.view .hint,html.view #relbtn{display:none}html.view input,html.view select,html.view textarea,html.view button,html.view .art{pointer-events:none}
+html.view .tools button:not(#relbtn),html.view .tools .hint,html.view .tools .rbadge{display:none}
+html.view [data-roll],html.view .art{pointer-events:none}
+html.view body::after{content:"MESTRE · editando a ficha do jogador";position:fixed;right:12px;top:8px;font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.12em;color:#15191a;background:#f0d28a;padding:2px 10px;z-index:30;pointer-events:none}
+html.ro input,html.ro select,html.ro textarea,html.ro button,html.ro .art{pointer-events:none}
 html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.12em;color:#15191a;background:#f0d28a;padding:2px 10px;z-index:30;pointer-events:none}
 @media print{.tools,#menu,#cust{display:none}.sheet{box-shadow:none}}
 </style>
@@ -254,9 +257,12 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
     var V=(parent&&parent.__FICHA_VIEW)||{},m={};
     var set=function(sh,im){m["ficha-ordem"]=sh||"{}";if(im)m["ficha-ordem-img"]=im;else delete m["ficha-ordem-img"]};
     set(V.sheet,V.img);
-    var st={getItem:function(k){return k in m?m[k]:null},setItem:function(){},removeItem:function(){},clear:function(){},key:function(i){return Object.keys(m)[i]||null},get length(){return Object.keys(m).length}};
+    var st={getItem:function(k){return k in m?m[k]:null},
+      setItem:function(k,v){m[k]=v;if(k==="ficha-ordem"&&parent&&parent.__FICHA_EDIT&&!parent.__FICHA_RO)parent.__FICHA_EDIT(v)},
+      removeItem:function(k){delete m[k]},clear:function(){},key:function(i){return Object.keys(m)[i]||null},get length(){return Object.keys(m).length}};
     try{Object.defineProperty(window,"localStorage",{value:st,configurable:true})}catch(e){}
     window.__viewSet=set;H.classList.add("view");
+    if(q.get("ro")==="1")H.classList.add("ro");
   }else if(q.get("npc")){
     var id=q.get("npc"),real=window.localStorage,map={"ficha-ordem":"npc:"+id,"ficha-ordem-img":"npc:"+id+":img","ficha-ordem-exp":"npc:"+id+":exp"};
     var rk=function(k){return map[k]||k};
@@ -842,7 +848,6 @@ $("#file").onchange=e=>{
       const u=c.toDataURL(f.type==="image/png"?"image/png":"image/jpeg",.88);
       setImg(u);
       try{localStorage.setItem("ficha-ordem-img",u)}catch(err){}
-      if(window.__syncMesa)window.__syncMesa();
     };
     im.src=r.result;
   };
@@ -872,20 +877,13 @@ window.fichaRecarregar=()=>{
 </script>
 <script type="module">
 import {loadOBR,ready} from "./obr.js";
-import {syncNow} from "./mesa-lib.js";
 (async()=>{
   if(document.documentElement.classList.contains("view"))return;
   const OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))return;
-  let name="",color="#ecc962",role="PLAYER";
-  try{name=await OBR.player.getName();color=await OBR.player.getColor();role=await OBR.player.getRole()}catch(e){}
-  window.OBRX={OBR,name,color,role};
-  let t=null;
-  const scheduleSync=()=>{clearTimeout(t);t=setTimeout(()=>syncNow(OBR,role),250)};
-  window.__syncMesa=scheduleSync;
-  document.addEventListener("input",scheduleSync);
-  document.addEventListener("click",scheduleSync);
-  scheduleSync();
+  let name="",color="#ecc962";
+  try{name=await OBR.player.getName();color=await OBR.player.getColor()}catch(e){}
+  window.OBRX={OBR,name,color};
 })();
 </script>
 <script>
@@ -895,18 +893,8 @@ import {syncNow} from "./mesa-lib.js";
   if(!ex)return;
   var mb=document.getElementById("mesabtn"),pop=new URLSearchParams(location.search).get("pop");
   if(mb){
-    if(!pop){
-      mb.textContent="← Mesa";
-      mb.title="Voltar para o painel da Mesa";
-    }
-    mb.onclick=function(){
-      var X=window.OBRX;
-      if(pop&&X&&X.OBR){
-        X.OBR.popover.close(pop).catch(function(){location.href="entrada.html"});
-      }else{
-        location.href="entrada.html";
-      }
-    };
+    if(!pop)mb.hidden=true;
+    mb.onclick=function(){var X=window.OBRX;if(X)X.OBR.popover.close(pop).catch(function(){})};
   }
   /* se a ficha mudar em outra janela (ex.: o mestre ajustou o PV de um NPC), atualiza aqui */
   addEventListener("storage",function(e){if(e.key===window.__SHEETKEY&&window.fichaRecarregar)window.fichaRecarregar()});
@@ -925,7 +913,6 @@ import {syncNow} from "./mesa-lib.js";
       localStorage.setItem("ficha-ordem",o.sheet);
       if(o.img)localStorage.setItem("ficha-ordem-img",o.img);else localStorage.removeItem("ficha-ordem-img");
       window.fichaRecarregar();
-      if(window.__syncMesa)window.__syncMesa();
     }catch(err){alert("Arquivo inválido.")}};
     r.readAsText(f);
   };

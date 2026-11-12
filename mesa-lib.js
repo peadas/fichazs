@@ -96,42 +96,21 @@ export function npcsOf(players){
   return out;
 }
 
-/* ================= publica direto nos metadados (sem depender só do background.html) ================= */
-export async function syncNow(OBR,roleHint){
-  const isJoined=g(LS.joined)==="1";
-  let fallback="Jogador",role=roleHint||"PLAYER";
-  if(OBR){
-    try{fallback=await OBR.player.getName()||fallback}catch(e){}
-    if(!roleHint){try{role=await OBR.player.getRole()||role}catch(e){}}
-  }
-  const entry=isJoined?await buildEntry(fallback):undefined;
-  const npcList=role==="GM"?await buildNpcs():undefined;
-  if(OBR){
-    const patch={[KEY]:entry};
-    if(role==="GM")patch[KEY_NPC]=npcList;
-    try{await OBR.player.setMetadata(patch)}catch(e){console.warn("[mesa] falha ao salvar metadata",e)}
-    try{await OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"})}catch(e){}
-  }
-  return {entry,npcs:npcList};
-}
-
-/* ================= abre a ficha numa janela grande (para os dados girarem à vontade) ================= */
-export async function openFicha(OBR,npcId){
-  const fallbackUrl=new URL("ficha.html",location.href).href+(npcId?"?npc="+encodeURIComponent(npcId):"");
-  if(!OBR){location.href=fallbackUrl;return}
-  const id="ordem.ficha/sheet"+(npcId?"/"+npcId:"");
+/* ================= janelas grandes (popover centralizado; não some quando os dados caem) ================= */
+async function openBig(OBR,id,rel,query,maxW,maxH){
   let vw=1280,vh=860;
   try{vw=await OBR.viewport.getWidth();vh=await OBR.viewport.getHeight()}catch(e){}
-  const url=new URL("ficha.html",location.href).href+"?pop="+encodeURIComponent(id)+(npcId?"&npc="+encodeURIComponent(npcId):"");
+  const url=new URL(rel,location.href).href+"?pop="+encodeURIComponent(id)+query;
   try{await OBR.popover.close(id)}catch(e){}
   try{
-    await OBR.popover.open({id,url,width:Math.max(360,Math.min(1120,vw-32)),height:Math.max(360,Math.min(860,vh-32)),
+    await OBR.popover.open({id,url,width:Math.max(360,Math.min(maxW,vw-24)),height:Math.max(360,Math.min(maxH,vh-24)),
       anchorReference:"POSITION",anchorPosition:{left:Math.round(vw/2),top:Math.round(vh/2)},
       anchorOrigin:{horizontal:"CENTER",vertical:"CENTER"},transformOrigin:{horizontal:"CENTER",vertical:"CENTER"},
       disableClickAway:true,marginThreshold:8});
     try{await OBR.action.close()}catch(e){}
-  }catch(e){
-    console.warn("[mesa] não consegui abrir o popover da ficha, abrindo na mesma janela",e);
-    location.href=fallbackUrl;
-  }
+  }catch(e){console.warn("[mesa] não consegui abrir a janela",e)}
 }
+/* a ficha do próprio jogador (ou de um NPC do mestre) */
+export const openFicha=(OBR,npcId)=>openBig(OBR,"ordem.ficha/sheet"+(npcId?"/"+npcId:""),"ficha.html",npcId?"&npc="+encodeURIComponent(npcId):"",1120,860);
+/* a ficha de um jogador, aberta pelo mestre (editável) */
+export const openGm=(OBR,playerId)=>openBig(OBR,"ordem.mesa/gm/"+playerId,"gm.html","&p="+encodeURIComponent(playerId),1280,920);

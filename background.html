@@ -4,11 +4,12 @@
 <body>
 <script src="engine.js"></script>
 <script type="module">
-/* Fica rodando o tempo todo na sala e cuida de duas coisas:
+/* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
-   2) mesa: mantém o painel da mesa aberto e publica o resumo da ficha de quem entrou na mesa. */
+   2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
+   3) recebe as edições que o mestre faz na ficha do jogador. */
 import {loadOBR,ready} from "./obr.js";
-import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs} from "./mesa-lib.js";
+import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js";
 (async()=>{
   const OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))return;
@@ -40,21 +41,6 @@ import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs} from "./mesa-lib.
     if(d.idle&&open){open=false;OBR.modal.close(mid).catch(()=>{})}
   });
 
-  /* ===== mesa: painel sempre aberto no canto ===== */
-  const PANEL="ordem.mesa/panel";
-  async function openPanel(){
-    let left=80,ref={horizontal:"LEFT",vertical:"TOP"};
-    try{const vw=await OBR.viewport.getWidth();if(vw>400){left=vw-12;ref={horizontal:"RIGHT",vertical:"TOP"}}}catch(e){console.warn("[mesa] largura da tela indisponível, usando o canto esquerdo",e)}
-    try{await OBR.popover.close(PANEL)}catch(e){}
-    try{
-      await OBR.popover.open({id:PANEL,url:abs("mesa.html")+"?pid="+encodeURIComponent(PANEL),width:250,height:44,
-        anchorReference:"POSITION",anchorPosition:{left,top:64},anchorOrigin:ref,transformOrigin:ref,
-        hidePaper:true,disableClickAway:true,marginThreshold:0});
-    }catch(err){console.warn("[mesa] não consegui abrir o painel",err)}
-  }
-  OBR.broadcast.onMessage("ordem.mesa/open",()=>openPanel());   // botão "Mesa" da ficha
-  openPanel();
-
   /* ===== mesa: publicar a minha ficha na sala (só se eu entrei) ===== */
   let isGM=false;try{isGM=(await OBR.player.getRole())==="GM"}catch(e){}
   let last="",lastN=null,busy=false,again=false,timer=0;
@@ -83,6 +69,16 @@ import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs} from "./mesa-lib.
   addEventListener("storage",()=>soon(false));            // a ficha (outra janela, mesmo domínio) salvou algo
   setInterval(()=>publish(false),3000);                   // garantia
   OBR.broadcast.onMessage("ordem.mesa/nudge",()=>soon(true));
+  /* o mestre editou a minha ficha: só aceita se quem mandou for mesmo o mestre */
+  OBR.broadcast.onMessage("ordem.mesa/edit",async ev=>{
+    try{
+      const d=ev.data||{};if(d.to!==OBR.player.id)return;
+      const from=(await OBR.party.getPlayers()).find(p=>p.connectionId===ev.connectionId);
+      if(!from||from.role!=="GM")return;
+      const sheet=await unpack(d.z);JSON.parse(sheet);
+      store.set(LS.sheet,sheet);soon(true);
+    }catch(e){console.warn("[mesa] edição do mestre ignorada",e)}
+  });
   publish(true);
 })();
 </script>
