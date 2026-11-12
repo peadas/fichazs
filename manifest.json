@@ -1,15 +1,14 @@
 {
   "name": "Ficha Ordem Paranormal",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "manifest_version": 1,
-  "description": "Ficha de personagem com dados 3D na mesa e mesa com foto, PV e PD de todos (o mestre abre e edita as fichas, e cria NPCs).",
-  "icon": "/fichazs/icon.svg",
+  "description": "Ficha de personagem com dados 3D na mesa e mesa com foto, PV e PD de todos.",
+  "icon": "icon.svg",
   "action": {
     "title": "Ficha",
-    "icon": "/fichazs/icon.svg",
-    "popover": "/fichazs/entrada.html",
+    "icon": "icon.svg",
+    "popover": "entrada.html",
     "width": 480,
     "height": 700
-  },
-  "background_url": "/fichazs/background.html"
+  }
 }
