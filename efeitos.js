@@ -24,12 +24,12 @@ button:not(.die):not(.bx):not(.vs):not(.nm):hover,.card:hover,.chip:hover,.tag:h
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}.ef-nev i{animation:none!important}}
 
 /* névoa */
-.ef-nev{position:fixed;inset:0;overflow:hidden;pointer-events:none;--mx:-999px;--my:-999px;--r:0px;-webkit-mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my),transparent 0,transparent 30%,#000 100%);mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my),transparent 0,transparent 30%,#000 100%)}
+.ef-nev{position:fixed;inset:0;overflow:hidden;pointer-events:none;--mx:-999px;--my:-999px;--r:0px;-webkit-mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my),transparent 0,transparent 45%,#000 100%);mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my),transparent 0,transparent 45%,#000 100%)}
 .ef-nev i{position:absolute;left:-1280px;top:-1280px;right:0;bottom:0;background:url("${base}nevoa.png") 0 0/512px 512px repeat;will-change:transform}
 .ef-nev.back{z-index:1}.ef-nev.front{z-index:6;mix-blend-mode:screen}
-.ef-nev.back i:nth-child(1){opacity:.20;animation:ef-nevoa-a 95s linear infinite}
-.ef-nev.back i:nth-child(2){opacity:.13;background-size:640px 640px;animation:ef-nevoa-b 150s linear infinite}
-.ef-nev.front i{opacity:.07;background-size:768px 768px;animation:ef-nevoa-c 140s linear infinite}
+.ef-nev.back i:nth-child(1){opacity:.34;animation:ef-nevoa-a 95s linear infinite}
+.ef-nev.back i:nth-child(2){opacity:.20;background-size:640px 640px;animation:ef-nevoa-b 150s linear infinite}
+.ef-nev.front i{opacity:.26;background-size:768px 768px;animation:ef-nevoa-c 140s linear infinite}
 body>main{position:relative;z-index:2}
 `;
   var st=document.createElement("style");st.textContent=css;document.head.appendChild(st);
@@ -51,7 +51,7 @@ body>main{position:relative;z-index:2}
   function kick(){if(!raf)raf=requestAnimationFrame(loop)}
   addEventListener("pointermove",function(e){
     if(cr<1&&tr===0){cx=tx=e.clientX;cy=ty=e.clientY}
-    tx=e.clientX;ty=e.clientY;tr=130;kick();
+    tx=e.clientX;ty=e.clientY;tr=210;kick();
   },{passive:true});
   document.addEventListener("pointerleave",function(){tr=0;kick()});
   addEventListener("blur",function(){tr=0;kick()});
