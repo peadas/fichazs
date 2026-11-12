@@ -30,7 +30,7 @@ button:hover{background:#232a2b}
 <div id="p"></div>
 <script type="module">
 import {loadOBR,ready} from "./obr.js";
-import {KEY,LS,store} from "./mesa-lib.js";
+import {KEY,LS,store,buildEntry} from "./mesa-lib.js";
 const qs=new URLSearchParams(location.search),pid=qs.get("pid")||"ordem.mesa/panel",P=document.getElementById("p");
 const abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
@@ -64,7 +64,27 @@ function render(){
     if(role!=="GM"){
       const f=el("div","ft"),b=el("button",null,joined?"Sair da mesa":"Entrar na mesa");
       f.append(el("span",null,joined?"Os outros veem seu PV e PD.":"Mostre foto, PV e PD."),b);
-      b.onclick=()=>{store.set(LS.joined,joined?"0":"1");OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"}).catch(()=>{});render()};
+      b.onclick=async()=>{
+        const next=joined?"0":"1";
+        store.set(LS.joined,next);
+        if(OBR){
+          try{
+            if(next==="1"){
+              const nm=await OBR.player.getName().catch(()=>"");
+              const entry=await buildEntry(nm);
+              await OBR.player.setMetadata({[KEY]:entry});
+              self={...(self||{id:OBR.player.id,name:nm,color:"#ecc962"}),metadata:{...((self&&self.metadata)||{}),[KEY]:entry}};
+            }else{
+              await OBR.player.setMetadata({[KEY]:undefined});
+              if(self&&self.metadata)delete self.metadata[KEY];
+            }
+          }catch(e){}
+          OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"}).catch(()=>{});
+        }else{
+          self=next==="1"?{id:"local",name:"Você",color:"#ecc962",metadata:{[KEY]:await buildEntry("Você")}}:null;
+        }
+        render();
+      };
       P.append(f);
     }
   }

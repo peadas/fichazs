@@ -858,6 +858,7 @@ window.fichaRecarregar=()=>{
 </script>
 <script type="module">
 import {loadOBR,ready} from "./obr.js";
+import {KEY,LS,store,buildEntry} from "./mesa-lib.js";
 (async()=>{
   if(document.documentElement.classList.contains("view"))return;
   const OBR=await loadOBR();
@@ -866,6 +867,19 @@ import {loadOBR,ready} from "./obr.js";
   try{name=await OBR.player.getName();color=await OBR.player.getColor()}catch(e){}
   window.OBRX={OBR,name,color};
   try{await OBR.action.setWidth(1120);await OBR.action.setHeight(820)}catch(e){}
+  let pubT=0;
+  const syncMesa=()=>{
+    clearTimeout(pubT);
+    pubT=setTimeout(async()=>{
+      try{
+        if(store.get(LS.joined)==="1")await OBR.player.setMetadata({[KEY]:await buildEntry(name)});
+        OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"}).catch(()=>{});
+      }catch(e){}
+    },350);
+  };
+  document.addEventListener("input",syncMesa);
+  document.addEventListener("click",syncMesa);
+  syncMesa();
 })();
 </script>
 <script>

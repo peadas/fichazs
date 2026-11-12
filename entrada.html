@@ -43,7 +43,7 @@ h2{margin:18px 0 8px;font:700 1rem "Barlow Condensed",sans-serif;text-transform:
 </main>
 <script type="module">
 import {loadOBR,ready} from "./obr.js";
-import {KEY,LS,store} from "./mesa-lib.js";
+import {KEY,LS,store,buildEntry} from "./mesa-lib.js";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER";
@@ -62,11 +62,30 @@ function row(p,mine){
   if(mine)n.append(el("span","me","você"));
   i.append(n,stat("pv","PV",e.pv,e.pvmax),stat("pd","PD",e.pd,e.pdmax));
   r.append(av,i);
-  if(role==="GM"){r.title="Abrir a ficha";r.onclick=()=>OBR.modal.open({id:"ordem.mesa/gm/"+p.id,
+  if(role==="GM"&&OBR){r.title="Abrir a ficha";r.onclick=()=>OBR.modal.open({id:"ordem.mesa/gm/"+p.id,
     url:abs("gm.html")+"?p="+encodeURIComponent(p.id)+"&m="+encodeURIComponent("ordem.mesa/gm/"+p.id),width:1120,height:820}).catch(()=>{})}
   return r;
 }
-function nudge(){OBR&&OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"}).catch(()=>{})}
+async function nudge(){
+  if(OBR){
+    try{
+      if(joined()){
+        const name=await OBR.player.getName().catch(()=>"");
+        const entry=await buildEntry(name);
+        await OBR.player.setMetadata({[KEY]:entry});
+        self={...(self||{id:OBR.player.id,name,color:"#ecc962"}),metadata:{...((self&&self.metadata)||{}),[KEY]:entry}};
+      }else{
+        await OBR.player.setMetadata({[KEY]:undefined});
+        if(self&&self.metadata)delete self.metadata[KEY];
+      }
+    }catch(e){}
+    OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"}).catch(()=>{});
+    render();
+  }else{
+    self=joined()?{id:"local",name:"Você",color:"#ecc962",metadata:{[KEY]:await buildEntry("Você")}}:null;
+    render();
+  }
+}
 function render(){
   const j=joined(),top=$("#top"),list=$("#list"),leave=$("#leave");
   top.replaceChildren();list.replaceChildren();leave.replaceChildren();
@@ -94,11 +113,18 @@ function render(){
 (async()=>{
   render();
   OBR=await loadOBR();
-  if(!OBR||!(await ready(OBR))){$("#sub").textContent="Abra esta página dentro do Owlbear Rodeo.";return}
+  if(!OBR||!(await ready(OBR))){
+    OBR=null;
+    await nudge();
+    addEventListener("storage",()=>nudge());
+    return;
+  }
   try{await OBR.action.setWidth(460);await OBR.action.setHeight(640)}catch(e){}
   role=await OBR.player.getRole();
   const me=async()=>({id:OBR.player.id,name:await OBR.player.getName(),color:await OBR.player.getColor(),metadata:await OBR.player.getMetadata()});
-  self=await me();party=await OBR.party.getPlayers();render();
+  self=await me();party=await OBR.party.getPlayers();
+  if(joined())await nudge();else render();
+  addEventListener("storage",()=>nudge());
   OBR.player.onChange(p=>{self={id:p.id||self.id,name:p.name,color:p.color,metadata:p.metadata};role=p.role||role;render()});
   OBR.party.onChange(ps=>{party=ps;render()});
 })();
