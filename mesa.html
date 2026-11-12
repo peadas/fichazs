@@ -24,13 +24,15 @@ html,body{margin:0;background:transparent;font:14px/1.3 Barlow,system-ui,sans-se
 button{font:600 .9rem Barlow,sans-serif;color:#eef0ee;background:transparent;border:1px solid #8b9594;padding:5px 12px;cursor:pointer}
 button:hover{background:#232a2b}
 .empty{padding:10px;color:#9aa4a3}
+.fb{font:700 .7rem "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-color:#d0a93f;color:#f0d28a;background:#221d0e;align-self:flex-start}
+.npc{font:700 .62rem "Barlow Condensed",sans-serif;letter-spacing:.12em;border:1px solid #d0a93f;color:#f0d28a;padding:0 5px;margin-left:6px}
 </style>
 </head>
 <body>
 <div id="p"></div>
 <script type="module">
 import {loadOBR,ready} from "./obr.js";
-import {KEY,LS,store,buildEntry} from "./mesa-lib.js";
+import {KEY,KEY_NPC,LS,store,npcs,npcsOf,openFicha,syncNow} from "./mesa-lib.js";
 const qs=new URLSearchParams(location.search),pid=qs.get("pid")||"ordem.mesa/panel",P=document.getElementById("p");
 const abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
@@ -42,17 +44,22 @@ function stat(cls,l,cur,max){
   r.append(b,el("em",null,cur+"/"+max));return r;
 }
 function row(p){
-  const e=p.metadata[KEY],r=el("div","row"+(role==="GM"?" gm":""));
+  const e=p.metadata[KEY],mine=!!(self&&p.id===self.id),r=el("div","row"+(role==="GM"?" gm":""));
   const av=el("div","av");if(e.th)av.style.backgroundImage="url("+e.th+")";
   const i=el("div","in"),n=el("div","nm",e.nome||p.name||"Jogador");n.style.color=p.color||"#ecc962";
+  if(p.isNpc)n.append(el("span","npc","NPC"));
   i.append(n,stat("pv","PV",e.pv,e.pvmax),stat("pd","PD",e.pd,e.pdmax));
   r.append(av,i);
-  if(role==="GM"){r.title="Abrir a ficha de "+(e.nome||p.name);r.onclick=()=>OBR.modal.open({
-    id:"ordem.mesa/gm/"+p.id,url:abs("gm.html")+"?p="+encodeURIComponent(p.id)+"&m="+encodeURIComponent("ordem.mesa/gm/"+p.id),width:1120,height:820}).catch(()=>{})}
+  if(mine){const b=el("button","fb","Ficha");b.title="Abrir minha ficha";b.onclick=ev=>{ev.stopPropagation();openFicha(OBR)};r.append(b)}
+  if(role==="GM"){
+    if(p.isNpc){if(npcs().some(x=>x.id===p.npc))r.onclick=()=>openFicha(OBR,p.npc);else r.classList.remove("gm")}
+    else{r.title="Abrir a ficha de "+(e.nome||p.name);r.onclick=()=>OBR.modal.open({
+      id:"ordem.mesa/gm/"+p.id,url:abs("gm.html")+"?p="+encodeURIComponent(p.id)+"&m="+encodeURIComponent("ordem.mesa/gm/"+p.id),width:1120,height:820}).catch(()=>{})}
+  }
   return r;
 }
 function render(){
-  const all=[self,...party].filter(p=>p&&p.metadata&&p.metadata[KEY]);
+  const base=[self,...party].filter(Boolean),all=[...base.filter(p=>p.metadata&&p.metadata[KEY]),...npcsOf(base)];
   const joined=store.get(LS.joined)==="1";
   P.replaceChildren();
   const hd=el("div","hd");hd.append(el("b",null,"Mesa"),el("span",null,all.length?all.length+" na mesa":""),el("span",null,collapsed?"▸":"▾"));
@@ -65,23 +72,13 @@ function render(){
       const f=el("div","ft"),b=el("button",null,joined?"Sair da mesa":"Entrar na mesa");
       f.append(el("span",null,joined?"Os outros veem seu PV e PD.":"Mostre foto, PV e PD."),b);
       b.onclick=async()=>{
-        const next=joined?"0":"1";
-        store.set(LS.joined,next);
-        if(OBR){
-          try{
-            if(next==="1"){
-              const nm=await OBR.player.getName().catch(()=>"");
-              const entry=await buildEntry(nm);
-              await OBR.player.setMetadata({[KEY]:entry});
-              self={...(self||{id:OBR.player.id,name:nm,color:"#ecc962"}),metadata:{...((self&&self.metadata)||{}),[KEY]:entry}};
-            }else{
-              await OBR.player.setMetadata({[KEY]:undefined});
-              if(self&&self.metadata)delete self.metadata[KEY];
-            }
-          }catch(e){}
-          OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"}).catch(()=>{});
-        }else{
-          self=next==="1"?{id:"local",name:"Você",color:"#ecc962",metadata:{[KEY]:await buildEntry("Você")}}:null;
+        store.set(LS.joined,joined?"0":"1");
+        const r=await syncNow(OBR,role);
+        if(self){
+          const m={...(self.metadata||{})};
+          if(r.entry)m[KEY]=r.entry;else delete m[KEY];
+          if(role==="GM"&&r.npcs)m[KEY_NPC]=r.npcs;
+          self.metadata=m;
         }
         render();
       };

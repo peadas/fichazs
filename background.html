@@ -8,7 +8,7 @@
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
    2) mesa: mantém o painel da mesa aberto e publica o resumo da ficha de quem entrou na mesa. */
 import {loadOBR,ready} from "./obr.js";
-import {KEY,LS,store,sig,buildEntry} from "./mesa-lib.js";
+import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs} from "./mesa-lib.js";
 (async()=>{
   const OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))return;
@@ -56,18 +56,28 @@ import {KEY,LS,store,sig,buildEntry} from "./mesa-lib.js";
   openPanel();
 
   /* ===== mesa: publicar a minha ficha na sala (só se eu entrei) ===== */
-  let last="",busy=false,again=false,timer=0;
+  let isGM=false;try{isGM=(await OBR.player.getRole())==="GM"}catch(e){}
+  let last="",lastN=null,busy=false,again=false,timer=0;
+  async function pubMine(force){
+    const sg=sig();if(!force&&sg===last)return;
+    last=sg;
+    if(store.get(LS.joined)!=="1"){await OBR.player.setMetadata({[KEY]:undefined});return}
+    let name="";try{name=await OBR.player.getName()}catch(e){}
+    await OBR.player.setMetadata({[KEY]:await buildEntry(name)});
+  }
+  async function pubNpcs(force){            // só o mestre publica NPCs, e só os que ele mostrou
+    if(!isGM)return;
+    const sg=sigNpcs();if(!force&&sg===lastN)return;
+    lastN=sg;
+    const a=await buildNpcs();
+    await OBR.player.setMetadata({[KEY_NPC]:a.length?a:undefined});
+  }
   async function publish(force){
     if(busy){again=true;return}
     busy=true;
-    try{
-      const sg=sig();if(!force&&sg===last)return;
-      last=sg;
-      if(store.get(LS.joined)!=="1"){await OBR.player.setMetadata({[KEY]:undefined});return}
-      let name="";try{name=await OBR.player.getName()}catch(e){}
-      await OBR.player.setMetadata({[KEY]:await buildEntry(name)});
-    }catch(e){console.warn("[mesa] não consegui publicar a ficha",e);last=""}
-    finally{busy=false;if(again){again=false;publish()}}
+    try{await pubMine(force)}catch(e){console.warn("[mesa] não consegui publicar a ficha",e);last=""}
+    try{await pubNpcs(force)}catch(e){console.warn("[mesa] não consegui publicar os NPCs",e);lastN=null}
+    busy=false;if(again){again=false;publish()}
   }
   const soon=force=>{clearTimeout(timer);timer=setTimeout(()=>publish(force),force?0:500)};
   addEventListener("storage",()=>soon(false));            // a ficha (outra janela, mesmo domínio) salvou algo

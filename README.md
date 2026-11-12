@@ -16,14 +16,14 @@ Tudo estático: **sem Netlify, sem banco, sem servidor**. Funciona direto no Git
 Avatar > Profile > Extensions > Add Extension > cole a URL do manifest. Cada jogador instala uma vez.
 
 ## Usar
-- Ícone **Ficha** na barra: abre a tela da Mesa. Clique em **Entrar na mesa** (seu personagem aparece vazio) e depois em **Editar minha ficha**. Clique numa perícia/atributo para rolar; os dados caem na mesa de todos.
-- Painel **Mesa** (canto superior direito, sempre visível): jogadores clicam em **Entrar na mesa** e todos veem foto, PV e PD.
-- Mestre: clica num jogador do painel e abre a ficha dele (somente leitura, atualiza ao vivo).
-- **Exportar / Importar** (rodapé da ficha): backup da ficha em arquivo. A ficha fica salva no navegador de quem joga.
+- Ícone **Ficha** na barra: abre a tela da **Mesa**. O jogador clica em **Entrar na mesa** (o personagem aparece em branco) e depois em **FICHA**, o botão pequeno no cartão dele: a ficha abre numa janela grande, para os dados girarem melhor. Foto, nome, PV e PD aparecem para todos conforme ele preenche.
+- Painel **Mesa** (canto da tela do Owlbear): a mesma lista, sempre visível.
+- **Mestre**: aba **Mesa** (clica num jogador e abre a ficha dele, somente leitura, ao vivo) e aba **NPCs**: cria NPCs com nome, PV e PD, ajusta PV/PD com − e +, abre a ficha completa do NPC e escolhe **Mostrar na mesa** para os jogadores o verem. NPCs ficam salvos no navegador do mestre.
+- **Exportar / Importar** (rodapé da ficha): backup da ficha em arquivo.
 
 ## O que mudou
 - Mesa e ficha agora são **uma extensão só**, no mesmo domínio. Por isso a ficha é lida direto do navegador e sumiram: `netlify.toml`, proxy `/ficha/*`, `sync.js`, função `ficha-sync`, banco Postgres e Drizzle.
 - O que a Mesa mostra é publicado nos metadados do jogador no Owlbear (some quando o jogador sai da sala).
 
 ## Arquivos
-`manifest.json` · `entrada.html` (tela inicial: entrar na mesa) · `ficha.html` (ficha) · `background.html` (dados + painel + publicação) · `overlay.html` + `engine.js` (dados 3D) · `mesa.html` (painel) · `gm.html` (visão do mestre) · `mesa-lib.js` · `obr.js` · `icon.svg`
+`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + painel + publicação) · `overlay.html` + `engine.js` (dados 3D) · `mesa.html` (painel) · `gm.html` (visão do mestre) · `mesa-lib.js` · `obr.js` · `icon.svg`

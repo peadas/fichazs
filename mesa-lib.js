@@ -2,6 +2,7 @@
    Tudo roda no mesmo domínio da ficha, então a ficha é lida direto do localStorage
    e compartilhada na sala pelos metadados do jogador do Owlbear. Sem servidor. */
 export const KEY="ordem.mesa/ficha";
+export const KEY_NPC="ordem.mesa/npcs";   // NPCs que o mestre mostrou na mesa
 export const LS={sheet:"ficha-ordem",img:"ficha-ordem-img",joined:"mesa-joined",collapsed:"mesa-collapsed"};
 const MAX=14000;   // folga sob o limite de metadados do Owlbear (~16 kB)
 
@@ -26,19 +27,19 @@ export async function unpack(t){
 }
 
 /* ---- miniatura da foto (cabe nos metadados) ---- */
-let tc={k:"",v:null};
-export function thumb(url){
+const tcm=new Map();
+export function thumb(url,S=128,q=.55){
   if(!url)return Promise.resolve(null);
-  const k=url.length+":"+url.slice(-48);
-  if(tc.k===k)return Promise.resolve(tc.v);
+  const k=S+":"+url.length+":"+url.slice(-48);
+  if(tcm.has(k))return Promise.resolve(tcm.get(k));
   return new Promise(res=>{
     const im=new Image();
     im.onload=()=>{
-      const r=Math.min(1,128/Math.max(im.width,im.height)),w=Math.max(1,Math.round(im.width*r)),h=Math.max(1,Math.round(im.height*r));
+      const r=Math.min(1,S/Math.max(im.width,im.height)),w=Math.max(1,Math.round(im.width*r)),h=Math.max(1,Math.round(im.height*r));
       const c=document.createElement("canvas");c.width=w;c.height=h;
       const x=c.getContext("2d");x.fillStyle="#1d2223";x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h);
-      let v=null;try{v=c.toDataURL("image/jpeg",.55)}catch(e){}
-      tc={k,v};res(v);
+      let v=null;try{v=c.toDataURL("image/jpeg",q)}catch(e){}
+      tcm.set(k,v);if(tcm.size>16)tcm.delete(tcm.keys().next().value);res(v);
     };
     im.onerror=()=>res(null);im.src=url;
   });
@@ -57,4 +58,80 @@ export async function buildEntry(fallbackName){
     const e={...base,...t};if(JSON.stringify(e).length<=MAX)return e;
   }
   return base;
+}
+
+/* ================= NPCs (ficam no navegador do mestre; só os "mostrados" vão para a sala) ================= */
+export const npcs=()=>{try{const a=JSON.parse(g("mesa-npcs")||"[]");return Array.isArray(a)?a:[]}catch(e){return[]}};
+export const saveNpcs=a=>s("mesa-npcs",JSON.stringify(a));
+export const npcSheet=id=>{try{return JSON.parse(g("npc:"+id)||"{}")||{}}catch(e){return{}}};
+export const setNpcSheet=(id,d)=>s("npc:"+id,JSON.stringify(d));
+export const npcImg=id=>g("npc:"+id+":img");
+export const npcDel=id=>{s("npc:"+id,null);s("npc:"+id+":img",null);s("npc:"+id+":exp",null);saveNpcs(npcs().filter(n=>n.id!==id))};
+export function npcInfo(id){
+  const d=npcSheet(id);
+  return{nome:((d.nome||"")+" "+(d.sob||"")).trim()||"NPC sem nome",perfil:d.perfil||"",nivel:num(d.nivel,1),
+    pv:num(d.pv,10),pvmax:num(d.pvmax,10),pd:num(d.pd,10),pdmax:num(d.pdmax,10)};
+}
+export function npcAdjust(id,key,delta){            // key: "pv" | "pd"
+  const d=npcSheet(id),max=num(d[key+"max"],10),cur=num(d[key],10);
+  d[key]=Math.max(0,Math.min(max,cur+delta));setNpcSheet(id,d);
+}
+export async function buildNpcs(){
+  const out=[];
+  for(const n of npcs()){
+    if(!n.shown)continue;const i=npcInfo(n.id);
+    out.push({id:n.id,nome:i.nome,pv:i.pv,pvmax:i.pvmax,pd:i.pd,pdmax:i.pdmax,th:await thumb(npcImg(n.id),72,.5)});
+  }
+  if(JSON.stringify(out).length>MAX)out.forEach(o=>{delete o.th});
+  return out;
+}
+export const sigNpcs=()=>npcs().map(n=>n.id+(n.shown?"1":"0")+(g("npc:"+n.id)||"")+((g("npc:"+n.id+":img")||"").length)).join("|");
+/* NPCs mostrados por qualquer jogador (o mestre), no mesmo formato de um jogador */
+export function npcsOf(players){
+  const out=[];
+  for(const p of players){
+    const a=p&&p.metadata&&p.metadata[KEY_NPC];if(!Array.isArray(a))continue;
+    for(const n of a)out.push({id:"npc:"+n.id,npc:n.id,name:n.nome,color:"#c9b27a",isNpc:true,metadata:{[KEY]:n}});
+  }
+  return out;
+}
+
+/* ================= publica direto nos metadados (sem depender só do background.html) ================= */
+export async function syncNow(OBR,roleHint){
+  const isJoined=g(LS.joined)==="1";
+  let fallback="Jogador",role=roleHint||"PLAYER";
+  if(OBR){
+    try{fallback=await OBR.player.getName()||fallback}catch(e){}
+    if(!roleHint){try{role=await OBR.player.getRole()||role}catch(e){}}
+  }
+  const entry=isJoined?await buildEntry(fallback):undefined;
+  const npcList=role==="GM"?await buildNpcs():undefined;
+  if(OBR){
+    const patch={[KEY]:entry};
+    if(role==="GM")patch[KEY_NPC]=npcList;
+    try{await OBR.player.setMetadata(patch)}catch(e){console.warn("[mesa] falha ao salvar metadata",e)}
+    try{await OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"})}catch(e){}
+  }
+  return {entry,npcs:npcList};
+}
+
+/* ================= abre a ficha numa janela grande (para os dados girarem à vontade) ================= */
+export async function openFicha(OBR,npcId){
+  const fallbackUrl=new URL("ficha.html",location.href).href+(npcId?"?npc="+encodeURIComponent(npcId):"");
+  if(!OBR){location.href=fallbackUrl;return}
+  const id="ordem.ficha/sheet"+(npcId?"/"+npcId:"");
+  let vw=1280,vh=860;
+  try{vw=await OBR.viewport.getWidth();vh=await OBR.viewport.getHeight()}catch(e){}
+  const url=new URL("ficha.html",location.href).href+"?pop="+encodeURIComponent(id)+(npcId?"&npc="+encodeURIComponent(npcId):"");
+  try{await OBR.popover.close(id)}catch(e){}
+  try{
+    await OBR.popover.open({id,url,width:Math.max(360,Math.min(1120,vw-32)),height:Math.max(360,Math.min(860,vh-32)),
+      anchorReference:"POSITION",anchorPosition:{left:Math.round(vw/2),top:Math.round(vh/2)},
+      anchorOrigin:{horizontal:"CENTER",vertical:"CENTER"},transformOrigin:{horizontal:"CENTER",vertical:"CENTER"},
+      disableClickAway:true,marginThreshold:8});
+    try{await OBR.action.close()}catch(e){}
+  }catch(e){
+    console.warn("[mesa] não consegui abrir o popover da ficha, abrindo na mesma janela",e);
+    location.href=fallbackUrl;
+  }
 }

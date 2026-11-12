@@ -147,6 +147,7 @@ button.t:hover{border-color:var(--hi)}
 }
 @media (max-width:520px){.sheet{padding:16px 14px}.top{grid-template-columns:1fr}.attrs{justify-items:start}}
 html.view .tools,html.view .hint,html.view #relbtn{display:none}html.view input,html.view select,html.view textarea,html.view button,html.view .art{pointer-events:none}
+html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.12em;color:#15191a;background:#f0d28a;padding:2px 10px;z-index:30;pointer-events:none}
 @media print{.tools,#menu,#cust{display:none}.sheet{box-shadow:none}}
 </style>
 </head>
@@ -207,7 +208,7 @@ html.view .tools,html.view .hint,html.view #relbtn{display:none}html.view input,
     <button class="t" id="custbtn">Rolar dados</button>
     <button class="t" id="rmimg">Remover imagem</button>
     <button class="t" id="relbtn">Relações</button>
-    <button class="t" id="mesabtn" title="Volta para a Mesa (entrar na mesa, PV e PD de todos)">← Mesa</button>
+    <button class="t" id="mesabtn" title="Fecha esta janela">Fechar</button>
     <button class="t" id="reset">Limpar ficha</button>
     <button class="t" id="bkexp" title="Baixa um arquivo com a sua ficha (backup)">Exportar</button>
     <button class="t" id="bkimp" title="Carrega uma ficha exportada">Importar</button>
@@ -243,14 +244,26 @@ html.view .tools,html.view .hint,html.view #relbtn{display:none}html.view input,
 <div id="roll" hidden><canvas id="cv" aria-hidden="true"></canvas><div class="rb"><div id="rres" aria-live="polite"></div><p>Toque para fechar</p></div></div>
 <div id="menu" hidden></div>
 <script>
-/* modo "ver" (mestre): a ficha lê de um armazenamento só de leitura entregue pela janela do mestre */
-(function(){if(!/[?&]view=1/.test(location.search))return;
-var V=(parent&&parent.__FICHA_VIEW)||{},m={};
-function set(sh,im){m["ficha-ordem"]=sh||"{}";if(im)m["ficha-ordem-img"]=im;else delete m["ficha-ordem-img"]}
-set(V.sheet,V.img);
-var st={getItem:function(k){return k in m?m[k]:null},setItem:function(){},removeItem:function(){},clear:function(){},key:function(i){return Object.keys(m)[i]||null},get length(){return Object.keys(m).length}};
-try{Object.defineProperty(window,"localStorage",{value:st,configurable:true})}catch(e){}
-window.__viewSet=set;document.documentElement.classList.add("view");
+/* Dois modos especiais, escolhidos pela URL:
+   ?view=1  -> mestre vendo a ficha de um jogador (somente leitura, dados vindos da janela do mestre)
+   ?npc=ID  -> ficha de NPC do mestre: mesma ficha, mas gravando em outras chaves do navegador */
+(function(){
+  var q=new URLSearchParams(location.search),H=document.documentElement;
+  window.__SHEETKEY="ficha-ordem";
+  if(q.get("view")==="1"){
+    var V=(parent&&parent.__FICHA_VIEW)||{},m={};
+    var set=function(sh,im){m["ficha-ordem"]=sh||"{}";if(im)m["ficha-ordem-img"]=im;else delete m["ficha-ordem-img"]};
+    set(V.sheet,V.img);
+    var st={getItem:function(k){return k in m?m[k]:null},setItem:function(){},removeItem:function(){},clear:function(){},key:function(i){return Object.keys(m)[i]||null},get length(){return Object.keys(m).length}};
+    try{Object.defineProperty(window,"localStorage",{value:st,configurable:true})}catch(e){}
+    window.__viewSet=set;H.classList.add("view");
+  }else if(q.get("npc")){
+    var id=q.get("npc"),real=window.localStorage,map={"ficha-ordem":"npc:"+id,"ficha-ordem-img":"npc:"+id+":img","ficha-ordem-exp":"npc:"+id+":exp"};
+    var rk=function(k){return map[k]||k};
+    var st2={getItem:function(k){return real.getItem(rk(k))},setItem:function(k,v){real.setItem(rk(k),v)},removeItem:function(k){real.removeItem(rk(k))},clear:function(){},key:function(i){return real.key(i)},get length(){return real.length}};
+    try{Object.defineProperty(window,"localStorage",{value:st2,configurable:true})}catch(e){}
+    window.__SHEETKEY="npc:"+id;H.classList.add("npc");
+  }
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
@@ -829,6 +842,7 @@ $("#file").onchange=e=>{
       const u=c.toDataURL(f.type==="image/png"?"image/png":"image/jpeg",.88);
       setImg(u);
       try{localStorage.setItem("ficha-ordem-img",u)}catch(err){}
+      if(window.__syncMesa)window.__syncMesa();
     };
     im.src=r.result;
   };
@@ -858,28 +872,20 @@ window.fichaRecarregar=()=>{
 </script>
 <script type="module">
 import {loadOBR,ready} from "./obr.js";
-import {KEY,LS,store,buildEntry} from "./mesa-lib.js";
+import {syncNow} from "./mesa-lib.js";
 (async()=>{
   if(document.documentElement.classList.contains("view"))return;
   const OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))return;
-  let name="",color="#ecc962";
-  try{name=await OBR.player.getName();color=await OBR.player.getColor()}catch(e){}
-  window.OBRX={OBR,name,color};
-  try{await OBR.action.setWidth(1120);await OBR.action.setHeight(820)}catch(e){}
-  let pubT=0;
-  const syncMesa=()=>{
-    clearTimeout(pubT);
-    pubT=setTimeout(async()=>{
-      try{
-        if(store.get(LS.joined)==="1")await OBR.player.setMetadata({[KEY]:await buildEntry(name)});
-        OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"}).catch(()=>{});
-      }catch(e){}
-    },350);
-  };
-  document.addEventListener("input",syncMesa);
-  document.addEventListener("click",syncMesa);
-  syncMesa();
+  let name="",color="#ecc962",role="PLAYER";
+  try{name=await OBR.player.getName();color=await OBR.player.getColor();role=await OBR.player.getRole()}catch(e){}
+  window.OBRX={OBR,name,color,role};
+  let t=null;
+  const scheduleSync=()=>{clearTimeout(t);t=setTimeout(()=>syncNow(OBR,role),250)};
+  window.__syncMesa=scheduleSync;
+  document.addEventListener("input",scheduleSync);
+  document.addEventListener("click",scheduleSync);
+  scheduleSync();
 })();
 </script>
 <script>
@@ -887,8 +893,23 @@ import {KEY,LS,store,buildEntry} from "./mesa-lib.js";
 (function(){
   var ex=document.getElementById("bkexp"),im=document.getElementById("bkimp"),fi=document.getElementById("bkfile");
   if(!ex)return;
-  var mb=document.getElementById("mesabtn");
-  if(mb)mb.onclick=function(){location.href="entrada.html"};
+  var mb=document.getElementById("mesabtn"),pop=new URLSearchParams(location.search).get("pop");
+  if(mb){
+    if(!pop){
+      mb.textContent="← Mesa";
+      mb.title="Voltar para o painel da Mesa";
+    }
+    mb.onclick=function(){
+      var X=window.OBRX;
+      if(pop&&X&&X.OBR){
+        X.OBR.popover.close(pop).catch(function(){location.href="entrada.html"});
+      }else{
+        location.href="entrada.html";
+      }
+    };
+  }
+  /* se a ficha mudar em outra janela (ex.: o mestre ajustou o PV de um NPC), atualiza aqui */
+  addEventListener("storage",function(e){if(e.key===window.__SHEETKEY&&window.fichaRecarregar)window.fichaRecarregar()});
   ex.onclick=function(){
     var sheet="{}",img=null;try{sheet=localStorage.getItem("ficha-ordem")||"{}";img=localStorage.getItem("ficha-ordem-img")}catch(e){}
     var nm="ficha";try{var d=JSON.parse(sheet);nm=((d.nome||"")+"-"+(d.sob||"")).replace(/[^\w-]+/g,"")||"ficha"}catch(e){}
@@ -904,6 +925,7 @@ import {KEY,LS,store,buildEntry} from "./mesa-lib.js";
       localStorage.setItem("ficha-ordem",o.sheet);
       if(o.img)localStorage.setItem("ficha-ordem-img",o.img);else localStorage.removeItem("ficha-ordem-img");
       window.fichaRecarregar();
+      if(window.__syncMesa)window.__syncMesa();
     }catch(err){alert("Arquivo inválido.")}};
     r.readAsText(f);
   };
