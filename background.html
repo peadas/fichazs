@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
+<body>
+<script src="engine.js"></script>
+<script type="module">
+/* Fica rodando o tempo todo na sala e cuida de duas coisas:
+   1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
+   2) mesa: mantém o painel da mesa aberto e publica o resumo da ficha de quem entrou na mesa. */
+import {loadOBR,ready} from "./obr.js";
+import {KEY,LS,store,sig,buildEntry} from "./mesa-lib.js";
+(async()=>{
+  const OBR=await loadOBR();
+  if(!OBR||!(await ready(OBR)))return;
+  const abs=p=>new URL(p,location.href).href;
+
+  /* ===== dados ===== */
+  const CH=ENG.CH;
+  let seq=0,open=false,mid="",lastAct=0;
+  const log=[];
+  const feed=e=>OBR.broadcast.sendMessage(CH.feed,e,{destination:"LOCAL"}).catch(()=>{});
+  async function openOverlay(e){
+    open=true;mid="ordem.ficha/overlay/"+Date.now();lastAct=Date.now();
+    try{
+      await OBR.modal.open({id:mid,url:abs("overlay.html")+"?mid="+encodeURIComponent(mid)+"&s="+e.seq+"&p="+ENG.b64(e.p),
+        fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:true});
+    }catch(err){open=false;console.warn("[ficha] não consegui abrir a camada de dados",err)}
+  }
+  OBR.broadcast.onMessage(CH.roll,ev=>{
+    const p=ENG.clean(ev.data);if(!p)return;
+    if(open&&Date.now()-lastAct>45000)open=false;
+    const e={seq:++seq,p};log.push(e);while(log.length>20)log.shift();
+    lastAct=Date.now();
+    if(open)feed(e);else openOverlay(e);
+  });
+  OBR.broadcast.onMessage(CH.idle,ev=>{
+    const d=ev.data||{},seen=+d.seen||0;lastAct=Date.now();
+    const missing=log.filter(e=>e.seq>seen);
+    if(missing.length){missing.forEach(feed);return}
+    if(d.idle&&open){open=false;OBR.modal.close(mid).catch(()=>{})}
+  });
+
+  /* ===== mesa: painel sempre aberto no canto ===== */
+  const PANEL="ordem.mesa/panel";
+  try{
+    const vw=await OBR.viewport.getWidth();
+    await OBR.popover.open({id:PANEL,url:abs("mesa.html")+"?pid="+encodeURIComponent(PANEL),width:250,height:44,
+      anchorReference:"POSITION",anchorPosition:{left:Math.max(260,vw-12),top:64},
+      anchorOrigin:{horizontal:"RIGHT",vertical:"TOP"},transformOrigin:{horizontal:"RIGHT",vertical:"TOP"},
+      hidePaper:true,disableClickAway:true,marginThreshold:0});
+  }catch(err){console.warn("[mesa] não consegui abrir o painel",err)}
+
+  /* ===== mesa: publicar a minha ficha na sala (só se eu entrei) ===== */
+  let last="",busy=false,again=false,timer=0;
+  async function publish(force){
+    if(busy){again=true;return}
+    busy=true;
+    try{
+      const sg=sig();if(!force&&sg===last)return;
+      last=sg;
+      if(store.get(LS.joined)!=="1"){await OBR.player.setMetadata({[KEY]:undefined});return}
+      let name="";try{name=await OBR.player.getName()}catch(e){}
+      await OBR.player.setMetadata({[KEY]:await buildEntry(name)});
+    }catch(e){console.warn("[mesa] não consegui publicar a ficha",e);last=""}
+    finally{busy=false;if(again){again=false;publish()}}
+  }
+  const soon=force=>{clearTimeout(timer);timer=setTimeout(()=>publish(force),force?0:500)};
+  addEventListener("storage",()=>soon(false));            // a ficha (outra janela, mesmo domínio) salvou algo
+  setInterval(()=>publish(false),3000);                   // garantia
+  OBR.broadcast.onMessage("ordem.mesa/nudge",()=>soon(true));
+  publish(true);
+})();
+</script>
+</body>
+</html>
