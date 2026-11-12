@@ -207,6 +207,7 @@ html.view .tools,html.view .hint,html.view #relbtn{display:none}html.view input,
     <button class="t" id="custbtn">Rolar dados</button>
     <button class="t" id="rmimg">Remover imagem</button>
     <button class="t" id="relbtn">Relações</button>
+    <button class="t" id="mesabtn" title="Volta para a Mesa (entrar na mesa, PV e PD de todos)">← Mesa</button>
     <button class="t" id="reset">Limpar ficha</button>
     <button class="t" id="bkexp" title="Baixa um arquivo com a sua ficha (backup)">Exportar</button>
     <button class="t" id="bkimp" title="Carrega uma ficha exportada">Importar</button>
@@ -864,6 +865,7 @@ import {loadOBR,ready} from "./obr.js";
   let name="",color="#ecc962";
   try{name=await OBR.player.getName();color=await OBR.player.getColor()}catch(e){}
   window.OBRX={OBR,name,color};
+  try{await OBR.action.setWidth(1120);await OBR.action.setHeight(820)}catch(e){}
 })();
 </script>
 <script>
@@ -871,6 +873,8 @@ import {loadOBR,ready} from "./obr.js";
 (function(){
   var ex=document.getElementById("bkexp"),im=document.getElementById("bkimp"),fi=document.getElementById("bkfile");
   if(!ex)return;
+  var mb=document.getElementById("mesabtn");
+  if(mb)mb.onclick=function(){location.href="entrada.html"};
   ex.onclick=function(){
     var sheet="{}",img=null;try{sheet=localStorage.getItem("ficha-ordem")||"{}";img=localStorage.getItem("ficha-ordem-img")}catch(e){}
     var nm="ficha";try{var d=JSON.parse(sheet);nm=((d.nome||"")+"-"+(d.sob||"")).replace(/[^\w-]+/g,"")||"ficha"}catch(e){}

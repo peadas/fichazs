@@ -1,15 +1,15 @@
 {
   "name": "Ficha Ordem Paranormal",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "manifest_version": 1,
-  "description": "Ficha de Ordem Paranormal com aba Mesa, barras de PV/PD e dados sincronizados.",
-  "icon": "/fichazs/icon.svg",
+  "description": "Ficha de personagem com dados 3D na mesa e painel da mesa (foto, PV e PD de todos; o mestre abre as fichas).",
+  "icon": "/icon.svg",
   "action": {
     "title": "Ficha",
-    "icon": "/fichazs/icon.svg",
-    "popover": "/fichazs/ficha.html",
-    "width": 1120,
-    "height": 820
+    "icon": "/icon.svg",
+    "popover": "/entrada.html",
+    "width": 460,
+    "height": 640
   },
-  "background_url": "/fichazs/background.html"
+  "background_url": "/background.html"
 }

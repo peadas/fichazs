@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mesa</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;600&family=Cinzel:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#161a1b;--bg2:#1d2223;--ink:#eef0ee;--muted:#9aa4a3;--line:#8b9594;--hi:#f0d28a;color-scheme:dark}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font:15px/1.4 Barlow,system-ui,sans-serif}
+main{padding:18px 18px 22px;max-width:460px;margin:0 auto}
+h1{margin:0 0 4px;font:800 1.6rem Cinzel,serif;color:var(--hi);letter-spacing:.04em}
+.sub{color:var(--muted);margin:0 0 16px}
+button{font:600 1rem Barlow,sans-serif;color:var(--ink);background:transparent;border:1px solid var(--line);padding:9px 16px;cursor:pointer}
+button:hover{background:#232a2b}
+button.go{background:var(--hi);color:#15191a;border-color:var(--hi);font-weight:700;width:100%;padding:14px;font-size:1.1rem}
+button.go:hover{background:#f6dea0}
+.acts{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}.acts button{flex:1}
+.row{display:flex;gap:12px;align-items:center;padding:10px;background:var(--bg2);border:1px solid #2b3233;margin-bottom:8px}
+.row.gm{cursor:pointer}.row.gm:hover{border-color:var(--line)}
+.av{width:60px;height:60px;flex:none;background:#14181a center/cover no-repeat;border:1px solid #3a4344}
+.in{flex:1;min-width:0}
+.nm{font:700 1.15rem "Barlow Condensed",sans-serif;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.me{color:var(--muted);font-size:.8rem;font-weight:400;margin-left:6px}
+.st{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center;font-size:.85rem;color:var(--muted);margin-top:4px}
+.st i{display:block;height:7px;background:#2b3233}.st u{display:block;height:100%}
+.pv u{background:#e0524f}.pd u{background:#4f9fe0}
+.st em{font-style:normal;color:var(--ink);min-width:42px;text-align:right}
+.tip{background:#2a2414;border:1px solid #5a4a1c;color:#e8d9b0;padding:10px 12px;margin:0 0 14px;font-size:.92rem}
+.empty{color:var(--muted);padding:6px 0}
+h2{margin:18px 0 8px;font:700 1rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.leave{margin-top:14px;text-align:center}.leave button{border:0;color:var(--muted);font-size:.9rem;text-decoration:underline;padding:4px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Mesa</h1>
+  <p class="sub" id="sub"></p>
+  <div id="top"></div>
+  <h2 id="h2">Na mesa</h2>
+  <div id="list"></div>
+  <div class="leave" id="leave"></div>
+</main>
+<script type="module">
+import {loadOBR,ready} from "./obr.js";
+import {KEY,LS,store} from "./mesa-lib.js";
+const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+let OBR=null,self=null,party=[],role="PLAYER";
+const joined=()=>store.get(LS.joined)==="1";
+const hasName=()=>{try{const d=JSON.parse(store.get(LS.sheet)||"{}");return !!((d.nome||"").trim()||(d.sob||"").trim())}catch(e){return false}};
+
+function stat(cls,l,cur,max){
+  const r=el("div","st "+cls);r.append(el("span",null,l));
+  const b=el("i"),u=el("u");u.style.width=(max>0?Math.max(0,Math.min(100,cur/max*100)):0)+"%";b.append(u);
+  r.append(b,el("em",null,cur+"/"+max));return r;
+}
+function row(p,mine){
+  const e=p.metadata[KEY],r=el("div","row"+(role==="GM"?" gm":""));
+  const av=el("div","av");if(e.th)av.style.backgroundImage="url("+e.th+")";
+  const i=el("div","in"),n=el("div","nm",e.nome||p.name||"Jogador");n.style.color=p.color||"#ecc962";
+  if(mine)n.append(el("span","me","você"));
+  i.append(n,stat("pv","PV",e.pv,e.pvmax),stat("pd","PD",e.pd,e.pdmax));
+  r.append(av,i);
+  if(role==="GM"){r.title="Abrir a ficha";r.onclick=()=>OBR.modal.open({id:"ordem.mesa/gm/"+p.id,
+    url:abs("gm.html")+"?p="+encodeURIComponent(p.id)+"&m="+encodeURIComponent("ordem.mesa/gm/"+p.id),width:1120,height:820}).catch(()=>{})}
+  return r;
+}
+function nudge(){OBR&&OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"}).catch(()=>{})}
+function render(){
+  const j=joined(),top=$("#top"),list=$("#list"),leave=$("#leave");
+  top.replaceChildren();list.replaceChildren();leave.replaceChildren();
+  if(role==="GM"){
+    $("#sub").textContent="Você é o mestre. Clique num jogador para abrir a ficha dele.";
+  }else if(!j){
+    $("#sub").textContent="Entre na mesa para os outros verem seu personagem.";
+    const b=el("button","go","Entrar na mesa");
+    b.onclick=()=>{store.set(LS.joined,"1");nudge();render()};
+    top.append(b);
+  }else{
+    $("#sub").textContent="Você está na mesa.";
+    if(!hasName())top.append(el("div","tip","Seu personagem entrou sem nada preenchido. Edite a ficha (nome, foto, PV e PD) para ele aparecer bonitinho para todos."));
+    const acts=el("div","acts"),b=el("button","go","Editar minha ficha");
+    b.onclick=()=>{location.href="ficha.html"};acts.append(b);top.append(acts);
+    const out=el("button",null,"Sair da mesa");out.onclick=()=>{store.set(LS.joined,"0");nudge();render()};leave.append(out);
+  }
+  const all=[];
+  if(self&&self.metadata&&self.metadata[KEY])all.push([self,true]);
+  party.forEach(p=>{if(p.metadata&&p.metadata[KEY])all.push([p,false])});
+  $("#h2").textContent="Na mesa"+(all.length?" ("+all.length+")":"");
+  if(!all.length)list.append(el("div","empty",j&&role!=="GM"?"Entrando na mesa…":"Ninguém entrou ainda."));
+  all.forEach(([p,m])=>list.append(row(p,m)));
+}
+(async()=>{
+  render();
+  OBR=await loadOBR();
+  if(!OBR||!(await ready(OBR))){$("#sub").textContent="Abra esta página dentro do Owlbear Rodeo.";return}
+  try{await OBR.action.setWidth(460);await OBR.action.setHeight(640)}catch(e){}
+  role=await OBR.player.getRole();
+  const me=async()=>({id:OBR.player.id,name:await OBR.player.getName(),color:await OBR.player.getColor(),metadata:await OBR.player.getMetadata()});
+  self=await me();party=await OBR.party.getPlayers();render();
+  OBR.player.onChange(p=>{self={id:p.id||self.id,name:p.name,color:p.color,metadata:p.metadata};role=p.role||role;render()});
+  OBR.party.onChange(ps=>{party=ps;render()});
+})();
+</script>
+</body>
+</html>

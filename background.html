@@ -42,13 +42,18 @@ import {KEY,LS,store,sig,buildEntry} from "./mesa-lib.js";
 
   /* ===== mesa: painel sempre aberto no canto ===== */
   const PANEL="ordem.mesa/panel";
-  try{
-    const vw=await OBR.viewport.getWidth();
-    await OBR.popover.open({id:PANEL,url:abs("mesa.html")+"?pid="+encodeURIComponent(PANEL),width:250,height:44,
-      anchorReference:"POSITION",anchorPosition:{left:Math.max(260,vw-12),top:64},
-      anchorOrigin:{horizontal:"RIGHT",vertical:"TOP"},transformOrigin:{horizontal:"RIGHT",vertical:"TOP"},
-      hidePaper:true,disableClickAway:true,marginThreshold:0});
-  }catch(err){console.warn("[mesa] não consegui abrir o painel",err)}
+  async function openPanel(){
+    let left=80,ref={horizontal:"LEFT",vertical:"TOP"};
+    try{const vw=await OBR.viewport.getWidth();if(vw>400){left=vw-12;ref={horizontal:"RIGHT",vertical:"TOP"}}}catch(e){console.warn("[mesa] largura da tela indisponível, usando o canto esquerdo",e)}
+    try{await OBR.popover.close(PANEL)}catch(e){}
+    try{
+      await OBR.popover.open({id:PANEL,url:abs("mesa.html")+"?pid="+encodeURIComponent(PANEL),width:250,height:44,
+        anchorReference:"POSITION",anchorPosition:{left,top:64},anchorOrigin:ref,transformOrigin:ref,
+        hidePaper:true,disableClickAway:true,marginThreshold:0});
+    }catch(err){console.warn("[mesa] não consegui abrir o painel",err)}
+  }
+  OBR.broadcast.onMessage("ordem.mesa/open",()=>openPanel());   // botão "Mesa" da ficha
+  openPanel();
 
   /* ===== mesa: publicar a minha ficha na sala (só se eu entrei) ===== */
   let last="",busy=false,again=false,timer=0;
