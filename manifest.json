@@ -3,13 +3,13 @@
   "version": "2.1.0",
   "manifest_version": 1,
   "description": "Ficha de personagem com dados 3D na mesa e mesa com foto, PV e PD de todos (o mestre abre e edita as fichas, e cria NPCs).",
-  "icon": "/icon.svg",
+  "icon": "/fichazs/icon.svg",
   "action": {
     "title": "Ficha",
-    "icon": "/icon.svg",
-    "popover": "/entrada.html",
+    "icon": "/fichazs/icon.svg",
+    "popover": "/fichazs/entrada.html",
     "width": 480,
     "height": 700
   },
-  "background_url": "/background.html"
+  "background_url": "/fichazs/background.html"
 }
