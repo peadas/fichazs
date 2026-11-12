@@ -6,20 +6,20 @@
   if(window.__efeitos)return;window.__efeitos=1;
   var base=(document.currentScript&&document.currentScript.src||location.href).replace(/[^\/]*$/,"");
   var css=`
-@keyframes ef-pulo{0%{translate:0 0;scale:1 1}28%{translate:0 -7px;scale:.95 1.09}52%{translate:0 0;scale:1.09 .9}72%{translate:0 -2px;scale:.99 1.03}100%{translate:0 0;scale:1 1}}
-@keyframes ef-pulo-leve{0%{translate:0 0}35%{translate:0 -3px}65%{translate:0 0}82%{translate:0 -1px}100%{translate:0 0}}
-@keyframes ef-letra{0%{translate:0 0}30%{translate:0 -.32em}60%{translate:0 .05em}100%{translate:0 0}}
-@keyframes ef-dado{0%{translate:0 0;rotate:0deg;scale:1}25%{translate:0 -9px;rotate:-14deg;scale:1.08}55%{translate:0 0;rotate:9deg;scale:.93 1.05}78%{translate:0 -2px;rotate:-3deg;scale:1}100%{translate:0 0;rotate:0deg;scale:1}}
+@keyframes ef-pulo{0%{translate:0 0;scale:1 1}35%{translate:0 -2px;scale:.99 1.02}70%{translate:0 0;scale:1.015 .99}100%{translate:0 0;scale:1 1}}
+@keyframes ef-pulo-leve{0%{translate:0 0}40%{translate:0 -1px}100%{translate:0 0}}
+@keyframes ef-letra{0%{translate:0 0}35%{translate:0 -.1em}70%{translate:0 .01em}100%{translate:0 0}}
+@keyframes ef-dado{0%{translate:0 0;rotate:0deg;scale:1}30%{translate:0 -3px;rotate:-4deg;scale:1.04}65%{translate:0 0;rotate:2deg;scale:.98 1.01}100%{translate:0 0;rotate:0deg;scale:1}}
 @keyframes ef-nevoa-a{to{transform:translate3d(512px,256px,0)}}
 @keyframes ef-nevoa-b{to{transform:translate3d(-640px,640px,0)}}
 
 /* pulinho */
 .die:not(.ro):hover,#menu .die:hover,.dado-pulo:hover{animation:ef-dado .55s cubic-bezier(.3,.7,.4,1) 1}
-button:not(.die):not(.bx):not(.vs):not(.nm):hover,.card:hover,.chip:hover,.tag:hover,.logo:hover,.ring:hover,.av:hover,.dt:hover,.niv:hover,.ft:hover{animation:ef-pulo .5s cubic-bezier(.3,.7,.4,1) 1}
+button:not(.die):not(.bx):not(.vs):not(.nm):hover,.card:hover,.chip:hover,.tag:hover,.logo:hover,.ring:hover,.av:hover,.dt:hover,.niv:hover,.ft:hover{animation:ef-pulo .4s cubic-bezier(.3,.7,.4,1) 1}
 .bx:hover,.vs:hover{animation:ef-pulo-leve .35s ease-out 1}
 [data-ef-split]{white-space:nowrap}
 .ef-l{display:inline-block;white-space:pre}
-.ef-on .ef-l{animation:ef-letra .5s cubic-bezier(.3,.7,.4,1) calc(var(--i)*26ms) 1}
+.ef-on .ef-l{animation:ef-letra .4s cubic-bezier(.3,.7,.4,1) calc(var(--i)*26ms) 1}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}.ef-nev i{animation:none!important}}
 
 /* névoa */
