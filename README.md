@@ -21,6 +21,11 @@ Avatar > Profile > Extensions > Add Extension > cole a URL do manifest. Cada jog
 - **Mestre**: aba **Mesa**: clique num jogador e a ficha dele abre bem grande, **editável** (as mudanças vão para o jogador sozinhas). Aba **NPCs**: cria NPCs com nome, PV e PD, ajusta com − e +, abre a ficha completa e escolhe **Mostrar na mesa**. NPCs ficam salvos no navegador do mestre.
 - **Exportar / Importar** (rodapé da ficha): backup da ficha em arquivo.
 
+## Visual e novidades
+- **Menu** com moldura prateada sobre fundo escuro (`moldura-menu.jpg`), **névoa** andando no fundo do menu e da ficha (`nevoa.png`) e **pulinho** ao passar o mouse em dados, botões e letras (`efeitos.js`).
+- **PV/PD no menu** em barrinhas segmentadas: o jogador clica nos segmentos do próprio cartão para mudar a vida sem abrir a ficha (clicar no último cheio tira um). O mestre faz o mesmo nos NPCs.
+- **Olho do NPC** (aba NPCs, ao lado de *Ficha*, e dentro da ficha do NPC): olho fechado = as rolagens do mestre para aquele NPC são **ocultas**; os dados só caem na tela do mestre. Olho aberto = todo mundo vê (padrão).
+
 ## Janelas e dados
 - A ficha (e a ficha aberta pelo mestre) fecham **clicando fora da janela** ou apertando **Esc**.
 - Os dados 3D carregam o three.js de até 3 CDNs. Se o navegador não tiver WebGL (aceleração de hardware desligada), os dados aparecem **desenhados em 2D**, com o mesmo resultado e o mesmo painel de resultado para todos.
@@ -31,4 +36,4 @@ Avatar > Profile > Extensions > Add Extension > cole a URL do manifest. Cada jog
 - O que a Mesa mostra é publicado nos metadados do jogador no Owlbear (some quando o jogador sai da sala).
 
 ## Arquivos
-`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `gm.html` (ficha do jogador aberta pelo mestre) · `mesa-lib.js` · `obr.js` · `icon.svg`
+`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `gm.html` (ficha do jogador aberta pelo mestre) · `efeitos.js` · `nevoa.png` · `moldura-menu.jpg` · `mesa-lib.js` · `obr.js` · `icon.svg`

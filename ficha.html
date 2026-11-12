@@ -150,6 +150,10 @@ html.view .tools button:not(#relbtn),html.view .tools .hint,html.view .tools .rb
 html.view [data-roll],html.view .art{pointer-events:none}
 html.view body::after{content:"MESTRE · editando a ficha do jogador";position:fixed;right:12px;top:8px;font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.12em;color:#15191a;background:#f0d28a;padding:2px 10px;z-index:30;pointer-events:none}
 html.ro input,html.ro select,html.ro textarea,html.ro button,html.ro .art{pointer-events:none}
+#olho{position:fixed;right:12px;top:34px;z-index:30;display:none;align-items:center;gap:7px;padding:4px 12px 4px 9px;font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#15191a;background:#f0d28a;border:0;cursor:pointer}
+#olho svg{width:20px;height:20px}
+html.npc #olho{display:inline-flex}
+#olho.off{background:#e0524f;color:#fff}
 html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.12em;color:#15191a;background:#f0d28a;padding:2px 10px;z-index:30;pointer-events:none}
 @media print{.tools,#menu,#cust{display:none}.sheet{box-shadow:none}}
 </style>
@@ -267,12 +271,13 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
     var rk=function(k){return map[k]||k};
     var st2={getItem:function(k){return real.getItem(rk(k))},setItem:function(k,v){real.setItem(rk(k),v)},removeItem:function(k){real.removeItem(rk(k))},clear:function(){},key:function(i){return real.key(i)},get length(){return real.length}};
     try{Object.defineProperty(window,"localStorage",{value:st2,configurable:true})}catch(e){}
-    window.__SHEETKEY="npc:"+id;H.classList.add("npc");
+    window.__SHEETKEY="npc:"+id;window.__NPCID=id;H.classList.add("npc");
   }
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
 <script src="engine.js"></script>
+<script src="efeitos.js"></script>
 <input type="file" id="file" accept="image/*" hidden>
 
 <script>
@@ -762,6 +767,10 @@ function roll(key){
   throwDice(list,pv,rb,res=>summary(res,pv,rb));
 }
 var rollTitle="";
+function npcOculto(){
+  if(!window.__NPCID)return false;
+  try{const a=JSON.parse(localStorage.getItem("mesa-npcs")||"[]");const n=a.find(x=>x.id===window.__NPCID);return !!(n&&n.oculto)}catch(e){return false}
+}
 /* dentro do Owlbear: a ficha sorteia a semente, descobre o resultado e manda para todos; os dados caem na mesa de cada jogador */
 function throwOBR(list,pv,rb,render){
   const X=window.OBRX;
@@ -776,7 +785,8 @@ function throwOBR(list,pv,rb,render){
   const tr=o.rows.filter(r=>r.l==="Valor do teste"||r.l==="Total").pop();
   const text=who+" · "+rollTitle+": "+(tr?tr.v:res.map(r=>r[2]).join(", "))+(o.crit?" ("+o.crit.t+")":"");
   const payload={id:String(Date.now()),seed,who,color:X.color,title:rollTitle,list:list.map(([n,f])=>[n,f]),kinds,res:res.map(r=>r[2]),anim:true,rows:o.rows,crit:o.crit,note:o.note,text};
-  X.OBR.broadcast.sendMessage(ENG.CH.roll,payload,{destination:"ALL"}).catch(()=>{});
+  /* NPC com o olho fechado: o dado cai só para o mestre (destino LOCAL), os outros jogadores não recebem nada */
+  X.OBR.broadcast.sendMessage(ENG.CH.roll,payload,{destination:npcOculto()?"LOCAL":"ALL"}).catch(()=>{});
   rolling=true;$("#roll").hidden=false;$("#rres").innerHTML="";
   setTimeout(()=>{rolling=false;$("#rres").innerHTML=o.html},ms);
   return true;
@@ -942,6 +952,27 @@ import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js";
     }catch(err){alert("Arquivo inválido.")}};
     r.readAsText(f);
   };
+})();
+</script>
+<button id="olho" type="button" hidden></button>
+<script>
+/* NPC: olho aberto = os jogadores veem os dados que o mestre rola; olho fechado = dados ocultos (só o mestre vê) */
+(function(){
+  var id=window.__NPCID;if(!id)return;
+  var b=document.getElementById("olho");b.hidden=false;
+  var ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3.2"/></svg>';
+  var OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z" opacity=".6"/><circle cx="12" cy="12" r="3.2" opacity=".6"/><path d="M3 3l18 18"/></svg>';
+  function lista(){try{var a=JSON.parse(localStorage.getItem("mesa-npcs")||"[]");return Array.isArray(a)?a:[]}catch(e){return[]}}
+  function draw(){
+    var o=npcOculto();b.classList.toggle("off",o);
+    b.innerHTML=(o?OFF:ON)+"<span>"+(o?"Dados ocultos":"Dados visíveis")+"</span>";
+    b.title=o?"Olho fechado: os outros jogadores não veem os dados deste NPC. Clique para mostrar":"Olho aberto: os jogadores veem os dados deste NPC. Clique para ocultar";
+    b.setAttribute("aria-pressed",String(o));
+  }
+  b.onclick=function(){var a=lista(),n=a.find(function(x){return x.id===id});if(!n)return;n.oculto=!n.oculto;
+    try{localStorage.setItem("mesa-npcs",JSON.stringify(a))}catch(e){}draw()};
+  addEventListener("storage",function(e){if(e.key==="mesa-npcs")draw()});
+  draw();
 })();
 </script>
 </body>

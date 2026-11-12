@@ -60,6 +60,18 @@ export async function buildEntry(fallbackName){
   return base;
 }
 
+/* PV/PD do jogador direto do menu: grava na mesma ficha que a janela da ficha usa (ela se atualiza sozinha) */
+export function mineLive(){
+  let d={};try{d=JSON.parse(g(LS.sheet)||"{}")||{}}catch(e){}
+  return{pv:num(d.pv,10),pvmax:num(d.pvmax,10),pd:num(d.pd,10),pdmax:num(d.pdmax,10)};
+}
+export function setMine(key,val){                   // key: "pv" | "pd"
+  let d={};try{d=JSON.parse(g(LS.sheet)||"{}")||{}}catch(e){}
+  const max=num(d[key+"max"],10);d[key]=Math.max(0,Math.min(max,val));
+  if(d[key+"max"]==null)d[key+"max"]=max;
+  s(LS.sheet,JSON.stringify(d));
+}
+
 /* ---- publicar / retirar a minha ficha da sala (usado pela tela da Mesa, pela ficha e pelo segundo plano) ---- */
 export async function publishMine(OBR,name){
   let nm=name;if(nm==null){try{nm=await OBR.player.getName()}catch(e){nm=""}}
@@ -87,6 +99,16 @@ export function npcInfo(id){
   const d=npcSheet(id);
   return{nome:((d.nome||"")+" "+(d.sob||"")).trim()||"NPC sem nome",perfil:d.perfil||"",nivel:num(d.nivel,1),
     pv:num(d.pv,10),pvmax:num(d.pvmax,10),pd:num(d.pd,10),pdmax:num(d.pdmax,10)};
+}
+export function npcSet(id,key,val){                 // define PV/PD do NPC (segmentos clicáveis)
+  const d=npcSheet(id),max=num(d[key+"max"],10);
+  d[key]=Math.max(0,Math.min(max,val));if(d[key+"max"]==null)d[key+"max"]=max;setNpcSheet(id,d);
+}
+/* olho do NPC: fechado (oculto) = as rolagens do mestre para ele não aparecem para os outros jogadores */
+export const npcOculto=id=>!!npcs().find(n=>n.id===id&&n.oculto);
+export function npcOlho(id,oculto){
+  const l=npcs(),n=l.find(x=>x.id===id);if(!n)return;
+  n.oculto=oculto===undefined?!n.oculto:!!oculto;saveNpcs(l);return n.oculto;
 }
 export function npcAdjust(id,key,delta){            // key: "pv" | "pd"
   const d=npcSheet(id),max=num(d[key+"max"],10),cur=num(d[key],10);
