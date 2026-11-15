@@ -26,6 +26,11 @@ Avatar > Profile > Extensions > Add Extension > cole a URL do manifest. Cada jog
 - **PV/PD no menu** em barrinhas segmentadas: o jogador clica nos segmentos do próprio cartão para mudar a vida sem abrir a ficha (clicar no último cheio tira um). O mestre faz o mesmo nos NPCs.
 - **Olho do NPC** (aba NPCs, ao lado de *Ficha*, e dentro da ficha do NPC): olho fechado = as rolagens do mestre para aquele NPC são **ocultas**; os dados só caem na tela do mestre. Olho aberto = todo mundo vê (padrão).
 
+## Ficha larga e abas (v2.1)
+- A ficha ocupa a janela inteira (sem limite de largura "de PDF"); a janela abre maior (até 1800×1000) e sobra espaço para novos campos.
+- **Habilidades** e **Equipamento** são cartões na ficha com prévia do texto; clicar abre um painel grande com abas (Esc ou ✕ fecha).
+- **Fechar** e **Remover imagem** viraram ícones pequenos (o de remover fica no canto da foto, só aparece com imagem).
+
 ## Janelas e dados
 - A ficha (e a ficha aberta pelo mestre) fecham **clicando fora da janela** ou apertando **Esc**.
 - Os dados 3D carregam o three.js de até 3 CDNs. Se o navegador não tiver WebGL (aceleração de hardware desligada), os dados aparecem **desenhados em 2D**, com o mesmo resultado e o mesmo painel de resultado para todos.

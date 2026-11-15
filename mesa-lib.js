@@ -149,6 +149,6 @@ async function openBig(OBR,id,rel,query,maxW,maxH){
   }catch(e){console.warn("[mesa] não consegui abrir a janela",e)}
 }
 /* a ficha do próprio jogador (ou de um NPC do mestre) */
-export const openFicha=(OBR,npcId)=>openBig(OBR,"ordem.ficha/sheet"+(npcId?"/"+npcId:""),"ficha.html",npcId?"&npc="+encodeURIComponent(npcId):"",1120,860);
+export const openFicha=(OBR,npcId)=>openBig(OBR,"ordem.ficha/sheet"+(npcId?"/"+npcId:""),"ficha.html",npcId?"&npc="+encodeURIComponent(npcId):"",1800,1000);
 /* a ficha de um jogador, aberta pelo mestre (editável) */
-export const openGm=(OBR,playerId)=>openBig(OBR,"ordem.mesa/gm/"+playerId,"gm.html","&p="+encodeURIComponent(playerId),1280,920);
+export const openGm=(OBR,playerId)=>openBig(OBR,"ordem.mesa/gm/"+playerId,"gm.html","&p="+encodeURIComponent(playerId),1800,1000);
