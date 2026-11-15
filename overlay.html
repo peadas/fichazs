@@ -82,10 +82,10 @@ body.arr #hbar{display:flex}
 <div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
 <div id="hbar"><span>Arraste os cartões</span><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js?v=2.3.0"></script>
+<script src="engine.js?v=2.4.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.3.0";
-import {KEY,npcsOf} from "./mesa-lib.js?v=2.3.0";
+import {loadOBR,ready} from "./obr.js?v=2.4.0";
+import {KEY,npcsOf} from "./mesa-lib.js?v=2.4.0";
 const $=s=>document.querySelector(s);
 const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1";
 const CH=ENG.CH,HOLD=5500,CHIP_LIFE=9000;

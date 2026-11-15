@@ -84,7 +84,7 @@ textarea:hover{border-color:var(--line)}
 .nm.big{font:700 1.9rem/1.1 Cinzel,Georgia,serif}
 #roll{position:fixed;inset:0;z-index:30;background:#0008;cursor:pointer}
 #roll[hidden]{display:none}
-.rb{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);width:max-content;background:#0f1213ee;border:1px solid var(--line);padding:12px 16px;text-align:center;max-width:calc(100% - 32px)}
+.rb{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);width:max-content;background:#0f1213ee;border:1px solid var(--line);padding:12px 16px;text-align:center;max-width:calc(100% - 32px);max-height:calc(100% - 32px);overflow:auto}
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block}
 #rres{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;min-height:70px}
 .rv small{display:block;color:var(--muted);font:600 .85rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.05em}
@@ -187,6 +187,54 @@ button.t{font:600 .95rem Barlow,sans-serif;color:var(--ink);background:transpare
 button.t:hover{border-color:var(--hi)}
 .hint{color:var(--muted);font-size:.9rem}
 
+/* habilidade do perfil: cartão no estilo do livro */
+.cls{margin-top:18px;padding:0 0 12px;border:1px solid #3d4647;background:linear-gradient(180deg,#1a2022,#121718);box-shadow:inset 0 0 0 3px #12171899}
+.cls [hidden]{display:none}
+.cc{display:grid;gap:10px}
+.ct{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin:0;padding:6px 14px;border-bottom:1px solid #3d4647;background:repeating-linear-gradient(135deg,#2c3335 0 3px,#232a2b 3px 6px);font:800 1.45rem/1.1 "Barlow Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+.ct .cnum{font:700 1rem "Barlow Condensed",sans-serif;letter-spacing:.06em;color:var(--muted)}
+.ct .sp{flex:1}
+.cc>p,.cc>ul,.cc>.cf{margin:0 14px}
+.cc p{line-height:1.5;color:#dfe4e1}
+.cc b{color:#fff}
+.cl{list-style:none;padding:0;display:grid;gap:10px}
+.cl li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;color:#dfe4e1;line-height:1.45}
+.cl li::before{content:"◆";color:var(--ink);font-size:.8rem;margin-right:-4px}
+.cl li>div{flex:1 1 260px;min-width:0}
+.cbtns{display:flex;flex-wrap:wrap;gap:6px}
+.cbar{display:flex;gap:5px}
+.cx{width:36px;height:15px;padding:0;border:0;border-radius:8px;background:#4a5254;cursor:pointer}
+.cx.on{background:var(--ink)}
+.cx:hover{background:var(--hi)}
+.cf{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;color:var(--muted)}
+.cf .sp{flex:1}
+.cdt{display:inline-flex;align-items:center;gap:6px;font:700 1rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.dti{width:3.2ch;text-align:center;font:700 1.1rem Cinzel,serif;color:var(--ink);border-bottom:1px solid var(--line)}
+.cst{font:700 1.05rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.cst.ok,.cmsg.ok{color:#5fd38a}.cst.bad,.cmsg.bad{color:#ff8f8c}
+.cmsg{margin:0 14px;font-size:.9rem;color:var(--muted)}
+.cmsg:empty{display:none}
+button.t.go{border-color:var(--hi);color:var(--hi)}
+.up{font:700 .85rem "Barlow Condensed",sans-serif;letter-spacing:.04em;color:var(--hi);border:1px solid var(--hi);padding:0 6px;cursor:help}
+.up[hidden]{display:none}
+.bolt{width:30px;height:30px;padding:0;font-size:1rem;line-height:1;color:#15191a;background:var(--hi);border:0;cursor:pointer;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.bolt[hidden]{display:none}
+.die.buff{background:var(--hi)}
+/* ações depois do teste (dentro do painel do resultado) */
+#acts{margin:12px auto 0;display:grid;gap:10px;max-width:640px;text-align:left}
+#acts:empty{display:none}
+.ac{border:1px solid #3d4647;background:#0a0c0d;padding:8px 12px 10px}
+.ah{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;font:700 1.05rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--hi)}
+.ah span{font-weight:600;letter-spacing:.02em;text-transform:none;color:var(--muted);font-size:.9rem}
+.adz{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 16px;margin:10px 0 6px}
+.ad{display:grid;justify-items:center;gap:4px}
+.ad small{font:600 .8rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);max-width:11ch;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ad .row{display:flex;align-items:center;gap:6px}
+.ad .die{width:40px;height:40px;font-size:.95rem}
+.ad .die.pk{background:var(--hi)}
+.ad .die:disabled{opacity:.35;cursor:default}
+.ib:disabled{opacity:.35;cursor:default}
+
 @media (max-width:900px){
   .body{grid-template-columns:1fr}
   .artw{order:-1}.art{min-height:380px}
@@ -231,6 +279,34 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
           <div class="r"><span class="rl">PD</span><div class="rn"><input type="number" data-k="pd" value="10" aria-label="PD atuais"><i>/</i><input type="number" data-k="pdmax" value="10" aria-label="PD máximos"></div><div class="bars" id="b-pd"></div></div>
         </div>
       </div>
+      <section class="cls" id="cls" aria-label="Habilidade do perfil">
+        <div data-cp="Executor" class="cc">
+          <h3 class="ct">Ímpeto<div class="cbar" data-bar="imp"></div><span class="cnum" data-num="imp"></span></h3>
+          <p>Você possui uma <b>barra de ímpeto</b>, com <b>cinco espaços</b>. Sempre que <b>faz um teste e falha</b>, você preenche um espaço na <b>barra de ímpeto</b>. Como uma ação livre, você pode gastar espaços da barra de ímpeto para receber benefícios.</p>
+          <ul class="cl">
+            <li><div><b>1 espaço.</b> Você <b>recebe +▲ em um teste.</b></div><button class="t sm" id="impgo" type="button" aria-pressed="false">Usar no próximo teste</button></li>
+            <li><div><b>3 espaços.</b> Você <b>aumenta um atributo em um passo</b> até o <b>fim da cena</b>.</div><span class="cbtns"><button class="t sm" type="button" data-ic="fis">Físico</button><button class="t sm" type="button" data-ic="men">Mente</button><button class="t sm" type="button" data-ic="emo">Emoção</button></span></li>
+            <li><div><b>3 espaços.</b> Em <b>cenas de conflito</b>, você faz <b>uma ação extra</b>.</div><button class="t sm" id="impact" type="button">Usar</button></li>
+          </ul>
+          <div class="cf"><span>No fim da cena, sua barra de ímpeto esvazia.</span><span class="sp"></span><label class="cdt" title="Dificuldade dos testes: resultado abaixo dela é falha e enche o ímpeto sozinho">DT <input class="dti" type="number" min="0" max="30" data-k="dt" value="7" aria-label="DT dos testes"></label><button class="t sm cend" type="button">Fim da cena</button></div>
+        </div>
+        <div data-cp="Analista" class="cc">
+          <h3 class="ct">Análise<div class="cbar" data-bar="ana"></div><span class="cnum" data-num="ana"></span></h3>
+          <p>Você pode <b>gastar uma ação</b> para receber <b>2 marcadores de análise.</b></p>
+          <ul class="cl">
+            <li><div>Quando faz um teste, <b>pode gastar quantos marcadores quiser após rolar os dados.</b> Para cada marcador gasto, pode mudar o resultado de um dado <b>em +1 ou −1</b> (até o máximo do dado).</div></li>
+            <li><div>Você pode acumular <b>no máximo 4 marcadores de análise</b> e, no fim da cena, <b>perde</b> quaisquer marcadores não usados.</div></li>
+          </ul>
+          <div class="cf"><button class="t sm" id="anaadd" type="button">Analisar (+2 marcadores)</button><span class="sp"></span><button class="t sm cend" type="button">Fim da cena</button></div>
+        </div>
+        <div data-cp="Vigilante" class="cc">
+          <h3 class="ct">Prontidão<span class="cst" id="prst"></span></h3>
+          <p><b>Uma vez por rodada</b>, quando você ou outro ser em <b>alcance curto</b> faz um teste, você pode <b>gastar 2 PD</b> para <b>rolar novamente</b>, ou para fazer o outro ser rolar novamente, <b>um dos dados</b> do teste cujo resultado <b>não tenha sido 1</b>.</p>
+          <p>Além disso, em <b>combates</b>, você pode fazer sua ação <b>na fase dela ou em fases posteriores</b>, e após qualquer ação daquela fase <b>já ter sido rolada</b>.</p>
+          <div class="cf"><span>Depois de rolar, o painel do resultado deixa você tocar no dado a rerrolar.</span><span class="sp"></span><button class="t sm" id="prtog" type="button">Nova rodada</button><button class="t sm cend" type="button">Fim da cena</button></div>
+        </div>
+        <p class="cmsg" id="cmsg" aria-live="polite"></p>
+      </section>
       <div class="mid">
         <section><h2><span class="tag">Perícias</span></h2><div id="skills"></div></section>
         <section class="notes">
@@ -312,7 +388,7 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
   </div>
 </div>
 <input type="file" id="rfile" accept="image/*" hidden>
-<div id="roll" hidden><canvas id="cv" aria-hidden="true"></canvas><div class="rb"><div id="rres" aria-live="polite"></div><p>Toque para fechar</p></div></div>
+<div id="roll" hidden><canvas id="cv" aria-hidden="true"></canvas><div class="rb"><div id="rres" aria-live="polite"></div><div id="acts"></div><p>Toque para fechar</p></div></div>
 <div id="menu" hidden></div>
 <script>
 /* Dois modos especiais, escolhidos pela URL:
@@ -341,8 +417,8 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
-<script src="engine.js?v=2.3.0"></script>
-<script src="efeitos.js?v=2.3.0"></script>
+<script src="engine.js?v=2.4.0"></script>
+<script src="efeitos.js?v=2.4.0"></script>
 <input type="file" id="file" accept="image/*" hidden>
 
 <script>
@@ -356,12 +432,13 @@ try{d=JSON.parse(localStorage.getItem("ficha-ordem")||"{}")}catch(e){}
 const save=()=>{try{localStorage.setItem("ficha-ordem",JSON.stringify(d))}catch(e){}};
 const val=k=>d[k]||(k[0]==="a"?6:4);
 
-$("#attrs").innerHTML=Object.entries(NM).map(([k,n])=>`<div class="attr"><button class="nm big" data-roll="a-${k}" title="Rolar ${n}">${n}</button><button class="die lg" data-die="a-${k}" data-sz="lg"></button></div>`).join("");
+$("#attrs").innerHTML=Object.entries(NM).map(([k,n])=>`<div class="attr"><button class="nm big" data-roll="a-${k}" title="Rolar ${n}">${n}</button><button class="die lg" data-die="a-${k}" data-sz="lg"></button><span class="up" data-up="${k}" hidden></span><button type="button" class="bolt" data-ib="${k}" hidden title="Gastar os 3 de Ímpeto: ${n} sobe +1 passo até o fim da cena" aria-label="Ímpeto: aumentar ${n}">⚡</button></div>`).join("");
 $("#skills").innerHTML=SK.map(([n,a])=>`<div class="sk"><b><button class="nm" data-roll="s-${n}" title="Rolar ${n}">${n}</button>${n==="Aptidão"?' <input class="apt" data-k="apt" placeholder="(tipo)" aria-label="Tipo de aptidão">':''}</b><button class="die" data-die="s-${n}"></button><i>+</i><span class="die ro" data-sk="${n}"></span><button class="at" data-at="${n}" title="Clique para trocar o atributo-base (Físico, Mente ou Emoção)">${NM[a]}</button></div>`).join("");
 
 function dice(){
   document.querySelectorAll("[data-die]").forEach(b=>{const v=val(b.dataset.die);b.dataset.f=v;b.textContent=v;b.title="Dado atual: d"+v+" (clique para mudar)"});
-  SK.forEach(([n])=>{const k=attrOf(n),r=document.querySelector(`[data-sk="${n}"]`),a=document.querySelector(`[data-at="${n}"]`),v=val("a-"+k);r.dataset.f=v;r.textContent=v;a.textContent=NM[k]});
+  SK.forEach(([n])=>{const k=attrOf(n),r=document.querySelector(`[data-sk="${n}"]`),a=document.querySelector(`[data-at="${n}"]`),v=effA(k);r.dataset.f=v;r.textContent=v;r.classList.toggle("buff",v!==val("a-"+k));a.textContent=NM[k]});
+  Object.keys(NM).forEach(k=>{const u=document.querySelector(`[data-up="${k}"]`);if(!u)return;const b=val("a-"+k),e=effA(k);u.hidden=e===b;if(e!==b){u.textContent="▲ d"+e;u.title="Ímpeto: "+NM[k]+" sobe de d"+b+" para d"+e+" até o fim da cena"}});
   pavor();
 }
 function bars(){
@@ -394,7 +471,7 @@ notasPrev();
 
 document.addEventListener("input",e=>{
   const k=e.target.dataset&&e.target.dataset.k;if(!k)return;
-  d[k]=e.target.value;save();bars();pavor();if(k==="hab"||k==="equip")notasPrev();
+  d[k]=e.target.value;save();bars();pavor();if(k==="hab"||k==="equip")notasPrev();if(k==="perfil"){impPick=false;msg("");$("#acts").innerHTML="";renderCls()}
 });
 
 /* dados: menu de passos */
@@ -670,7 +747,7 @@ function attrOf(n){return d["at-"+n]||SK.find(x=>x[0]===n)[1]}
 
 /* pavor */
 var emb=false;
-const stp=(f,s)=>{const a=steps();let i=a.indexOf(f);if(i<0)i=a.findIndex(x=>x>=f);if(i<0)i=a.length-1;return a[Math.min(a.length-1,Math.max(0,i+s))]};
+function stp(f,s){const a=steps();let i=a.indexOf(f);if(i<0)i=a.findIndex(x=>x>=f);if(i<0)i=a.length-1;return a[Math.min(a.length-1,Math.max(0,i+s))]}
 function syncPD(){document.querySelector('[data-k="pd"]').value=d.pd}
 function pavor(){
   const on=!!d.pavorOn,b=$("#pvon");
@@ -695,26 +772,169 @@ function rowsHtml(rows,crit,note){
   if(note)h+=`<div class="crit" style="font-size:1.1rem">${esc(note)}</div>`;
   return h;
 }
-function summary(res,pv,rb){
-  const two=res.length>1,a=two?res[0][2]:0,b=two?res[1][2]:0,p=pv?res[2][2]:0,bonus=pv&&emb;
+/* ===== habilidades de perfil: Ímpeto (Executor) · Análise (Analista) · Prontidão (Vigilante) ===== */
+var PERFIS=["Executor","Analista","Vigilante"],CAP={imp:5,ana:4},impPick=false,LR=null,rollBuff=[],uidN=0;
+const perfil=()=>PERFIS.includes(d.perfil)?d.perfil:"Executor";
+const clampN=(n,k)=>Math.max(0,Math.min(CAP[k||"imp"],Math.floor(+n||0)));
+/* dado do atributo com o aumento de Ímpeto (+1 passo até o fim da cena) */
+function effA(k){const b=val("a-"+k);return d.ibuf&&d.ibuf[k]?stp(b,1):b}
+const PD_PRONT=2;
+
+/* cálculo puro do teste (sem efeitos colaterais): serve para a rolagem e para refazer depois de um ajuste */
+function calc(res,pv,rb,bonus){
+  const two=res.length>1,a=two?res[0][2]:0,b=two?res[1][2]:0,p=pv?res[2][2]:0;
   const gone=[pv&&!bonus&&a<=p,pv&&!bonus&&b<=p];
   const total=(gone[0]?0:a)+(gone[1]?0:b)+(bonus?p:0)+(rb?res[res.length-1][2]:0);
   const pos=two&&a===b&&a>=6&&!gone[0],neg=two&&((a===1&&b===1)||(gone[0]&&gone[1]));
   const rows=res.map(([n,f,x],i)=>({l:n+" · d"+f+(pv&&i===2&&bonus?" (bônus)":"")+(rb&&i===res.length-1?" (relação)":""),v:String(x),c:[gone[i]?"x":"",pv&&i===2?"pv":"",rb&&i===res.length-1?"rl":""].filter(Boolean).join(" ")}));
-  let crit=null,note="";
+  let crit=null;
   if(two){
     const c=pos?"ok":neg?"bad":"";
     rows.push({l:"Valor do teste",v:String(total),c});
     if(pos||neg)crit={t:pos?"Crítico!":"Falha crítica!",c};
   }
+  return{rows,crit,value:two?total:res[0][2],neg};
+}
+function summary(res,pv,rb){
+  const bonus=pv&&emb,c=calc(res,pv,rb,bonus),notes=rollBuff.slice();rollBuff=[];
   if(pv){
     emb=false;
-    if(p===1){d.pavorOn=false;note="O pavor terminou (o dado de pavor tirou 1)."}
+    if(res[2][2]===1){d.pavorOn=false;notes.push("O pavor terminou (o dado de pavor tirou 1).")}
     save();bars();pavor();
   }
   if(rb){rb.r.on=false;save();renderRels()}
-  return{rows,crit,note,html:rowsHtml(rows,crit,note)};
+  /* Executor: falhou no teste (abaixo da DT) => enche 1 espaço do Ímpeto sozinho */
+  const dt=Math.floor(+d.dt)||0;
+  if(LR&&perfil()==="Executor"&&dt>0&&(c.value<dt||c.neg)){
+    if(clampN(d.imp)<CAP.imp){d.imp=clampN(d.imp)+1;notes.push("Falha (DT "+dt+"): Ímpeto +1 ("+d.imp+"/"+CAP.imp+")")}
+    else notes.push("Falha (DT "+dt+"): Ímpeto já está cheio");
+    save();renderCls();
+  }
+  if(LR){LR.bonus=bonus;LR.base=notes.slice()}
+  const note=notes.join(" · ");
+  return{rows:c.rows,crit:c.crit,note,html:rowsHtml(c.rows,c.crit,note)};
 }
+
+/* ----- cartão da habilidade ----- */
+function renderBar(key){
+  const n=clampN(d[key],key),nm=key==="imp"?"Ímpeto":"Marcador de análise";
+  document.querySelector(`[data-bar="${key}"]`).innerHTML=Array.from({length:CAP[key]},(_,i)=>`<button type="button" class="cx${i<n?" on":""}" data-cx="${key}:${i}" aria-label="${nm} ${i+1}"></button>`).join("");
+  const t=document.querySelector(`[data-num="${key}"]`);if(t)t.textContent=n+"/"+CAP[key];
+}
+const canAttr=k=>perfil()==="Executor"&&clampN(d.imp)>=3&&!(d.ibuf&&d.ibuf[k]);
+function renderCls(){
+  const p=perfil();
+  document.querySelectorAll("[data-cp]").forEach(e=>e.hidden=e.dataset.cp!==p);
+  d.imp=clampN(d.imp);d.ana=clampN(d.ana,"ana");
+  renderBar("imp");renderBar("ana");
+  const go=$("#impgo");go.disabled=d.imp<1;go.classList.toggle("go",impPick&&d.imp>0);go.setAttribute("aria-pressed",String(impPick&&d.imp>0));
+  go.textContent=impPick&&d.imp>0?"Vai no próximo teste ✓":"Usar no próximo teste";
+  $("#impact").disabled=d.imp<3;
+  $("#anaadd").disabled=clampN(d.ana,"ana")>=CAP.ana;
+  const pr=!!d.pro;$("#prst").textContent=pr?"Usada nesta rodada":"Disponível nesta rodada";$("#prst").classList.toggle("bad",pr);$("#prst").classList.toggle("ok",!pr);
+  $("#prtog").hidden=!pr;
+  /* botões de atributo (⚡ ao lado do dado e os do cartão): só com 3 ou mais espaços */
+  Object.keys(NM).forEach(k=>{
+    const b=document.querySelector(`[data-ib="${k}"]`);if(b)b.hidden=!canAttr(k);
+    const c=document.querySelector(`[data-ic="${k}"]`);if(c)c.disabled=!canAttr(k);
+  });
+  dice();
+}
+function msg(t,c){const e=$("#cmsg");e.textContent=t||"";e.className="cmsg"+(c?" "+c:"")}
+function spendAttr(k){
+  if(!canAttr(k))return;
+  d.imp=clampN(d.imp)-3;d.ibuf=d.ibuf||{};d.ibuf[k]=1;impPick=false;save();renderCls();
+  msg("Ímpeto gasto: "+NM[k]+" sobe de d"+val("a-"+k)+" para d"+effA(k)+" até o fim da cena.","ok");
+}
+$("#cls").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b||b.disabled)return;
+  if(b.dataset.cx){const[k,i]=b.dataset.cx.split(":"),c=clampN(d[k],k);d[k]=(+i+1===c)?+i:+i+1;impPick=false;save();renderCls();return}
+  if(b.dataset.ic){spendAttr(b.dataset.ic);return}
+  if(b.id==="impgo"){
+    if(d.imp<1)return;impPick=!impPick;
+    msg(impPick?"Próximo teste: +1 passo no primeiro dado (gasta 1 espaço ao rolar).":"");renderCls();return;
+  }
+  if(b.id==="impact"){
+    if(d.imp<3)return;d.imp=clampN(d.imp)-3;impPick=false;save();renderCls();
+    msg("Ação extra! −3 espaços de Ímpeto (só em cenas de conflito).","ok");return;
+  }
+  if(b.id==="anaadd"){
+    const n=clampN(d.ana,"ana");if(n>=CAP.ana)return;
+    d.ana=Math.min(CAP.ana,n+2);save();msg("Análise: +"+(d.ana-n)+" marcador"+(d.ana-n===1?"":"es")+" ("+d.ana+"/"+CAP.ana+").","ok");renderCls();return;
+  }
+  if(b.id==="prtog"){d.pro=false;save();msg("Nova rodada: Prontidão disponível.","ok");renderCls();return}
+  if(b.classList.contains("cend"))endScene();
+});
+function endScene(){
+  d.imp=0;d.ana=0;d.ibuf={};d.pro=false;impPick=false;save();renderCls();
+  msg("Fim da cena: ímpeto esvaziado, aumentos de atributo removidos, marcadores de análise perdidos.","ok");
+}
+$("#attrs").addEventListener("click",e=>{const b=e.target.closest("[data-ib]");if(b)spendAttr(b.dataset.ib)});
+
+/* ----- ações depois do teste (dentro do painel do resultado) ----- */
+function showActs(){
+  const box=$("#acts");box.innerHTML="";
+  if(!LR||!LR.res||rolling)return;
+  const p=perfil();
+  if(p==="Analista"){
+    const m=clampN(d.ana,"ana");
+    box.innerHTML=`<div class="ac"><div class="ah">Análise <span>${m} marcador${m===1?"":"es"} · cada um muda um dado em +1 ou −1</span></div><div class="adz">${LR.res.map(([n,f,x],i)=>`<div class="ad"><small title="${esc(n)}">${esc(n)}</small><div class="row"><button type="button" class="ib" data-an="${i}:-1" aria-label="−1 em ${esc(n)}"${m<1||x<=1?" disabled":""}>−</button><span class="die" data-f="${f}">${x}</span><button type="button" class="ib" data-an="${i}:1" aria-label="+1 em ${esc(n)}"${m<1||x>=f?" disabled":""}>+</button></div></div>`).join("")}</div></div>`;
+  }else if(p==="Vigilante"){
+    const u=!!d.pro,pd=+d.pd||0,off=u||pd<PD_PRONT;
+    box.innerHTML=`<div class="ac"><div class="ah">Prontidão <span>${u?"já usada nesta rodada":pd<PD_PRONT?"PD insuficiente (custa "+PD_PRONT+")":"gaste "+PD_PRONT+" PD e toque num dado (que não tenha tirado 1) para rerrolar"}</span></div><div class="adz">${LR.res.map(([n,f,x],i)=>`<div class="ad"><small title="${esc(n)}">${esc(n)}</small><button type="button" class="die pk" data-pr="${i}" data-f="${f}" aria-label="Rerrolar ${esc(n)}"${off||x===1?" disabled":""}>${x}</button></div>`).join("")}</div></div>`;
+  }
+}
+$("#acts").addEventListener("click",e=>{
+  e.stopPropagation();
+  const b=e.target.closest("button");if(!b||b.disabled||rolling||!LR||!LR.res)return;
+  if(b.dataset.an){const[i,s]=b.dataset.an.split(":").map(Number);analise(i,s)}
+  else if(b.dataset.pr!==undefined)prontidao(+b.dataset.pr);
+});
+const uid=()=>String(Date.now())+"u"+(++uidN);
+function obrSend(p){
+  const X=window.OBRX;if(!X||typeof ENG==="undefined")return;
+  X.OBR.broadcast.sendMessage(ENG.CH.roll,p,{destination:npcOculto()?"LOCAL":"ALL"}).catch(()=>{});
+}
+/* mostra o resultado refeito aqui e manda o mesmo resultado (sem animação) para a mesa */
+function refresh(tag){
+  const c=calc(LR.res,LR.pv,LR.rb,LR.bonus),note=LR.base.concat(LR.acts).join(" · ");
+  $("#rres").innerHTML=rowsHtml(c.rows,c.crit,note);showActs();
+  if(window.OBRX&&LR.who){
+    const who=LR.who,tr=c.rows.filter(r=>r.l==="Valor do teste"||r.l==="Total").pop();
+    obrSend({id:uid(),seed:LR.seed||1,who,color:LR.color,title:(tag+" · "+LR.title).slice(0,40),list:LR.res.map(([n,f])=>[n,f]),kinds:LR.kinds,res:LR.res.map(r=>r[2]),anim:false,rows:c.rows,crit:c.crit,note,
+      text:who+" · "+LR.title+": "+(tr?tr.v:LR.res.map(r=>r[2]).join(", "))+" ("+tag+")"});
+  }
+}
+/* Análise: cada marcador muda um dado em +1 ou −1 (até o máximo do dado); pode gastar vários, inclusive no mesmo dado */
+function analise(i,s){
+  const r=LR.res[i];if(!r||clampN(d.ana,"ana")<1)return;
+  const n=r[2]+s;if(n<1||n>r[1])return;
+  const last=LR.acts[LR.acts.length-1],mine="Análise: "+r[0]+" ";
+  /* vários ajustes no mesmo dado viram uma nota só: "Análise: Furtividade 3→5" */
+  if(last&&last.indexOf(mine)===0&&LR.lastAn===i){const from=last.slice(mine.length).split("→")[0];LR.acts[LR.acts.length-1]=mine+from+"→"+n}
+  else LR.acts.push(mine+r[2]+"→"+n);
+  LR.lastAn=i;r[2]=n;d.ana=clampN(d.ana,"ana")-1;save();renderCls();
+  refresh("Análise");
+}
+/* Prontidão: 1x por rodada, 2 PD, rerrola um dado que não tirou 1 */
+function prontidao(i){
+  const r=LR.res[i];if(!r||d.pro||r[2]===1||(+d.pd||0)<PD_PRONT)return;
+  const o=r[2],f=r[1];let nv=0,seed=0,ms=0;
+  if(window.OBRX&&typeof ENG!=="undefined"){
+    seed=window.crypto.getRandomValues(new Uint32Array(1))[0];
+    try{const sim=new ENG.Sim([[r[0],f]],seed),rs=sim.runAll();nv=rs[0][2];ms=Math.min(9000,sim.W.t*1000+600)}catch(e){nv=0}
+  }
+  if(!nv){nv=rolarDados("1d"+f).total;seed=0;ms=0}
+  d.pro=true;d.pd=(+d.pd||0)-PD_PRONT;syncPD();bars();save();renderCls();
+  r[2]=nv;LR.acts.push("Prontidão (−"+PD_PRONT+" PD): "+r[0]+" "+o+"→"+nv);LR.lastAn=-1;
+  if(seed&&window.OBRX&&LR.who){
+    /* o dado rerrolado cai de novo na mesa de todos; depois chega o resultado refeito */
+    obrSend({id:uid(),seed,who:LR.who,color:LR.color,title:("Prontidão · "+r[0]).slice(0,40),list:[[r[0],f]],kinds:[LR.kinds[i]||""],res:[nv],anim:true,rows:[],crit:null,note:"",text:""});
+    rolling=true;$("#acts").innerHTML="";
+    setTimeout(()=>{rolling=false;refresh("Prontidão")},ms);
+  }else refresh("Prontidão");
+}
+
 /* relações: foto, nome, grau (1 a 3) e bônus de rolagem */
 d.rels=d.rels||[];
 const RD=[6,8,12],esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -752,6 +972,7 @@ function rollCustom(){
   cmsg.textContent="";$("#cust").hidden=true;
   try{localStorage.setItem("ficha-ordem-exp",cexp.value)}catch(e){}
   const {dice,mod}=p;
+  LR=null;rollBuff=[];$("#acts").innerHTML="";
   rollTitle="Rolagem "+cexp.value.trim();
   throwDice(dice.map(([sg,f])=>[(sg<0?"−":"")+"d"+f,f]),false,null,res=>{
     let tot=mod;
@@ -810,6 +1031,7 @@ $("#rfile").onchange=e=>{
   rd.readAsDataURL(f);e.target.value="";
 };
 renderRels();
+renderCls();
 
 /**
  * Rola dados de RPG no formato XdY+Z (ex: 2d6+4, 1d20-1)
@@ -856,19 +1078,30 @@ function rolarDados(expressao) {
   };
 }
 
-function closeRoll(){if(rolling)return;cancelAnimationFrame(anim);$("#roll").hidden=true}
+function closeRoll(){if(rolling)return;cancelAnimationFrame(anim);$("#roll").hidden=true;$("#acts").innerHTML=""}
 $("#roll").onclick=closeRoll;
 /* o dado é jogado no meio da ficha e a física decide: bate nas bordas, gira, cai — a face de cima é o resultado.
    rolarDados fica como fonte de aleatoriedade (força, giro, ângulo do arremesso) e como reserva se o 3D falhar. */
 function roll(key){
   if(rolling)return;
+  $("#acts").innerHTML="";rollBuff=[];LR=null;
+  const ak=key[0]==="s"?attrOf(key.slice(2)):key.slice(2),ae=effA(ak),ab=val("a-"+ak);
   let list;
-  if(key[0]==="s"){const n=key.slice(2),a=attrOf(n);list=[[skLabel(n),val(key)],[NM[a],val("a-"+a)]];if(d.pavorOn)list.push(["Pavor",val("pavor")])}
-  else list=[[NM[key.slice(2)],val(key)]];
+  if(key[0]==="s"){const n=key.slice(2);list=[[skLabel(n),val(key)],[NM[ak],ae]];if(d.pavorOn)list.push(["Pavor",val("pavor")])}
+  else list=[[NM[ak],ae]];
+  if(ae!==ab)rollBuff.push("Ímpeto: "+NM[ak]+" d"+ab+"→d"+ae);
   const pv=key[0]==="s"&&!!d.pavorOn,rb=key[0]==="s"?relActive():null;
   if(rb)list.push([rb.nome||"Relação",rb.f]);
+  /* Executor: Ímpeto gasto antes do teste (+1 passo no primeiro dado) */
+  if(impPick&&perfil()==="Executor"&&clampN(d.imp)>0){
+    const o=list[0][1],n=stp(o,1);
+    if(n!==o){list[0][1]=n;d.imp=clampN(d.imp)-1;save();rollBuff.push("Ímpeto gasto: "+list[0][0]+" d"+o+"→d"+n)}
+    else msg("O dado já está no máximo: o Ímpeto não foi gasto.","bad");
+  }
+  if(impPick){impPick=false;renderCls()}
   rollTitle=list[0][0];
-  throwDice(list,pv,rb,res=>summary(res,pv,rb));
+  LR={key,pv,rb,title:rollTitle,kinds:list.map((_,i)=>pv&&i===2?"pv":rb&&i===list.length-1?"rel":""),res:null,base:[],acts:[]};
+  throwDice(list,pv,rb,res=>{LR.res=res.map(r=>r.slice());return summary(res,pv,rb)});
 }
 var rollTitle="";
 function npcOculto(){
@@ -889,18 +1122,19 @@ function throwOBR(list,pv,rb,render){
   const tr=o.rows.filter(r=>r.l==="Valor do teste"||r.l==="Total").pop();
   const text=who+" · "+rollTitle+": "+(tr?tr.v:res.map(r=>r[2]).join(", "))+(o.crit?" ("+o.crit.t+")":"");
   const payload={id:String(Date.now()),seed,who,color:X.color,title:rollTitle,list:list.map(([n,f])=>[n,f]),kinds,res:res.map(r=>r[2]),anim:true,rows:o.rows,crit:o.crit,note:o.note,text};
+  if(LR){LR.who=who;LR.color=X.color;LR.kinds=kinds;LR.seed=seed}
   /* NPC com o olho fechado: o dado cai só para o mestre (destino LOCAL), os outros jogadores não recebem nada */
   X.OBR.broadcast.sendMessage(ENG.CH.roll,payload,{destination:npcOculto()?"LOCAL":"ALL"}).catch(()=>{});
-  rolling=true;$("#roll").hidden=false;$("#rres").innerHTML="";
-  setTimeout(()=>{rolling=false;$("#rres").innerHTML=o.html},ms);
+  rolling=true;$("#roll").hidden=false;$("#rres").innerHTML="";$("#acts").innerHTML="";
+  setTimeout(()=>{rolling=false;$("#rres").innerHTML=o.html;showActs()},ms);
   return true;
 }
 function throwDice(list,pv,rb,render){
   if(rolling)return;
   if(window.OBRX&&throwOBR(list,pv,rb,render))return;
   const fb=()=>list.map(([n,f])=>[n,f,rolarDados("1d"+f).total]);
-  const out=$("#rres");out.innerHTML="";$("#roll").hidden=false;
-  const show=res=>{rolling=false;out.innerHTML=render(res).html};
+  const out=$("#rres");out.innerHTML="";$("#acts").innerHTML="";$("#roll").hidden=false;
+  const show=res=>{rolling=false;out.innerHTML=render(res).html;showActs()};
   cancelAnimationFrame(anim);
   const rnd=()=>(rolarDados("1d1000000").total-1)/1e6;
   let W,bodies,ar;
@@ -984,13 +1218,13 @@ window.fichaRecarregar=()=>{
     if(el.tagName==="SELECT"){const o=[...el.options].find(o=>o.defaultSelected)||el.options[0];if(o)el.value=o.value}
     else el.value=el.defaultValue;
   });
-  bind();dice();bars();renderRels();notasPrev();applyJJ();
+  bind();dice();bars();renderRels();notasPrev();applyJJ();renderCls();
   try{setImg(localStorage.getItem("ficha-ordem-img"))}catch(e){}
 };
 </script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.3.0";
-import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.3.0";
+import {loadOBR,ready} from "./obr.js?v=2.4.0";
+import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.4.0";
 (async()=>{
   if(document.documentElement.classList.contains("view"))return;
   const OBR=await loadOBR();
