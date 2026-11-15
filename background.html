@@ -9,49 +9,11 @@
    2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
    3) recebe as edições que o mestre faz na ficha do jogador. */
 import {loadOBR,ready} from "./obr.js?v=2.6.1";
-import {VER,KEY,KEY_NPC,KEY_TOKEN,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack,getCombatState,setCombatState} from "./mesa-lib.js?v=2.6.1";
+import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.6.1";
 (async()=>{
   const OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))return;
   const abs=p=>new URL(p,location.href).href;
-
-  /* ===== Menu de Contexto nos Tokens (3 pontinhos -> Luta) ===== */
-  try{
-    await OBR.contextMenu.create({
-      id:"ordem.luta/menu",
-      icons:[
-        {
-          icon:abs("luta.svg"),
-          label:"⚔️ Luta",
-          filter:{
-            every:[{key:"layer",value:"CHARACTER"}]
-          }
-        }
-      ],
-      async onClick(ctx,elementId){
-        const item=ctx.items&&ctx.items[0];
-        if(!item)return;
-        const url=abs("luta.html")+"?v="+VER+"&token="+encodeURIComponent(item.id);
-        try{await OBR.popover.close("ordem.luta/pop")}catch(e){}
-        const cfg={
-          id:"ordem.luta/pop",
-          url,
-          width:390,
-          height:560,
-          marginThreshold:12
-        };
-        if(elementId){
-          cfg.anchorElementId=elementId;
-          cfg.anchorOrigin={horizontal:"CENTER",vertical:"BOTTOM"};
-          cfg.transformOrigin={horizontal:"CENTER",vertical:"TOP"};
-        }
-        try{await OBR.popover.open(cfg)}catch(e){
-          delete cfg.anchorElementId;
-          await OBR.popover.open(cfg).catch(err=>console.warn("[luta] falha ao abrir popover",err));
-        }
-      }
-    });
-  }catch(e){console.warn("[luta] falha ao registrar menu de contexto",e)}
 
   /* ===== dados + cartões na tela (a mesma camada transparente faz as duas coisas) ===== */
   const CH=ENG.CH;
@@ -183,37 +145,6 @@ const keepOn=()=>hudOn()||trayOn();
       const sheet=await unpack(d.z);JSON.parse(sheet);
       store.set(LS.sheet,sheet);soon(true);
     }catch(e){console.warn("[mesa] edição do mestre ignorada",e)}
-  });
-  /* evento de combate na mesa (ex: ser agarrado, derrubado, atrapalhado, fintado, dano) */
-  OBR.broadcast.onMessage("ordem.luta/event",async ev=>{
-    try{
-      const d=ev.data||{};
-      const isMine=d.toPlayer===OBR.player.id&&!d.toNpc;
-      const isMyNpc=isGM&&d.toNpc;
-      if(!isMine&&!isMyNpc)return;
-      const npcId=isMyNpc?d.toNpc:null;
-      const st=getCombatState(npcId);
-      let changed=false;
-      if(d.addCond&&!st.conds.includes(d.addCond)){st.conds.push(d.addCond);changed=true}
-      if(d.remCond&&st.conds.includes(d.remCond)){st.conds=st.conds.filter(c=>c!==d.remCond);changed=true}
-      if(typeof d.stepDelta==="number"&&d.stepDelta!==0){st.stepMod=(+st.stepMod||0)+d.stepDelta;changed=true}
-      if(typeof d.d6Delta==="number"&&d.d6Delta!==0){st.d6Mod=(+st.d6Mod||0)+d.d6Delta;changed=true}
-      if(d.grapplingId!==undefined){st.grapplingId=d.grapplingId;changed=true}
-      if(changed){
-        setCombatState(st,npcId);
-        window.dispatchEvent(new Event("storage"));
-        soon(true);
-      }
-      if(typeof d.dmg==="number"&&d.dmg>0){
-        const k=npcId?"npc:"+npcId:LS.sheet;
-        const sh=JSON.parse(store.get(k)||"{}");
-        const field=d.dmgType==="pd"?"pd":"pv";
-        sh[field]=Math.max(0,(parseInt(sh[field],10)||10)-d.dmg);
-        store.set(k,JSON.stringify(sh));
-        window.dispatchEvent(new Event("storage"));
-        soon(true);
-      }
-    }catch(e){console.warn("[luta] falha ao aplicar evento de combate",e)}
   });
   publish(true);
   ensure();

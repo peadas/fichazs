@@ -94,20 +94,6 @@ textarea:hover{border-color:var(--line)}
 .artw{position:relative;display:flex;flex-direction:column;min-height:540px}
 .artw .art{flex:1}
 .pavor{margin-top:10px;background:#12100c;border:1px solid #b98a3a;padding:8px 10px;display:grid;gap:6px}
-.combat-panel{margin-top:10px;background:#131719;border:1px solid #d0a93f;padding:10px 12px;display:grid;gap:8px}
-.ch{display:flex;align-items:center;justify-content:space-between;gap:8px;font:700 1.05rem Cinzel,serif;color:#f0d28a}
-.lutar-btn{background:linear-gradient(180deg,#f6dea0,#d0a93f);color:#141718;border:0;padding:5px 12px;font:800 .9rem "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;box-shadow:0 3px 12px #d0a93f33}
-.lutar-btn:hover{filter:brightness(1.08)}
-.cb-mods{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font:600 .8rem "Barlow Condensed",sans-serif;color:var(--muted)}
-.cb-mods b{color:var(--ink)}
-.cb-ctrl{display:inline-flex;align-items:center;gap:3px;border:1px solid #2f383a;background:#0d1011;padding:1px 4px}
-.cb-ctrl button{background:none;border:0;color:var(--hi);font-weight:700;cursor:pointer;padding:0 5px}
-.cb-conds{display:flex;flex-wrap:wrap;gap:4px}
-.cb-tag{font:700 .7rem "Barlow Condensed",sans-serif;letter-spacing:.05em;text-transform:uppercase;padding:2px 6px;border:1px solid #353f42;background:#192022;color:#9aa4a3;cursor:pointer;transition:.12s}
-.cb-tag:hover{border-color:#d0a93f;color:#eef0ee}
-.cb-tag.on.buff{border-color:#4aa86e;background:#11261a;color:#5fd38a}
-.cb-tag.on.debuff{border-color:#c44744;background:#291313;color:#ff7b78}
-.cb-tag.on.warn{border-color:#b98a3a;background:#261d0e;color:#e9a23b}
 .ph{display:flex;align-items:center;gap:8px;font:700 1.1rem Cinzel,serif;color:#e9a23b}
 .pb{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
 .t.sm{padding:3px 8px;font-size:.8rem}
@@ -353,19 +339,6 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
       </div>
       <p id="pvmsg"></p>
     </div>
-    <div class="combat-panel" id="cb-panel">
-      <div class="ch">
-        <span>⚔️ Combate & Condições</span>
-        <button class="lutar-btn" id="btn-lutar-ficha" title="Gira o teste de Luta da sua ficha aplicando todos os buffs/debuffs de combate">⚔️ Lutar</button>
-      </div>
-      <div class="cb-mods">
-        <span>Passos: <span class="cb-ctrl"><button id="cb-st-dn">−</button><b id="cb-st-v">0</b><button id="cb-st-up">+</button></span></span>
-        <span>Dados d6: <span class="cb-ctrl"><button id="cb-d6-dn">−</button><b id="cb-d6-v">0d6</b><button id="cb-d6-up">+</button></span></span>
-        <button class="t sm" id="cb-clr" style="margin-left:auto;padding:1px 7px;font-size:.7rem" title="Limpa condições temporárias">Limpar</button>
-      </div>
-      <div class="cb-conds" id="cb-conds"></div>
-      <p id="cb-msg" style="font-size:.76rem;color:var(--muted);margin:0">Seus buffs e debuffs do menu Luta (3 pontinhos no token) aparecem e somam automaticamente aqui.</p>
-    </div>
     </div>
   </div>
 
@@ -445,7 +418,7 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
     window.__viewSet=set;H.classList.add("view");
     if(q.get("ro")==="1")H.classList.add("ro");
   }else if(q.get("npc")){
-    var id=q.get("npc"),real=window.localStorage,map={"ficha-ordem":"npc:"+id,"ficha-ordem-img":"npc:"+id+":img","ficha-ordem-exp":"npc:"+id+":exp","ficha-ordem-combat":"npc:"+id+":combat"};
+    var id=q.get("npc"),real=window.localStorage,map={"ficha-ordem":"npc:"+id,"ficha-ordem-img":"npc:"+id+":img","ficha-ordem-exp":"npc:"+id+":exp"};
     var rk=function(k){return map[k]||k};
     var st2={getItem:function(k){return real.getItem(rk(k))},setItem:function(k,v){real.setItem(rk(k),v)},removeItem:function(k){real.removeItem(rk(k))},clear:function(){},key:function(i){return real.key(i)},get length(){return real.length}};
     try{Object.defineProperty(window,"localStorage",{value:st2,configurable:true})}catch(e){}
@@ -477,7 +450,6 @@ function dice(){
   SK.forEach(([n])=>{const k=attrOf(n),r=document.querySelector(`[data-sk="${n}"]`),a=document.querySelector(`[data-at="${n}"]`),v=effA(k);r.dataset.f=v;r.textContent=v;r.classList.toggle("buff",v!==val("a-"+k));a.textContent=NM[k]});
   Object.keys(NM).forEach(k=>{const u=document.querySelector(`[data-up="${k}"]`);if(!u)return;const b=val("a-"+k),e=effA(k);u.hidden=e===b;if(e!==b){u.textContent="▲ d"+e;u.title="Ímpeto: "+NM[k]+" sobe de d"+b+" para d"+e+" até o fim da cena"}});
   pavor();
-  if(typeof renderCombat==="function")renderCombat();
 }
 function bars(){
   ["pv","pd"].forEach(p=>{
@@ -800,74 +772,6 @@ function attrOf(n){return d["at-"+n]||SK.find(x=>x[0]===n)[1]}
 var emb=false;
 function stp(f,s){const a=steps();let i=a.indexOf(f);if(i<0)i=a.findIndex(x=>x>=f);if(i<0)i=a.length-1;return a[Math.min(a.length-1,Math.max(0,i+s))]}
 function syncPD(){document.querySelector('[data-k="pd"]').value=d.pd}
-
-/* ===== Combate: Buffs, Debuffs e botão Lutar ===== */
-const COND_DEFS=[
-  {id:"agarrando",nome:"Agarrando",step:0,d6:0,tipo:"warn"},
-  {id:"agarrado",nome:"Agarrado (−1p atk)",step:-1,d6:0,atkOnly:true,tipo:"debuff"},
-  {id:"caido",nome:"Caído (−1p fís)",step:-1,d6:0,fisOnly:true,tipo:"debuff"},
-  {id:"fintado",nome:"Fintou (+2p atk)",step:2,d6:0,atkOnly:true,once:true,tipo:"buff"},
-  {id:"mirando",nome:"Mirando (+1d6)",step:0,d6:1,pontOnly:true,once:true,tipo:"buff"},
-  {id:"atrapalhado",nome:"Atrapalhado (−1p)",step:-1,d6:0,tipo:"debuff"},
-  {id:"desequilibrado",nome:"Desequilibrado (−1p)",step:-1,d6:0,once:true,tipo:"debuff"},
-  {id:"defendendo",nome:"Defendendo-se",step:0,d6:0,tipo:"buff"},
-  {id:"erguer_livre",nome:"Ação Livre (−1p)",step:-1,d6:0,tipo:"debuff"},
-  {id:"vantagem",nome:"Vantagem (+1p atk)",step:1,d6:0,atkOnly:true,tipo:"buff"},
-  {id:"tiro_cac",nome:"Tiro em CaC (−2p)",step:-2,d6:0,pontOnly:true,tipo:"debuff"},
-  {id:"cob_leve",nome:"Cobertura Leve",step:0,d6:0,tipo:"buff"},
-  {id:"ocul_leve",nome:"Ocultação Leve",step:0,d6:0,tipo:"buff"}
-];
-function getCb(){
-  try{const o=JSON.parse(localStorage.getItem("ficha-ordem-combat")||"{}");return{conds:Array.isArray(o.conds)?o.conds:[],stepMod:+o.stepMod||0,d6Mod:+o.d6Mod||0,tokenId:o.tokenId||"",grapplingId:o.grapplingId||""}}
-  catch(e){return{conds:[],stepMod:0,d6Mod:0,tokenId:"",grapplingId:""}}
-}
-function setCb(st){
-  try{localStorage.setItem("ficha-ordem-combat",JSON.stringify(st))}catch(e){}
-  if(window.OBRX)window.OBRX.OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"}).catch(()=>{});
-}
-function calcCbMods(st,skillName){
-  let step=(+st.stepMod||0),d6=(+st.d6Mod||0);
-  const isAtk=(skillName==="Luta"||skillName==="Pontaria");
-  const isPont=(skillName==="Pontaria");
-  const isFis=["Acrobacia","Atletismo","Crime","Furtividade","Luta","Pontaria","Vigor"].includes(skillName);
-  const active=(st.conds||[]).map(id=>COND_DEFS.find(c=>c.id===id)).filter(Boolean);
-  for(const c of active){
-    if(c.atkOnly&&!isAtk)continue;
-    if(c.pontOnly&&!isPont)continue;
-    if(c.fisOnly&&!isFis)continue;
-    step+=c.step;
-    d6+=c.d6;
-  }
-  return{step,d6,active};
-}
-function renderCombat(){
-  const st=getCb(),box=$("#cb-conds");
-  if(!box)return;
-  $("#cb-st-v").textContent=(st.stepMod>0?"+":"")+st.stepMod;
-  $("#cb-d6-v").textContent=(st.d6Mod>0?"+":"")+st.d6Mod+"d6";
-  box.innerHTML=COND_DEFS.map(c=>{
-    const on=st.conds.includes(c.id);
-    return `<button class="cb-tag ${c.tipo}${on?" on":""}" data-cid="${c.id}">${on?"✓ ":""}${c.nome}</button>`;
-  }).join("");
-  const mLuta=calcCbMods(st,"Luta");
-  const baseL=val("s-Luta"),adjL=stp(baseL,mLuta.step);
-  const btn=$("#btn-lutar-ficha");
-  if(btn)btn.textContent=`⚔️ Lutar (d${adjL}+d${effA(attrOf("Luta"))}${mLuta.d6>0?"+"+mLuta.d6+"d6":""})`;
-}
-$("#cb-conds").addEventListener("click",e=>{
-  const b=e.target.closest("[data-cid]");if(!b)return;
-  const cid=b.dataset.cid,st=getCb();
-  if(st.conds.includes(cid))st.conds=st.conds.filter(x=>x!==cid);
-  else st.conds.push(cid);
-  setCb(st);renderCombat();
-});
-$("#cb-st-dn").onclick=()=>{const s=getCb();s.stepMod=Math.max(-5,s.stepMod-1);setCb(s);renderCombat()};
-$("#cb-st-up").onclick=()=>{const s=getCb();s.stepMod=Math.min(5,s.stepMod+1);setCb(s);renderCombat()};
-$("#cb-d6-dn").onclick=()=>{const s=getCb();s.d6Mod=Math.max(-4,s.d6Mod-1);setCb(s);renderCombat()};
-$("#cb-d6-up").onclick=()=>{const s=getCb();s.d6Mod=Math.min(4,s.d6Mod+1);setCb(s);renderCombat()};
-$("#cb-clr").onclick=()=>{const s=getCb();s.conds=[];s.stepMod=0;s.d6Mod=0;setCb(s);renderCombat()};
-$("#btn-lutar-ficha").onclick=()=>roll("s-Luta");
-renderCombat();
 function pavor(){
   const on=!!d.pavorOn,b=$("#pvon");
   b.textContent=on?"Ativo":"Inativo";b.setAttribute("aria-pressed",on);b.classList.toggle("on",on);
@@ -904,10 +808,7 @@ function calc(res,pv,rb,bonus){
   const V=r=>r[2]*(r[3]?2:1);                 // valor do dado: a face de cima, dobrada se caiu no círculo 2x (Foco)
   const two=res.length>1,a=two?V(res[0]):0,b=two?V(res[1]):0,p=pv?V(res[2]):0;
   const gone=[pv&&!bonus&&a<=p,pv&&!bonus&&b<=p];
-  let extraSum=0;
-  const startIdx=2+(pv?1:0);
-  for(let i=startIdx;i<res.length;i++)extraSum+=V(res[i]);
-  const total=(gone[0]?0:a)+(gone[1]?0:b)+(bonus?p:0)+extraSum;
+  const total=(gone[0]?0:a)+(gone[1]?0:b)+(bonus?p:0)+(rb?V(res[res.length-1]):0);
   const pos=two&&a===b&&a>=6&&!gone[0],neg=two&&((a===1&&b===1)||(gone[0]&&gone[1]));
   const rows=res.map((r,i)=>{const[n,f]=r;return{l:n+" · d"+f+(r[3]?" ×2":"")+(pv&&i===2&&bonus?" (bônus)":"")+(rb&&i===res.length-1?" (relação)":""),v:String(V(r)),c:[gone[i]?"x":"",r[3]?"x2":"",pv&&i===2?"pv":"",rb&&i===res.length-1?"rl":""].filter(Boolean).join(" ")}});
   let crit=null;
@@ -1224,19 +1125,8 @@ function roll(key){
   if(rolling)return;
   $("#acts").innerHTML="";rollBuff=[];LR=null;
   const ak=key[0]==="s"?attrOf(key.slice(2)):key.slice(2),ae=effA(ak),ab=val("a-"+ak);
-  let list,cbMods=null;
-  if(key[0]==="s"){
-    const n=key.slice(2),st=getCb();
-    cbMods=calcCbMods(st,n);
-    const adjDie=stp(val(key),cbMods.step);
-    const stLbl=cbMods.step!==0?` (${cbMods.step>0?"+":"−"}${Math.abs(cbMods.step)}p)`:"";
-    list=[[skLabel(n)+stLbl,adjDie],[NM[ak],ae]];
-    if(d.pavorOn)list.push(["Pavor",val("pavor")]);
-    for(let i=0;i<Math.min(4,Math.max(0,cbMods.d6));i++)list.push(["Bônus Combate",6]);
-    let consumed=false;
-    for(const cd of cbMods.active){if(cd.once){st.conds=st.conds.filter(x=>x!==cd.id);consumed=true}}
-    if(consumed){setCb(st);renderCombat()}
-  }
+  let list;
+  if(key[0]==="s"){const n=key.slice(2);list=[[skLabel(n),val(key)],[NM[ak],ae]];if(d.pavorOn)list.push(["Pavor",val("pavor")])}
   else list=[[NM[ak],ae]];
   if(ae!==ab)rollBuff.push("Ímpeto: "+NM[ak]+" d"+ab+"→d"+ae);
   const pv=key[0]==="s"&&!!d.pavorOn,rb=key[0]==="s"?relActive():null;
@@ -1423,8 +1313,8 @@ import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.6.1";
     var open=["rels","cust","roll","menu","notas","sett"].some(function(id){var n=document.getElementById(id);return n&&!n.hidden});
     var X=window.OBRX;if(!open&&X)X.OBR.popover.close(pop).catch(function(){});
   },true);
-  /* se a ficha ou estado de combate mudar em outra janela (ex.: o mestre ajustou o PV ou usou manobra no token), atualiza aqui */
-  addEventListener("storage",function(e){if(window.fichaRecarregar)window.fichaRecarregar()});
+  /* se a ficha mudar em outra janela (ex.: o mestre ajustou o PV de um NPC), atualiza aqui */
+  addEventListener("storage",function(e){if(e.key===window.__SHEETKEY&&window.fichaRecarregar)window.fichaRecarregar()});
   ex.onclick=function(){
     var sheet="{}",img=null;try{sheet=localStorage.getItem("ficha-ordem")||"{}";img=localStorage.getItem("ficha-ordem-img")}catch(e){}
     var nm="ficha";try{var d=JSON.parse(sheet);nm=((d.nome||"")+"-"+(d.sob||"")).replace(/[^\w-]+/g,"")||"ficha"}catch(e){}

@@ -1,54 +1,10 @@
 /* Peças compartilhadas da Mesa (painel, mestre e segundo plano).
    Tudo roda no mesmo domínio da ficha, então a ficha é lida direto do localStorage
    e compartilhada na sala pelos metadados do jogador do Owlbear. Sem servidor. */
-export const VER="2.7.0";
+export const VER="2.6.1";
 export const KEY="ordem.mesa/ficha";
 export const KEY_NPC="ordem.mesa/npcs";   // NPCs que o mestre mostrou na mesa
-export const KEY_TOKEN="ordem.luta/token"; // Estado de combate e vínculo da ficha no token do Owlbear
-export const LS={sheet:"ficha-ordem",img:"ficha-ordem-img",joined:"mesa-joined",collapsed:"mesa-collapsed",combat:"ficha-ordem-combat"};
-
-export const COND_DEFS=[
-  {id:"agarrando",nome:"Agarrando",step:0,d6:0,dt:0,tipo:"warn",desc:"Mão ocupada, sobrecarregado; arrasta o alvo ao se mover."},
-  {id:"agarrado",nome:"Agarrado",step:-1,d6:0,dt:0,atkOnly:true,tipo:"debuff",desc:"Imóvel, −1 passo em ataques, só ataca com armas pequenas."},
-  {id:"caido",nome:"Caído",step:-1,d6:0,dt:3,fisOnly:true,tipo:"debuff",desc:"−1 passo em testes físicos. Corpo a corpo contra você tem +1 passo; à distância DT +3."},
-  {id:"fintado",nome:"Fintou (+2 passos)",step:2,d6:0,dt:0,atkOnly:true,once:true,tipo:"buff",desc:"+2 passos no próximo ataque contra o alvo até o fim da próxima rodada."},
-  {id:"mirando",nome:"Mirando (+1d6)",step:0,d6:1,dt:0,pontOnly:true,once:true,tipo:"buff",desc:"+1d6 no próximo ataque à distância (Pontaria)."},
-  {id:"atrapalhado",nome:"Atrapalhado (−1 passo)",step:-1,d6:0,dt:0,tipo:"debuff",desc:"−1 passo em todos os testes até o fim da rodada."},
-  {id:"desequilibrado",nome:"Desequilibrado (−1 passo)",step:-1,d6:0,dt:0,once:true,tipo:"debuff",desc:"−1 passo no próximo teste (empurrado com força)."},
-  {id:"defendendo",nome:"Defendendo-se",step:0,d6:0,dt:0,tipo:"buff",desc:"Teste de Acrobacia/Luta +1d6 oposto ao ataque sofrido."},
-  {id:"preparado",nome:"Ação Preparada",step:0,d6:0,dt:0,tipo:"buff",desc:"Reação engatilhada antes do evento acontecer."},
-  {id:"erguer_livre",nome:"Erguer-se/Sacar Livre (−1p)",step:-1,d6:0,dt:0,tipo:"debuff",desc:"−1 passo em todos os testes nesta rodada por ação livre."},
-  {id:"vantagem",nome:"Vantagem Tática (+1 passo)",step:1,d6:0,dt:0,atkOnly:true,tipo:"buff",desc:"+1 passo em testes de ataque (alvo caído ou posição elevada)."},
-  {id:"tiro_cac",nome:"Atirando em CaC (−2 passos)",step:-2,d6:0,dt:0,pontOnly:true,tipo:"debuff",desc:"−2 passos em ataque à distância contra alvo em corpo a corpo."},
-  {id:"cob_leve",nome:"Cobertura Leve (DT +3)",step:0,d6:0,dt:3,tipo:"buff",desc:"A DT para atingi-lo aumenta em +3 (DT 10 curto / 13 longo)."},
-  {id:"cob_total",nome:"Cobertura Total",step:0,d6:0,dt:99,tipo:"buff",desc:"Não pode ser atacado."},
-  {id:"ocul_leve",nome:"Ocultação Leve",step:0,d6:0,dt:0,tipo:"buff",desc:"Inimigos sofrem −1 passo nos ataques contra você."}
-];
-
-export function getCombatState(npcId){
-  const k=npcId?"npc:"+npcId+":combat":LS.combat;
-  try{const o=JSON.parse(g(k)||"{}");return{conds:Array.isArray(o.conds)?o.conds:[],stepMod:+o.stepMod||0,d6Mod:+o.d6Mod||0,fase:o.fase||"cac",tokenId:o.tokenId||"",grapplingId:o.grapplingId||""}}
-  catch(e){return{conds:[],stepMod:0,d6Mod:0,fase:"cac",tokenId:"",grapplingId:""}}
-}
-export function setCombatState(st,npcId){
-  const k=npcId?"npc:"+npcId+":combat":LS.combat;
-  s(k,JSON.stringify(st));
-}
-export function calcCombatMods(st,skillName){
-  let step=(+st.stepMod||0),d6=(+st.d6Mod||0);
-  const isAtk=(skillName==="Luta"||skillName==="Pontaria");
-  const isPont=(skillName==="Pontaria");
-  const isFis=["Acrobacia","Atletismo","Crime","Furtividade","Luta","Pontaria","Vigor"].includes(skillName);
-  const active=(st.conds||[]).map(id=>COND_DEFS.find(c=>c.id===id)).filter(Boolean);
-  for(const c of active){
-    if(c.atkOnly&&!isAtk)continue;
-    if(c.pontOnly&&!isPont)continue;
-    if(c.fisOnly&&!isFis)continue;
-    step+=c.step;
-    d6+=c.d6;
-  }
-  return{step,d6,active};
-}
+export const LS={sheet:"ficha-ordem",img:"ficha-ordem-img",joined:"mesa-joined",collapsed:"mesa-collapsed"};
 const MAX=12000;   // folga sob o limite de metadados do Owlbear (~16 kB)
 
 const g=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
@@ -91,15 +47,13 @@ export function thumb(url,S=128,q=.55){
 }
 
 /* assinatura barata para saber se algo mudou */
-export const sig=()=>(g(LS.sheet)||"")+"|"+((g(LS.img)||"").length)+((g(LS.img)||"").slice(-24))+"|"+g(LS.joined)+"|"+(g(LS.combat)||"");
+export const sig=()=>(g(LS.sheet)||"")+"|"+((g(LS.img)||"").length)+((g(LS.img)||"").slice(-24))+"|"+g(LS.joined);
 
-/* o que este jogador publica na sala: resumo + miniatura + ficha completa (para o mestre) + estado de combate */
+/* o que este jogador publica na sala: resumo + miniatura + ficha completa (para o mestre) */
 export async function buildEntry(fallbackName){
   const sheet=g(LS.sheet)||"{}";let d={};try{d=JSON.parse(sheet)||{}}catch(e){}
-  const cb=getCombatState();
   const base={v:1,nome:((d.nome||"")+" "+(d.sob||"")).trim()||fallbackName||"",perfil:d.perfil||"",nivel:num(d.nivel,1),
-    pv:num(d.pv,10),pvmax:num(d.pvmax,10),pd:num(d.pd,10),pdmax:num(d.pdmax,10),
-    conds:cb.conds,stepMod:cb.stepMod,d6Mod:cb.d6Mod,tokenId:cb.tokenId,t:Date.now()};
+    pv:num(d.pv,10),pvmax:num(d.pvmax,10),pd:num(d.pd,10),pdmax:num(d.pdmax,10),t:Date.now()};
   const th=await thumb(g(LS.img));
   for(const t of [{th,z:await pack(sheet)},{th,big:1},{big:1}]){
     const e={...base,...t};if(JSON.stringify(e).length<=MAX)return e;
@@ -164,14 +118,13 @@ export function npcAdjust(id,key,delta){            // key: "pv" | "pd"
 export async function buildNpcs(){
   const out=[];
   for(const n of npcs()){
-    if(!n.shown)continue;const i=npcInfo(n.id),cb=getCombatState(n.id);
-    out.push({id:n.id,nome:i.nome,pv:i.pv,pvmax:i.pvmax,pd:i.pd,pdmax:i.pdmax,
-      conds:cb.conds,stepMod:cb.stepMod,d6Mod:cb.d6Mod,tokenId:cb.tokenId,th:await thumb(npcImg(n.id),72,.5)});
+    if(!n.shown)continue;const i=npcInfo(n.id);
+    out.push({id:n.id,nome:i.nome,pv:i.pv,pvmax:i.pvmax,pd:i.pd,pdmax:i.pdmax,th:await thumb(npcImg(n.id),72,.5)});
   }
   if(JSON.stringify(out).length>MAX)out.forEach(o=>{delete o.th});
   return out;
 }
-export const sigNpcs=()=>npcs().map(n=>n.id+(n.shown?"1":"0")+(g("npc:"+n.id)||"")+((g("npc:"+n.id+":img")||"").length)+(g("npc:"+n.id+":combat")||"")).join("|");
+export const sigNpcs=()=>npcs().map(n=>n.id+(n.shown?"1":"0")+(g("npc:"+n.id)||"")+((g("npc:"+n.id+":img")||"").length)).join("|");
 /* NPCs mostrados por qualquer jogador (o mestre), no mesmo formato de um jogador */
 export function npcsOf(players){
   const out=[];
