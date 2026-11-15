@@ -24,17 +24,46 @@ html,body{margin:0;height:100%;overflow:hidden;background:transparent;font:16px/
 .bad,.bad strong{color:#ff6b6b}
 .crit{font:800 1.6rem Cinzel,serif;margin-top:2px}
 .note{color:#9aa4a3;font-size:.9rem;margin-top:4px}
+
+/* cartões dos jogadores na tela (sem fundo: foto, nome, PV e PD) */
+#hud{position:fixed;inset:0;overflow:hidden;pointer-events:none}
+.hc{position:absolute;left:0;top:0;display:flex;gap:10px;align-items:center;transform:scale(var(--s,1));transform-origin:0 0;user-select:none;-webkit-user-select:none;touch-action:none;color:#fff}
+body.arr .hc{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outline-offset:8px}
+.hc.drag{cursor:grabbing;filter:brightness(1.15)}
+.hp{width:84px;height:84px;flex:none;display:grid;place-items:center;background:#0000 center/cover no-repeat;border:2px solid var(--c,#ecc962);box-shadow:0 3px 14px #000b;font:800 2.2rem Cinzel,serif;color:var(--c,#ecc962);text-shadow:0 2px 6px #000}
+.hi{display:grid;gap:3px;min-width:170px}
+.hn{font:700 1.45rem/1.05 "Barlow Condensed",sans-serif;letter-spacing:.03em;max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 3px #000,0 1px 5px #000,0 0 12px #000}
+.hn.npc::after{content:" · NPC";font-size:.8em;color:#c9b27a}
+.hv{display:grid;grid-template-columns:24px 140px auto;gap:7px;align-items:center;text-shadow:0 0 3px #000,0 1px 4px #000}
+.hv b{font:800 .95rem Cinzel,serif}
+.hv em{font:700 1rem "Barlow Condensed",sans-serif;font-style:normal;white-space:nowrap}
+.hb{height:12px;border:1px solid #fffc;background:#000a;transform:skewX(-14deg);box-shadow:0 1px 5px #000a;overflow:hidden;position:relative}
+.hb u{display:block;height:100%;transition:width .4s}
+.hb s{position:absolute;inset:0;background:repeating-linear-gradient(90deg,#0000 0 calc(100%/var(--n) - 1.5px),#000b calc(100%/var(--n) - 1.5px) calc(100%/var(--n)))}
+.pvv u{background:linear-gradient(90deg,#a82f2d,#f0655f)}.pdv u{background:linear-gradient(90deg,#2d6fa8,#63b5f2)}
+#hbar{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top,0px));transform:translateX(-50%);display:none;align-items:center;gap:8px;padding:8px 12px;background:#0f1213f2;border:1px solid #8b9594;box-shadow:0 6px 20px #000a;pointer-events:auto;z-index:5}
+body.arr #hbar{display:flex}
+#hbar span{font:700 1rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+#hbar button{font:700 .95rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#eef0ee;background:transparent;border:1px solid #8b9594;padding:5px 12px;cursor:pointer;min-width:34px}
+#hbar button:hover{border-color:#f0d28a;color:#f0d28a}
+#hbar button.ok{background:#f0d28a;color:#15191a;border-color:#f0d28a}
+#hbar button.ok:hover{background:#fff;color:#15191a}
+#hvazio{position:fixed;left:50%;top:40%;transform:translateX(-50%);display:none;color:#fff;font:600 1.1rem Barlow,sans-serif;text-shadow:0 1px 6px #000;pointer-events:none}
 </style>
 </head>
 <body>
 <canvas id="cv" aria-hidden="true"></canvas>
 <canvas id="cv2" aria-hidden="true" hidden></canvas>
+<div id="hud" aria-hidden="true"></div>
+<div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
+<div id="hbar"><span>Arraste os cartões</span><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js"></script>
+<script src="engine.js?v=2.2.1"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js";
+import {loadOBR,ready} from "./obr.js?v=2.2.1";
+import {KEY,npcsOf} from "./mesa-lib.js?v=2.2.1";
 const $=s=>document.querySelector(s);
-const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"";
+const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1";
 const CH=ENG.CH,HOLD=5500,CHIP_LIFE=9000;
 let OBR=null,received=0,idleTimer=0;
 const queue=[];let cur=null,raf=0,raf2=0;
@@ -136,7 +165,7 @@ function disposeGroup(c){
 }
 
 /* ---------- reserva sem WebGL (aceleração de hardware desligada): dados desenhados em 2D ---------- */
-const SIDES={4:3,6:4,8:4,10:5,12:5,20:6};
+const SIDES={4:3,6:4,8:4,10:5,12:5,14:7,16:8,18:9,20:6};
 const KS={"":{f:"#0b0b0e",s:"#d0a93f",t:"#ecc962"},pv:{f:"#14171c",s:"#e9a23b",t:"#e9a23b"},rel:{f:"#e9e3d3",s:"#8c2f3a",t:"#8c2f3a"}};
 function play2d(p){
   const cv=$("#cv2"),w=Math.max(2,innerWidth||800),h=Math.max(2,innerHeight||600),dpr=Math.min(2,devicePixelRatio||1);
@@ -287,7 +316,97 @@ function maybeIdle(){
   if(!OBR)return;
   OBR.broadcast.sendMessage(CH.idle,{seen:received,idle:true,mid},{destination:"LOCAL"}).catch(()=>{});
   clearTimeout(idleTimer);
-  idleTimer=setTimeout(()=>{if(mid)OBR.modal.close(mid).catch(()=>{})},12000);   // garantia: fecha sozinha
+  if(!HUD)idleTimer=setTimeout(()=>{if(mid)OBR.modal.close(mid).catch(()=>{})},12000);   // garantia: fecha sozinha
+}
+
+
+/* ---------- cartões dos jogadores na tela ---------- */
+const lsg=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lss=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
+function startHud(){
+  const box=$("#hud"),cards=new Map();
+  let ents=[],pos={},scale=Math.min(2,Math.max(.5,parseFloat(lsg("hud-scale"))||1)),drag=null;
+  try{pos=JSON.parse(lsg("hud-pos")||"{}")||{}}catch(e){pos={}}
+  if(ARR)document.body.classList.add("arr");
+  const okImg=u=>typeof u==="string"&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(u)&&u.length<20000;
+  const num=(v,d)=>{const n=parseInt(v,10);return Number.isFinite(n)?n:d};
+  const sigOf=x=>JSON.stringify([x.nome,x.color,x.npc?1:0,x.e.pv,x.e.pvmax,x.e.pd,x.e.pdmax,x.e.th?x.e.th.length+x.e.th.slice(-24):0]);
+  function bar(cls,l,cur,max){
+    const r=el("div","hv "+cls),b=el("div","hb"),u=el("u"),m=Math.max(0,Math.min(60,max));
+    u.style.width=(max>0?Math.max(0,Math.min(100,cur/max*100)):0)+"%";b.append(u);
+    if(m>0&&m<=40){const s=el("s");s.style.setProperty("--n",m);b.append(s)}
+    r.append(el("b",null,l),b,el("em",null,Math.max(0,cur)+"/"+max));return r;
+  }
+  function fill(c,x){
+    const e=x.e,col=/^#[0-9a-f]{6}$/i.test(x.color||"")?x.color:"#ecc962";
+    c.style.setProperty("--c",col);c.replaceChildren();
+    const p=el("div","hp");
+    if(okImg(e.th))p.style.backgroundImage="url("+e.th+")";else p.textContent=(x.nome||"?").trim().charAt(0).toUpperCase()||"?";
+    const i=el("div","hi"),n=el("div","hn"+(x.npc?" npc":""),x.nome);
+    i.append(n,bar("pvv","PV",num(e.pv,0),num(e.pvmax,10)),bar("pdv","PD",num(e.pd,0),num(e.pdmax,10)));
+    c.append(p,i);
+  }
+  function place(c,i){
+    const w=c.offsetWidth*scale,h=c.offsetHeight*scale,p=pos[c.dataset.id];
+    let x=p?p.x*innerWidth:70,y=p?p.y*innerHeight:100+i*(h+18);
+    x=Math.max(0,Math.min(innerWidth-w,x));y=Math.max(0,Math.min(innerHeight-h,y));
+    c.style.left=x+"px";c.style.top=y+"px";
+  }
+  function layout(){box.style.setProperty("--s",scale);[...box.children].forEach((c,i)=>{if(!drag||drag.c!==c)place(c,i)})}
+  function render(){
+    const seen=new Set();
+    ents.forEach(x=>{
+      seen.add(x.id);let c=cards.get(x.id);
+      if(!c){c=el("div","hc");c.dataset.id=x.id;cards.set(x.id,c);box.append(c)}
+      const sg=sigOf(x);if(c.dataset.sig!==sg){c.dataset.sig=sg;fill(c,x)}
+    });
+    cards.forEach((c,id)=>{if(!seen.has(id)){c.remove();cards.delete(id)}});
+    box.style.setProperty("--s",scale);
+    layout();
+    $("#hvazio").style.display=ARR&&!ents.length?"block":"none";
+  }
+  async function pull(){
+    try{
+      const me={id:OBR.player.id,name:await OBR.player.getName(),color:await OBR.player.getColor(),metadata:await OBR.player.getMetadata()};
+      const base=[me,...await OBR.party.getPlayers()],out=[];
+      base.forEach(p=>{const e=p.metadata&&p.metadata[KEY];if(e&&typeof e==="object")out.push({id:String(p.id),nome:String(e.nome||p.name||"Jogador").slice(0,60),color:p.color,e})});
+      npcsOf(base).forEach(n=>{const e=n.metadata[KEY];if(e&&typeof e==="object")out.push({id:String(n.id),nome:String(e.nome||n.name||"NPC").slice(0,60),color:n.color,e,npc:1})});
+      out.sort((a,b)=>a.id<b.id?-1:1);ents=out;render();
+    }catch(e){console.warn("[hud] não consegui ler a mesa",e)}
+  }
+  let t=0;const soon=()=>{clearTimeout(t);t=setTimeout(pull,150)};
+  OBR.party.onChange(soon);OBR.player.onChange(soon);
+  setInterval(pull,4000);
+  addEventListener("resize",layout);
+  /* sinal de vida: o segundo plano só reabre esta camada se ela parar de responder */
+  setInterval(()=>OBR.broadcast.sendMessage(CH.idle,{seen:received,idle:false,mid},{destination:"LOCAL"}).catch(()=>{}),15000);
+  pull();
+
+  if(!ARR)return;
+  /* ----- modo organizar: arrastar cartões, tamanho, restaurar ----- */
+  box.addEventListener("pointerdown",e=>{
+    const c=e.target.closest&&e.target.closest(".hc");if(!c||e.button>0)return;
+    const r=c.getBoundingClientRect();drag={c,dx:e.clientX-r.left,dy:e.clientY-r.top};
+    c.classList.add("drag");try{c.setPointerCapture(e.pointerId)}catch(_){}
+    box.append(c);e.preventDefault();
+  });
+  box.addEventListener("pointermove",e=>{
+    if(!drag)return;const c=drag.c,w=c.offsetWidth*scale,h=c.offsetHeight*scale;
+    c.style.left=Math.max(0,Math.min(innerWidth-w,e.clientX-drag.dx))+"px";
+    c.style.top=Math.max(0,Math.min(innerHeight-h,e.clientY-drag.dy))+"px";
+  });
+  const drop=()=>{
+    if(!drag)return;const c=drag.c;c.classList.remove("drag");drag=null;
+    pos[c.dataset.id]={x:parseFloat(c.style.left)/innerWidth,y:parseFloat(c.style.top)/innerHeight};
+    lss("hud-pos",JSON.stringify(pos));
+  };
+  box.addEventListener("pointerup",drop);box.addEventListener("pointercancel",drop);
+  const setScale=v=>{scale=Math.min(2,Math.max(.5,Math.round(v*100)/100));lss("hud-scale",String(scale));layout()};
+  $("#h-menos").onclick=()=>setScale(scale-.1);
+  $("#h-mais").onclick=()=>setScale(scale+.1);
+  $("#h-reset").onclick=()=>{pos={};lss("hud-pos",null);setScale(1)};
+  const done=()=>OBR.broadcast.sendMessage("ordem.hud/arrange",{on:false},{destination:"LOCAL"}).catch(()=>{});
+  $("#h-ok").onclick=done;
+  addEventListener("keydown",e=>{if(e.key==="Escape")done()});
 }
 
 /* ---------- início ---------- */
@@ -302,8 +421,9 @@ function maybeIdle(){
   if(OBR){
     OBR.broadcast.onMessage(CH.feed,ev=>{const d=ev.data||{};enqueue(d.p,+d.seq||0)});
     OBR.broadcast.sendMessage(CH.idle,{seen:s0,idle:false,mid},{destination:"LOCAL"}).catch(()=>{});
+    if(HUD)startHud();
   }
-  try{enqueue(ENG.unb64(qs.get("p")),s0)}catch(e){maybeIdle()}
+  if(qs.get("p")){try{enqueue(ENG.unb64(qs.get("p")),s0)}catch(e){maybeIdle()}}
 })();
 </script>
 </body>

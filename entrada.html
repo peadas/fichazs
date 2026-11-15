@@ -75,6 +75,16 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
 .fb{align-self:stretch;display:grid;place-items:center;padding:0 9px;font:700 .72rem "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;border-color:var(--gold2);color:var(--gold);background:#141a1b}
 .fb:hover{background:var(--gold2);color:#15191a}
 .leave{margin-top:12px;text-align:center}.leave button{border:0;color:var(--muted);font-size:.88rem;text-decoration:underline}
+/* cartões na tela do Owlbear */
+.hudset{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;margin:0 0 6px;border:1px solid var(--line);background:#141a1bcc}
+.hudset .t{flex:1;min-width:150px;font:700 .98rem "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.sw{width:46px;height:24px;border-radius:12px;border:1px solid #8b9594;background:#0a0c0d;position:relative;padding:0;flex:none}
+.sw i{position:absolute;top:2px;left:3px;width:16px;height:16px;border-radius:50%;background:#8f9a99;transition:left .2s,background .2s}
+.sw[aria-checked="true"]{border-color:#e9ece7}
+.sw[aria-checked="true"] i{left:25px;background:#e9ece7}
+.hudset .org{display:inline-flex;align-items:center;gap:7px;padding:6px 12px}
+.hudset .org svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hudset .org:disabled{opacity:.4;cursor:default}
 .empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed var(--line)}
 
 /* PV / PD segmentados */
@@ -126,6 +136,7 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
   </nav>
   <section id="v-mesa">
     <div id="top"></div>
+    <div class="hudset"><button class="sw" id="hud-sw" type="button" role="switch" aria-checked="true" aria-label="Mostrar cartões na tela"><i></i></button><span class="t">Cartões na tela</span><button class="org" id="hud-org" type="button" title="Arrastar os cartões para onde quiser na tela do Owlbear"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3 9 6m3-3 3 3M12 21l-3-3m3 3 3-3M3 12l3-3m-3 3 3 3M21 12l-3-3m3 3-3 3"/></svg>Organizar</button></div>
     <h3 class="sec" id="h2">Na mesa</h3>
     <div id="list"></div>
     <div class="leave" id="leave"></div>
@@ -141,10 +152,10 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js"></script>
+<script src="efeitos.js?v=2.2.1"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js";
-import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js";
+import {loadOBR,ready} from "./obr.js?v=2.2.1";
+import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.2.1";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";
@@ -285,6 +296,11 @@ function render(){
   renderMesa();if(gm&&tab==="npc")renderNpcs();
   if(anim)setTimeout(()=>{anim=false;document.body.classList.remove("anim")},700);
 }
+/* cartões na tela: liga/desliga (cada jogador decide para a própria tela) */
+const hudOn=()=>store.get("hud-on")!=="0";
+function drawHud(){$("#hud-sw").setAttribute("aria-checked",String(hudOn()));$("#hud-org").disabled=!hudOn()}
+$("#hud-sw").onclick=()=>{store.set("hud-on",hudOn()?"0":"1");drawHud();if(OBR)OBR.broadcast.sendMessage("ordem.hud/cfg",{},{destination:"LOCAL"}).catch(()=>{})};
+drawHud();
 document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;kM=kN="";anim=true;render()});
 addEventListener("storage",()=>{if(role==="GM"&&tab==="npc")renderNpcs();else if(tab==="mesa")renderMesa()});
 
@@ -296,6 +312,10 @@ addEventListener("storage",()=>{if(role==="GM"&&tab==="npc")renderNpcs();else if
   role=await OBR.player.getRole();
   const me=async()=>({id:OBR.player.id,name:await OBR.player.getName(),color:await OBR.player.getColor(),metadata:await OBR.player.getMetadata()});
   $("#b-ficha").onclick=()=>openFicha(OBR);
+  $("#hud-org").onclick=async()=>{
+    try{await OBR.broadcast.sendMessage("ordem.hud/arrange",{on:true},{destination:"LOCAL"})}catch(e){}
+    try{await OBR.action.close()}catch(e){}
+  };
   refresh=async()=>{try{role=await OBR.player.getRole();self=await me();party=await OBR.party.getPlayers();if(wantJoin!==null&&self.metadata&&!!self.metadata[KEY]===wantJoin)wantJoin=null;render()}catch(e){}};
   await refresh();
   OBR.player.onChange(p=>{self={id:p.id||self.id,name:p.name,color:p.color,metadata:p.metadata};role=p.role||role;render()});

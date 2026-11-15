@@ -2,38 +2,51 @@
 <html lang="pt-BR">
 <head><meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
 <body>
-<script src="engine.js"></script>
+<script src="engine.js?v=2.2.1"></script>
 <script type="module">
 /* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
    2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
    3) recebe as edições que o mestre faz na ficha do jogador. */
-import {loadOBR,ready} from "./obr.js";
-import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js";
+import {loadOBR,ready} from "./obr.js?v=2.2.1";
+import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.2.1";
 (async()=>{
   const OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))return;
   const abs=p=>new URL(p,location.href).href;
 
-  /* ===== dados ===== */
+  /* ===== dados + cartões na tela (a mesma camada transparente faz as duas coisas) ===== */
   const CH=ENG.CH;
-  let seq=0,open=false,mid="",lastAct=0,helloT=0,hello=false;
+  let seq=0,open=false,mid="",lastAct=0,helloT=0,hello=false,arrange=false,lastTry=0;
   const log=[];
+  const hudOn=()=>store.get("hud-on")!=="0";
   const feed=e=>OBR.broadcast.sendMessage(CH.feed,e,{destination:"LOCAL"}).catch(()=>{});
   async function openOverlay(e){
     const id="ordem.ficha/overlay/"+Date.now();
-    open=true;hello=false;mid=id;lastAct=Date.now();
+    open=true;hello=false;mid=id;lastAct=Date.now();lastTry=Date.now();
+    const q="?v=2.2.1&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
     try{
-      await OBR.modal.open({id,url:abs("overlay.html")+"?mid="+encodeURIComponent(id)+"&s="+e.seq+"&p="+ENG.b64(e.p),
-        fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:true});
+      await OBR.modal.open({id,url:abs("overlay.html")+q,
+        fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:!arrange});
     }catch(err){if(mid===id)open=false;console.warn("[ficha] não consegui abrir a camada de dados",err);return}
     /* se a camada não der sinal de vida em 6 s (não carregou), fecha e tenta de novo uma vez */
     clearTimeout(helloT);
     helloT=setTimeout(()=>{
       if(mid!==id||!open||hello)return;
       OBR.modal.close(id).catch(()=>{});open=false;
-      if(!e.retry)openOverlay({...e,retry:1});
+      if(e&&!e.retry)openOverlay({...e,retry:1});
     },6000);
+  }
+  const ensure=()=>{if(!open&&hudOn())openOverlay(null)};
+  async function closeOverlay(){const id=mid;open=false;try{await OBR.modal.close(id)}catch(e){}}
+  async function cfg(){                         // ligou/desligou os cartões na tela
+    if(!hudOn()){arrange=false;if(open)await closeOverlay();return}
+    if(open)await closeOverlay();ensure();      // reabre com a configuração nova
+  }
+  async function setArrange(on){
+    arrange=!!on&&hudOn();
+    if(open)await closeOverlay();
+    if(hudOn())openOverlay(null);
   }
   OBR.broadcast.onMessage(CH.roll,ev=>{
     const p=ENG.clean(ev.data);if(!p)return;
@@ -48,8 +61,17 @@ import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./me
     hello=true;clearTimeout(helloT);lastAct=Date.now();
     const missing=log.filter(e=>e.seq>seen);
     if(missing.length){missing.forEach(feed);return}
-    if(d.idle&&open){open=false;OBR.modal.close(mid).catch(()=>{})}
+    if(d.idle&&open&&!hudOn()){open=false;OBR.modal.close(mid).catch(()=>{})}
   });
+  OBR.broadcast.onMessage("ordem.hud/cfg",()=>cfg());
+  OBR.broadcast.onMessage("ordem.hud/arrange",ev=>setArrange(!!(ev.data&&ev.data.on)));
+  addEventListener("storage",ev=>{if(ev.key==="hud-on")cfg()});
+  /* garantia: se a camada parou de responder, reabre (no máximo uma vez a cada 20 s) */
+  setInterval(()=>{
+    if(!hudOn())return;
+    if(open&&Date.now()-lastAct>45000)open=false;
+    if(!open&&Date.now()-lastTry>20000)ensure();
+  },5000);
 
   /* ===== mesa: publicar a minha ficha na sala (só se eu entrei) ===== */
   let isGM=false;try{isGM=(await OBR.player.getRole())==="GM"}catch(e){}
@@ -92,6 +114,7 @@ import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./me
     }catch(e){console.warn("[mesa] edição do mestre ignorada",e)}
   });
   publish(true);
+  ensure();
 })();
 </script>
 </body>

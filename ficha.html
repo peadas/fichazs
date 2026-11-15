@@ -71,8 +71,11 @@ textarea:hover{border-color:var(--line)}
 .die[data-f="8"]{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
 .die[data-f="10"]{clip-path:polygon(50% 0,100% 40%,50% 100%,0 40%)}
 .die[data-f="12"]{clip-path:polygon(50% 0,100% 38%,82% 100%,18% 100%,0 38%)}
+.die[data-f="14"]{clip-path:polygon(50.0% 0.0%,89.1% 18.8%,98.7% 61.1%,71.7% 95.0%,28.3% 95.0%,1.3% 61.1%,10.9% 18.8%)}
+.die[data-f="16"]{clip-path:polygon(50.0% 0.0%,85.4% 14.6%,100.0% 50.0%,85.4% 85.4%,50.0% 100.0%,14.6% 85.4%,0.0% 50.0%,14.6% 14.6%)}
+.die[data-f="18"]{clip-path:polygon(50.0% 0.0%,82.1% 11.7%,99.2% 41.3%,93.3% 75.0%,67.1% 97.0%,32.9% 97.0%,6.7% 75.0%,0.8% 41.3%,17.9% 11.7%)}
 .die[data-f="20"]{clip-path:polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%)}
-#menu{position:fixed;z-index:20;display:flex;gap:6px;padding:8px;background:#0f1213;border:1px solid var(--line);box-shadow:0 6px 20px #000a}
+#menu{position:fixed;z-index:20;display:flex;flex-wrap:wrap;max-width:min(400px,calc(100vw - 16px));gap:6px;padding:8px;background:#0f1213;border:1px solid var(--line);box-shadow:0 6px 20px #000a}
 #menu[hidden]{display:none}
 #menu .die{width:34px;height:34px;font-size:.85rem}
 
@@ -131,6 +134,9 @@ button.t:disabled{opacity:.4;cursor:default}
 /* botões de ícone (pequenos, sem poluir) */
 .ib{display:inline-grid;place-items:center;width:30px;height:30px;padding:0;flex:none;color:var(--muted);background:#0f1213;border:1px solid var(--line);cursor:pointer;line-height:0}
 .ib svg{width:16px;height:16px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ib.lg{width:40px;height:40px}.ib.lg svg{width:21px;height:21px}
+.ib.arm{color:#fff;background:#8a2724;border-color:#e0524f}
+.tools .sp{flex:1}
 .ib:hover,.ib:focus-visible{color:var(--ink);border-color:var(--hi)}
 .ib.danger:hover{color:#ff8f8c;border-color:#e0524f}
 #rmimg{position:absolute;right:10px;top:10px;z-index:3;width:32px;height:32px;background:#0f1213cc;backdrop-filter:blur(3px)}
@@ -160,6 +166,15 @@ html.view #rmimg{display:none}
 .nt textarea{flex:1;min-height:0;margin:0;font-size:1.08rem;line-height:1.55;padding:14px 16px;background:#0a0c0d;resize:none}
 .nt textarea[hidden]{display:none}
 
+#sett{position:fixed;inset:0;z-index:25;background:#000c;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:max(16px,env(safe-area-inset-top,0px)) 16px 24px}
+#sett[hidden]{display:none}
+.opt{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #2d3638}
+.ol{font:700 1.3rem "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.sw{width:48px;height:26px;border-radius:13px;border:1px solid var(--line);background:#0a0c0d;position:relative;padding:0;cursor:pointer;flex:none}
+.sw i{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:left .2s,background .2s}
+.sw[aria-checked="true"]{border-color:var(--hi)}
+.sw[aria-checked="true"] i{left:25px;background:var(--hi)}
+
 /* retrato */
 .art{position:relative;min-height:540px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;border:1px dashed var(--line);color:var(--muted);padding:20px}
 .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}
@@ -179,7 +194,7 @@ button.t:hover{border-color:var(--hi)}
   .meta{margin-left:0}
 }
 @media (max-width:520px){.sheet{padding:16px 14px}.top{grid-template-columns:1fr}.attrs{justify-items:start}}
-html.view .tools button:not(#relbtn),html.view .tools .hint,html.view .tools .rbadge{display:none}
+html.view .tools button:not(#relbtn):not(#setbtn),html.view .tools .rbadge{display:none}
 html.view [data-roll],html.view .art{pointer-events:none}
 html.view body::after{content:"MESTRE · editando a ficha do jogador";position:fixed;right:12px;top:8px;font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.12em;color:#15191a;background:#f0d28a;padding:2px 10px;z-index:30;pointer-events:none}
 html.ro input,html.ro select,html.ro textarea,html.ro button,html.ro .art{pointer-events:none}
@@ -188,7 +203,7 @@ html.ro input,html.ro select,html.ro textarea,html.ro button,html.ro .art{pointe
 html.npc #olho{display:inline-flex}
 #olho.off{background:#e0524f;color:#fff}
 html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.12em;color:#15191a;background:#f0d28a;padding:2px 10px;z-index:30;pointer-events:none}
-@media print{.tools,#menu,#cust,#notas,#rmimg{display:none}.sheet{box-shadow:none}}
+@media print{.tools,#menu,#cust,#notas,#sett,#rmimg{display:none}.sheet{box-shadow:none}}
 </style>
 </head>
 <body>
@@ -244,14 +259,15 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
   </div>
 
   <div class="tools">
-    <button class="t" id="custbtn">Rolar dados</button>
-    <button class="t" id="relbtn">Relações</button>
-    <button class="t" id="reset">Limpar ficha</button>
-    <button class="t" id="bkexp" title="Baixa um arquivo com a sua ficha (backup)">Exportar</button>
-    <button class="t" id="bkimp" title="Carrega uma ficha exportada">Importar</button>
-    <input type="file" id="bkfile" accept="application/json,.json" hidden>
+    <button class="ib lg" id="custbtn" type="button" title="Rolar dados" aria-label="Rolar dados"><svg viewBox="0 0 24 24"><path d="M12 2.5 20.5 7.5v9L12 21.5 3.5 16.5v-9z"/><path d="M12 2.5v6.5m0 0-8.5-1.5M12 9l8.5-1.5M12 9v12.5M12 9l-5.5 8.5M12 9l5.5 8.5"/></svg></button>
+    <button class="ib lg" id="relbtn" type="button" title="Relações" aria-label="Relações"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.8 20c.4-3.6 3-5.5 6.2-5.5s5.8 1.9 6.2 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17.5 14.4c2.3.2 3.9 1.9 4.2 4.6"/></svg></button>
+    <button class="ib lg" id="setbtn" type="button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.6a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3h0a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5h0a1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v0a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></button>
     <span class="rbadge" id="relbadge"></span>
-    <span class="hint">Clique em um dado para mudar o passo (d4 a d20). Clique no nome de uma perícia ou atributo para rolar.</span>
+    <span class="sp"></span>
+    <button class="ib lg" id="bkexp" type="button" title="Exportar ficha (backup)" aria-label="Exportar ficha"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5M4 20h16"/></svg></button>
+    <button class="ib lg" id="bkimp" type="button" title="Importar ficha" aria-label="Importar ficha"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 20h16"/></svg></button>
+    <input type="file" id="bkfile" accept="application/json,.json" hidden>
+    <button class="ib lg danger" id="reset" type="button" title="Limpar ficha" aria-label="Limpar ficha"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg></button>
   </div>
 </div>
 </main>
@@ -265,6 +281,12 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
     </div>
     <textarea data-k="hab" aria-label="Habilidades" placeholder="Nome da habilidade&#10;O que ela faz, custo, alcance…"></textarea>
     <textarea data-k="equip" aria-label="Equipamento" placeholder="Itens, armas, dano, pontos de armadura…" hidden></textarea>
+  </div>
+</div>
+<div id="sett" hidden>
+  <div class="rp" role="dialog" aria-label="Settings">
+    <h2><span class="tag">Settings</span><button class="ib" id="sclose" type="button" aria-label="Fechar" title="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></h2>
+    <div class="opt"><button class="sw" id="jj" type="button" role="switch" aria-checked="false" aria-label="Jujutsu"><i></i></button><span class="ol">Jujutsu</span></div>
   </div>
 </div>
 <div id="rels" hidden>
@@ -283,7 +305,7 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
 <div id="cust" hidden>
   <div class="rp" role="dialog" aria-label="Rolar dados">
     <h2><span class="tag">Rolar dados</span><button class="ib" id="cclose" type="button" aria-label="Fechar" title="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></h2>
-    <p class="hint">Monte a sua rolagem como quiser, por exemplo <b>1d4+1d4</b>, <b>2d6+3</b> ou <b>1d20+1d8-2</b>. Dados aceitos: d4, d6, d8, d10, d12 e d20 (até 8 dados).</p>
+    <p class="hint">Monte a sua rolagem como quiser, por exemplo <b>1d4+1d4</b>, <b>2d6+3</b> ou <b>1d20+1d8-2</b>. Dados aceitos: <span id="cok">d4, d6, d8, d10, d12 e d20</span> (até 8 dados).</p>
     <div class="cq" id="cq"></div>
     <p><input id="cexp" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="1d4+1d4" aria-label="Expressão de rolagem"></p>
     <p><button class="t" id="cgo">Rolar</button> <button class="t sm" id="cclr">Limpar</button> <span class="hint" id="cmsg" role="status"></span></p>
@@ -319,12 +341,13 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
-<script src="engine.js"></script>
-<script src="efeitos.js"></script>
+<script src="engine.js?v=2.2.1"></script>
+<script src="efeitos.js?v=2.2.1"></script>
 <input type="file" id="file" accept="image/*" hidden>
 
 <script>
-const F=[4,6,8,10,12,20];
+const F=[4,6,8,10,12,20],FJ=[4,6,8,10,12,14,16,18,20];
+const jj=()=>!!d.jujutsu,steps=()=>jj()?FJ:F,skLabel=n=>n==="Bruxaria"&&jj()?"Maldição":n;
 const NM={fis:"Físico",men:"Mente",emo:"Emoção"};
 const SK=[["Acrobacia","fis"],["Animais","emo"],["Aptidão","men"],["Atletismo","fis"],["Bruxaria","men"],["Crime","fis"],["Disciplina","emo"],["Enganação","emo"],["Furtividade","fis"],["Inspecionar","men"],["Intimidar","emo"],["Intuição","emo"],["Luta","fis"],["Medicina","men"],["Percepção","men"],["Persuasão","emo"],["Pontaria","fis"],["Sobrevivência","men"],["Vigor","fis"]];
 const $=s=>document.querySelector(s);
@@ -376,7 +399,6 @@ document.addEventListener("input",e=>{
 
 /* dados: menu de passos */
 const menu=$("#menu");let target=null;
-menu.innerHTML=F.map(f=>`<button class="die" data-f="${f}" data-pick="${f}" aria-label="d${f}">${f}</button>`).join("");
 function closeMenu(){menu.hidden=true;target=null}
 document.addEventListener("click",e=>{
   const at=e.target.closest("[data-at]");
@@ -402,7 +424,7 @@ document.addEventListener("click",e=>{
   }
   closeMenu();
 });
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMenu();closeRoll();$("#rels").hidden=true;$("#cust").hidden=true;if(!$("#notas").hidden)fecharNota()}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMenu();closeRoll();$("#rels").hidden=true;$("#cust").hidden=true;$("#sett").hidden=true;if(!$("#notas").hidden)fecharNota()}});
 
 /* ===== física de dados (corpo rígido, sem dependências) ===== */
 const PH=(()=>{
@@ -534,6 +556,10 @@ return{P,Body,World,toss,kick,readout,qrot,randQuat};
 })();
 
 /* dados 3D */
+const TRAP=(n,H,r)=>()=>{const p=[],T=[0,H,0],B=[0,-H,0],U=[],L=[],c=Math.cos(Math.PI/n),h=H*(1-c)/(1+c);
+  for(let i=0;i<n;i++){const a=i*Math.PI*2/n,b=a+Math.PI/n;U.push([Math.cos(a)*r,h,Math.sin(a)*r]);L.push([Math.cos(b)*r,-h,Math.sin(b)*r])}
+  for(let i=0;i<n;i++){const j=(i+1)%n;p.push(...T,...U[i],...L[i],...T,...L[i],...U[j],...B,...L[i],...U[j],...B,...U[j],...L[j])}
+  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g};
 const GEO={
  4:()=>new THREE.TetrahedronGeometry(1.15),
  6:()=>new THREE.BoxGeometry(1.35,1.35,1.35),
@@ -543,6 +569,9 @@ const GEO={
   for(let i=0;i<5;i++){const j=(i+1)%5;p.push(...T,...U[i],...L[i],...T,...L[i],...U[j],...B,...L[i],...U[j],...B,...U[j],...L[j])}
   const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g},
  12:()=>new THREE.DodecahedronGeometry(1.05),
+ 14:TRAP(7,1.1,.95),
+ 16:TRAP(8,1.1,.95),
+ 18:TRAP(9,1.1,.95),
  20:()=>new THREE.IcosahedronGeometry(1.1)
 };
 let R,scene,cam,M,meshes=[],anim=0,rolling=false,shTex;
@@ -641,7 +670,7 @@ function attrOf(n){return d["at-"+n]||SK.find(x=>x[0]===n)[1]}
 
 /* pavor */
 var emb=false;
-const stp=(f,s)=>F[Math.min(5,Math.max(0,F.indexOf(f)+s))];
+const stp=(f,s)=>{const a=steps();let i=a.indexOf(f);if(i<0)i=a.findIndex(x=>x>=f);if(i<0)i=a.length-1;return a[Math.min(a.length-1,Math.max(0,i+s))]};
 function syncPD(){document.querySelector('[data-k="pd"]').value=d.pd}
 function pavor(){
   const on=!!d.pavorOn,b=$("#pvon");
@@ -697,7 +726,7 @@ function renderRels(){
 }
 let rfi=-1;
 /* rolagem personalizada: "1d4+1d4", "2d6+3", "1d20+1d8-2" */
-const CF=[4,6,8,10,12,20],cexp=$("#cexp"),cmsg=$("#cmsg");
+const CF=[4,6,8,10,12,14,16,18,20],cf=()=>steps(),cexp=$("#cexp"),cmsg=$("#cmsg");
 function parseExp(t){
   t=t.toLowerCase().replace(/\s+/g,"").replace(/[−–]/g,"-");
   if(!t)throw"Escreva uma rolagem, por exemplo 1d4+1d4.";
@@ -707,7 +736,7 @@ function parseExp(t){
     const sg=m[1]==="-"?-1:1;
     if(m[3]){
       const n=m[2]===""?1:+m[2],f=+m[3];
-      if(!CF.includes(f))throw"O d"+f+" não existe aqui. Use d4, d6, d8, d10, d12 ou d20.";
+      if(!cf().includes(f))throw"O d"+f+" não existe aqui. Use "+cf().map(x=>"d"+x).join(", ")+".";
       if(n<1)throw"Quantidade de dados inválida.";
       for(let i=0;i<n;i++)dice.push([sg,f]);
     }else mod+=sg*+m[4];
@@ -732,7 +761,22 @@ function rollCustom(){
     return{rows,crit:null,note:"",html:rowsHtml(rows,null,"")};
   });
 }
-$("#cq").innerHTML=CF.map(f=>`<button class="t sm" data-f="${f}">+d${f}</button>`).join("");
+/* Settings: Jujutsu (Bruxaria vira Maldição e os dados ganham d14, d16 e d18) */
+function applyJJ(){
+  const on=jj();
+  $("#jj").setAttribute("aria-checked",String(on));
+  document.documentElement.classList.toggle("jujutsu",on);
+  const b=document.querySelector('[data-roll="s-Bruxaria"]');
+  if(b){b.textContent=skLabel("Bruxaria");b.title="Rolar "+skLabel("Bruxaria");delete b.dataset.efOk;delete b.dataset.efSplit;b.removeAttribute("data-ef-split");b.classList.remove("ef-on")}
+  menu.innerHTML=steps().map(f=>`<button class="die" data-f="${f}" data-pick="${f}" aria-label="d${f}">${f}</button>`).join("");
+  $("#cq").innerHTML=steps().map(f=>`<button class="t sm" data-f="${f}">+d${f}</button>`).join("");
+  $("#cok").textContent=steps().map(x=>"d"+x).join(", ");
+}
+$("#jj").onclick=()=>{d.jujutsu=!d.jujutsu;save();applyJJ();dice()};
+$("#setbtn").onclick=()=>{$("#sett").hidden=false};
+$("#sclose").onclick=()=>{$("#sett").hidden=true};
+$("#sett").onclick=e=>{if(e.target.id==="sett")$("#sett").hidden=true};
+applyJJ();
 $("#cq").onclick=e=>{const f=e.target.dataset&&e.target.dataset.f;if(!f)return;const v=cexp.value.trim();cexp.value=v?v+"+1d"+f:"1d"+f;cexp.focus()};
 $("#cgo").onclick=rollCustom;
 $("#cclr").onclick=()=>{cexp.value="";cmsg.textContent="";cexp.focus()};
@@ -819,7 +863,7 @@ $("#roll").onclick=closeRoll;
 function roll(key){
   if(rolling)return;
   let list;
-  if(key[0]==="s"){const n=key.slice(2),a=attrOf(n);list=[[n,val(key)],[NM[a],val("a-"+a)]];if(d.pavorOn)list.push(["Pavor",val("pavor")])}
+  if(key[0]==="s"){const n=key.slice(2),a=attrOf(n);list=[[skLabel(n),val(key)],[NM[a],val("a-"+a)]];if(d.pavorOn)list.push(["Pavor",val("pavor")])}
   else list=[[NM[key.slice(2)],val(key)]];
   const pv=key[0]==="s"&&!!d.pavorOn,rb=key[0]==="s"?relActive():null;
   if(rb)list.push([rb.nome||"Relação",rb.f]);
@@ -927,7 +971,7 @@ $("#rmimg").onclick=()=>{setImg(null);try{localStorage.removeItem("ficha-ordem-i
 
 let armed=false;
 $("#reset").onclick=e=>{
-  if(!armed){armed=true;e.target.textContent="Clique de novo para apagar tudo";setTimeout(()=>{armed=false;e.target.textContent="Limpar ficha"},4000);return}
+  const b=e.currentTarget;if(!armed){armed=true;b.classList.add("arm");b.title="Clique de novo para apagar tudo";setTimeout(()=>{armed=false;b.classList.remove("arm");b.title="Limpar ficha"},4000);return}
   try{localStorage.removeItem("ficha-ordem");localStorage.removeItem("ficha-ordem-img")}catch(err){}
   location.reload();
 };
@@ -940,13 +984,13 @@ window.fichaRecarregar=()=>{
     if(el.tagName==="SELECT"){const o=[...el.options].find(o=>o.defaultSelected)||el.options[0];if(o)el.value=o.value}
     else el.value=el.defaultValue;
   });
-  bind();dice();bars();renderRels();notasPrev();
+  bind();dice();bars();renderRels();notasPrev();applyJJ();
   try{setImg(localStorage.getItem("ficha-ordem-img"))}catch(e){}
 };
 </script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js";
-import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js";
+import {loadOBR,ready} from "./obr.js?v=2.2.1";
+import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.2.1";
 (async()=>{
   if(document.documentElement.classList.contains("view"))return;
   const OBR=await loadOBR();
@@ -989,7 +1033,7 @@ import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js";
   /* a janela fecha clicando fora dela (o Owlbear cuida disso) ou apertando Esc quando nada mais está aberto */
   if(pop)document.addEventListener("keydown",function(e){
     if(e.key!=="Escape")return;
-    var open=["rels","cust","roll","menu","notas"].some(function(id){var n=document.getElementById(id);return n&&!n.hidden});
+    var open=["rels","cust","roll","menu","notas","sett"].some(function(id){var n=document.getElementById(id);return n&&!n.hidden});
     var X=window.OBRX;if(!open&&X)X.OBR.popover.close(pop).catch(function(){});
   },true);
   /* se a ficha mudar em outra janela (ex.: o mestre ajustou o PV de um NPC), atualiza aqui */

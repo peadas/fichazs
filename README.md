@@ -31,6 +31,12 @@ Avatar > Profile > Extensions > Add Extension > cole a URL do manifest. Cada jog
 - **Habilidades** e **Equipamento** são cartões na ficha com prévia do texto; clicar abre um painel grande com abas (Esc ou ✕ fecha).
 - **Fechar** e **Remover imagem** viraram ícones pequenos (o de remover fica no canto da foto, só aparece com imagem).
 
+## v2.2: ícones, Settings e cartões na tela
+- A barra de baixo da ficha agora é só ícones: rolar dados, relações, **Settings** (engrenagem), exportar, importar e limpar (a lixeira fica vermelha e pede um segundo clique).
+- **Settings > Jujutsu**: ligado, a perícia Bruxaria vira **Maldição** e os passos de dado ganham d14, d16 e d18 (d4 a d20), inclusive no pavor e em *Rolar dados*. A escolha fica salva na ficha.
+- **Cartões na tela do Owlbear**: quem entra na mesa aparece direto na tela de todos com foto, nome, PV e PD, sem fundo (NPCs mostrados pelo mestre também). No menu da Mesa: interruptor **Cartões na tela** e botão **Organizar** (arraste cada cartão para onde quiser, **− / +** muda o tamanho, **Restaurar**, **Concluir** ou Esc). A posição é de cada jogador, salva no navegador dele.
+- Os dados 3D e os cartões usam a mesma camada transparente (`overlay.html`), que agora fica aberta enquanto os cartões estiverem ligados.
+
 ## Janelas e dados
 - A ficha (e a ficha aberta pelo mestre) fecham **clicando fora da janela** ou apertando **Esc**.
 - Os dados 3D carregam o three.js de até 3 CDNs. Se o navegador não tiver WebGL (aceleração de hardware desligada), os dados aparecem **desenhados em 2D**, com o mesmo resultado e o mesmo painel de resultado para todos.

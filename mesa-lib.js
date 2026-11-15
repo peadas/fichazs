@@ -1,6 +1,7 @@
 /* Peças compartilhadas da Mesa (painel, mestre e segundo plano).
    Tudo roda no mesmo domínio da ficha, então a ficha é lida direto do localStorage
    e compartilhada na sala pelos metadados do jogador do Owlbear. Sem servidor. */
+export const VER="2.2.1";
 export const KEY="ordem.mesa/ficha";
 export const KEY_NPC="ordem.mesa/npcs";   // NPCs que o mestre mostrou na mesa
 export const LS={sheet:"ficha-ordem",img:"ficha-ordem-img",joined:"mesa-joined",collapsed:"mesa-collapsed"};
@@ -138,7 +139,7 @@ export function npcsOf(players){
 async function openBig(OBR,id,rel,query,maxW,maxH){
   let vw=1280,vh=860;
   try{vw=await OBR.viewport.getWidth();vh=await OBR.viewport.getHeight()}catch(e){}
-  const url=new URL(rel,location.href).href+"?pop="+encodeURIComponent(id)+query;
+  const url=new URL(rel,location.href).href+"?v="+VER+"&pop="+encodeURIComponent(id)+query;
   try{await OBR.popover.close(id)}catch(e){}
   try{
     await OBR.popover.open({id,url,width:Math.max(360,Math.min(maxW,vw-24)),height:Math.max(360,Math.min(maxH,vh-24)),

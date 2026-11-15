@@ -148,6 +148,10 @@ return{P,Body,World,toss,kick,readout,targetQuat,qrot,randQuat};
 })();
 
 /* ---------- geometria (precisa do three.js, só na hora de usar) ---------- */
+const TRAP=(n,H,r)=>()=>{const p=[],T=[0,H,0],B=[0,-H,0],U=[],L=[],c=Math.cos(Math.PI/n),h=H*(1-c)/(1+c);
+  for(let i=0;i<n;i++){const a=i*Math.PI*2/n,b=a+Math.PI/n;U.push([Math.cos(a)*r,h,Math.sin(a)*r]);L.push([Math.cos(b)*r,-h,Math.sin(b)*r])}
+  for(let i=0;i<n;i++){const j=(i+1)%n;p.push(...T,...U[i],...L[i],...T,...L[i],...U[j],...B,...L[i],...U[j],...B,...U[j],...L[j])}
+  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g};
 const GEO={
  4:()=>new THREE.TetrahedronGeometry(1.15),
  6:()=>new THREE.BoxGeometry(1.35,1.35,1.35),
@@ -157,6 +161,9 @@ const GEO={
   for(let i=0;i<5;i++){const j=(i+1)%5;p.push(...T,...U[i],...L[i],...T,...L[i],...U[j],...B,...L[i],...U[j],...B,...U[j],...L[j])}
   const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g},
  12:()=>new THREE.DodecahedronGeometry(1.05),
+ 14:TRAP(7,1.1,.95),
+ 16:TRAP(8,1.1,.95),
+ 18:TRAP(9,1.1,.95),
  20:()=>new THREE.IcosahedronGeometry(1.1)
 };
 function faces(g){
@@ -189,7 +196,7 @@ ENG.ARENA={minX:-540,maxX:540,minZ:-300,maxZ:300};
 ENG.RAD=38;
 ENG.VIEW={w:1140,h:660};
 ENG.DT=1/120;
-ENG.FACES=[4,6,8,10,12,20];
+ENG.FACES=[4,6,8,10,12,14,16,18,20];
 
 /* ---------- simulação passo a passo ---------- */
 class Sim{
