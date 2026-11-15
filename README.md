@@ -37,6 +37,10 @@ Avatar > Profile > Extensions > Add Extension > cole a URL do manifest. Cada jog
 - **Cartões na tela do Owlbear**: quem entra na mesa aparece direto na tela de todos com foto, nome, PV e PD, sem fundo (NPCs mostrados pelo mestre também). No menu da Mesa: interruptor **Cartões na tela** e botão **Organizar** (arraste cada cartão para onde quiser, **− / +** muda o tamanho, **Restaurar**, **Concluir** ou Esc). A posição é de cada jogador, salva no navegador dele.
 - Os dados 3D e os cartões usam a mesma camada transparente (`overlay.html`), que agora fica aberta enquanto os cartões estiverem ligados.
 
+## v2.3: mover cartões pela foto e resultado no topo
+- **Mover cartões:** basta apertar e arrastar a foto (não precisa mais do botão Organizar, que continua no menu como reserva). Cada foto tem uma zona transparente por cima (`grab.html`) que não atrapalha o resto do mapa.
+- **Resultado dos dados** aparece no topo ao lado do nome de quem rolou: dados brancos (com a forma de cada dado), **amarelo** = crítico, **vermelho** = falha crítica, **preto** = pavor, **azul** = relação; mais o valor do teste.
+
 ## Janelas e dados
 - A ficha (e a ficha aberta pelo mestre) fecham **clicando fora da janela** ou apertando **Esc**.
 - Os dados 3D carregam o three.js de até 3 CDNs. Se o navegador não tiver WebGL (aceleração de hardware desligada), os dados aparecem **desenhados em 2D**, com o mesmo resultado e o mesmo painel de resultado para todos.

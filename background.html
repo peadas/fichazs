@@ -2,14 +2,14 @@
 <html lang="pt-BR">
 <head><meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
 <body>
-<script src="engine.js?v=2.2.1"></script>
+<script src="engine.js?v=2.3.0"></script>
 <script type="module">
 /* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
    2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
    3) recebe as edições que o mestre faz na ficha do jogador. */
-import {loadOBR,ready} from "./obr.js?v=2.2.1";
-import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.2.1";
+import {loadOBR,ready} from "./obr.js?v=2.3.0";
+import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.3.0";
 (async()=>{
   const OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))return;
@@ -24,7 +24,7 @@ import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./me
   async function openOverlay(e){
     const id="ordem.ficha/overlay/"+Date.now();
     open=true;hello=false;mid=id;lastAct=Date.now();lastTry=Date.now();
-    const q="?v=2.2.1&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
+    const q="?v=2.3.0&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
     try{
       await OBR.modal.open({id,url:abs("overlay.html")+q,
         fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:!arrange});
@@ -37,8 +37,28 @@ import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./me
       if(e&&!e.retry)openOverlay({...e,retry:1});
     },6000);
   }
+  /* zonas de arrastar: um popover transparente do tamanho de cada foto (a camada dos cartões não recebe cliques) */
+  const grabs=new Map(),gid=id=>"ordem.hud/grab/"+id;
+  async function openGrab(r){
+    const pid=gid(r.id),g={...r,alive:Date.now(),tried:Date.now()};grabs.set(r.id,g);
+    try{await OBR.popover.close(pid)}catch(e){}
+    try{
+      await OBR.popover.open({id:pid,url:abs("grab.html")+"?v="+VER+"&id="+encodeURIComponent(r.id),width:r.w,height:r.h,
+        anchorReference:"POSITION",anchorPosition:{left:r.x,top:r.y},
+        anchorOrigin:{horizontal:"LEFT",vertical:"TOP"},transformOrigin:{horizontal:"LEFT",vertical:"TOP"},
+        hidePaper:true,disableClickAway:true,marginThreshold:0});
+    }catch(e){console.warn("[hud] não consegui abrir a zona de arrastar",e)}
+  }
+  function syncGrabs(list){
+    const ok=r=>r&&typeof r.id==="string"&&[r.x,r.y,r.w,r.h].every(Number.isFinite)&&r.w>=20&&r.w<=400&&r.h>=20&&r.h<=400;
+    const rects=(Array.isArray(list)?list:[]).filter(ok).slice(0,12),want=new Set(rects.map(r=>r.id));
+    for(const [id] of grabs)if(!want.has(id)){OBR.popover.close(gid(id)).catch(()=>{});grabs.delete(id)}
+    for(const r of rects){const g=grabs.get(r.id);if(g&&g.x===r.x&&g.y===r.y&&g.w===r.w&&g.h===r.h)continue;openGrab(r)}
+  }
+  OBR.broadcast.onMessage("ordem.hud/layout",ev=>{if(open&&hudOn()&&!arrange)syncGrabs((ev.data||{}).rects)});
+  OBR.broadcast.onMessage("ordem.hud/alive",ev=>{const g=grabs.get(String((ev.data||{}).id));if(g)g.alive=Date.now()});
   const ensure=()=>{if(!open&&hudOn())openOverlay(null)};
-  async function closeOverlay(){const id=mid;open=false;try{await OBR.modal.close(id)}catch(e){}}
+  async function closeOverlay(){const id=mid;open=false;syncGrabs([]);try{await OBR.modal.close(id)}catch(e){}}
   async function cfg(){                         // ligou/desligou os cartões na tela
     if(!hudOn()){arrange=false;if(open)await closeOverlay();return}
     if(open)await closeOverlay();ensure();      // reabre com a configuração nova
@@ -71,6 +91,7 @@ import {KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./me
     if(!hudOn())return;
     if(open&&Date.now()-lastAct>45000)open=false;
     if(!open&&Date.now()-lastTry>20000)ensure();
+    for(const [,g] of grabs)if(Date.now()-g.alive>20000&&Date.now()-g.tried>20000)openGrab(g);   // a zona sumiu (ex.: outra janela fechou): reabre
   },5000);
 
   /* ===== mesa: publicar a minha ficha na sala (só se eu entrei) ===== */

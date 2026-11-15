@@ -1,7 +1,7 @@
 /* Peças compartilhadas da Mesa (painel, mestre e segundo plano).
    Tudo roda no mesmo domínio da ficha, então a ficha é lida direto do localStorage
    e compartilhada na sala pelos metadados do jogador do Owlbear. Sem servidor. */
-export const VER="2.2.1";
+export const VER="2.3.0";
 export const KEY="ordem.mesa/ficha";
 export const KEY_NPC="ordem.mesa/npcs";   // NPCs que o mestre mostrou na mesa
 export const LS={sheet:"ficha-ordem",img:"ficha-ordem-img",joined:"mesa-joined",collapsed:"mesa-collapsed"};

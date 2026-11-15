@@ -341,8 +341,8 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
-<script src="engine.js?v=2.2.1"></script>
-<script src="efeitos.js?v=2.2.1"></script>
+<script src="engine.js?v=2.3.0"></script>
+<script src="efeitos.js?v=2.3.0"></script>
 <input type="file" id="file" accept="image/*" hidden>
 
 <script>
@@ -989,8 +989,8 @@ window.fichaRecarregar=()=>{
 };
 </script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.2.1";
-import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.2.1";
+import {loadOBR,ready} from "./obr.js?v=2.3.0";
+import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.3.0";
 (async()=>{
   if(document.documentElement.classList.contains("view"))return;
   const OBR=await loadOBR();

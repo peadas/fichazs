@@ -10,7 +10,31 @@ html,body{margin:0;height:100%;overflow:hidden;background:transparent;font:16px/
 #cv,#cv2{position:fixed;inset:0;width:100%;height:100%;display:block;pointer-events:none}
 #cv2[hidden]{display:none}
 #chips{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;width:max-content;max-width:calc(100% - 24px);pointer-events:none}
-.chip{background:#0f1213ee;border:1px solid #8b9594;padding:10px 18px;text-align:center;max-width:min(92vw,560px);box-shadow:0 6px 20px #000a;animation:in .3s ease-out both;transition:opacity .5s,transform .5s}
+.chip{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 14px;background:#0f1213ee;border:1px solid #8b9594;padding:7px 16px;max-width:min(94vw,760px);box-shadow:0 6px 20px #000a;animation:in .3s ease-out both;transition:opacity .5s,transform .5s}
+.chip .who{margin:0;font:700 1.2rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.08em}
+.chip .ttl{color:#9aa4a3;font:600 .95rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.dz{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.dd{position:relative;width:36px;height:36px;display:grid;place-items:center;background:#eef0ee;color:#15191a;font:800 1.05rem/1 Cinzel,serif;filter:drop-shadow(0 2px 3px #000b)}
+.dd.s2{font-size:.88rem}
+.dd[data-f="4"]{clip-path:polygon(50% 4%,98% 92%,2% 92%);padding-top:8px}
+.dd[data-f="6"]{clip-path:inset(4% round 7px)}
+.dd[data-f="8"]{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.dd[data-f="10"]{clip-path:polygon(50% 0,100% 40%,50% 100%,0 40%)}
+.dd[data-f="12"]{clip-path:polygon(50% 0,100% 38%,82% 100%,18% 100%,0 38%)}
+.dd[data-f="20"]{clip-path:polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%)}
+.dd[data-f="14"]{clip-path:polygon(50.0% 0.0%,89.1% 18.8%,98.7% 61.1%,71.7% 95.0%,28.3% 95.0%,1.3% 61.1%,10.9% 18.8%)}
+.dd[data-f="16"]{clip-path:polygon(50.0% 0.0%,85.4% 14.6%,100.0% 50.0%,85.4% 85.4%,50.0% 100.0%,14.6% 85.4%,0.0% 50.0%,14.6% 14.6%)}
+.dd[data-f="18"]{clip-path:polygon(50.0% 0.0%,82.1% 11.7%,99.2% 41.3%,93.3% 75.0%,67.1% 97.0%,32.9% 97.0%,6.7% 75.0%,0.8% 41.3%,17.9% 11.7%)}
+.dd.dcrit{background:#f2c230;color:#2a1d00}
+.dd.dfail{background:#e0443e;color:#fff}
+.dd.pv{background:#17191d;color:#e9e3d3}
+.dd.rel{background:#3a86d8;color:#fff}
+.dd.x{opacity:.4}
+.dd.neg::before{content:"−";margin-right:1px}
+.tot{font:800 1.7rem/1 Cinzel,serif}
+.tot small{font:600 .8rem "Barlow Condensed",sans-serif;color:#9aa4a3;text-transform:uppercase;letter-spacing:.05em;margin-right:6px}
+.chip .crit{width:auto;margin:0;font:800 1.15rem Cinzel,serif}
+.chip .note{margin:0;flex-basis:100%;text-align:center}
 .chip.out{opacity:0;transform:translateY(-8px)}
 @keyframes in{from{opacity:0;transform:translateY(-10px)}}
 .who{font:700 1rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
@@ -58,10 +82,10 @@ body.arr #hbar{display:flex}
 <div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
 <div id="hbar"><span>Arraste os cartões</span><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js?v=2.2.1"></script>
+<script src="engine.js?v=2.3.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.2.1";
-import {KEY,npcsOf} from "./mesa-lib.js?v=2.2.1";
+import {loadOBR,ready} from "./obr.js?v=2.3.0";
+import {KEY,npcsOf} from "./mesa-lib.js?v=2.3.0";
 const $=s=>document.querySelector(s);
 const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1";
 const CH=ENG.CH,HOLD=5500,CHIP_LIFE=9000;
@@ -209,11 +233,22 @@ function play2d(p){
 const chips=$("#chips");
 const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
 function showChip(p){
-  const c=el("div","chip"),w=el("div","who",p.who+(p.title?" · "+p.title:""));w.style.color=p.color;c.append(w);
-  const rows=el("div","rows");
-  p.rows.forEach(r=>{const rv=el("div","rv "+r.c);rv.append(el("small",null,r.l),el("strong",null,r.v));rows.append(rv)});
-  c.append(rows);
-  if(p.crit)c.append(el("div","crit "+p.crit.c,p.crit.t));
+  const c=el("div","chip"),w=el("span","who",p.who);w.style.color=p.color;c.append(w);
+  if(p.title)c.append(el("span","ttl",p.title));
+  const dz=el("div","dz");
+  p.list.forEach(([n,f],i)=>{
+    const k=p.kinds[i],x=p.res[i],r=p.rows&&p.rows[i];
+    let cl="dd";
+    if(k==="pv")cl+=" pv";else if(k==="rel")cl+=" rel";else if(p.crit&&i<2)cl+=p.crit.c==="ok"?" dcrit":p.crit.c==="bad"?" dfail":"";
+    if(r&&/(^|\s)x(\s|$)/.test(r.c))cl+=" x";
+    if(String(n).charAt(0)==="−")cl+=" neg";
+    if(x>9)cl+=" s2";
+    const dd=el("span",cl,String(x));dd.dataset.f=f;dd.title=n+" · d"+f;dz.append(dd);
+  });
+  c.append(dz);
+  const tr=(p.rows||[]).filter(r=>r.l==="Valor do teste"||r.l==="Total").pop();
+  if(tr){const t=el("span","tot"+(p.crit?" "+p.crit.c:""));t.append(el("small",null,tr.l==="Total"?"Total":"Valor"),document.createTextNode(tr.v));c.append(t)}
+  if(p.crit)c.append(el("span","crit "+p.crit.c,p.crit.t));
   if(p.note)c.append(el("div","note",p.note));
   chips.append(c);
   while(chips.children.length>4)chips.firstChild.remove();
@@ -351,7 +386,7 @@ function startHud(){
     x=Math.max(0,Math.min(innerWidth-w,x));y=Math.max(0,Math.min(innerHeight-h,y));
     c.style.left=x+"px";c.style.top=y+"px";
   }
-  function layout(){box.style.setProperty("--s",scale);[...box.children].forEach((c,i)=>{if(!drag||drag.c!==c)place(c,i)})}
+  let layout=function(){box.style.setProperty("--s",scale);[...box.children].forEach((c,i)=>{if(!drag||drag.c!==c)place(c,i)})};
   function render(){
     const seen=new Set();
     ents.forEach(x=>{
@@ -376,10 +411,39 @@ function startHud(){
   let t=0;const soon=()=>{clearTimeout(t);t=setTimeout(pull,150)};
   OBR.party.onChange(soon);OBR.player.onChange(soon);
   setInterval(pull,4000);
-  addEventListener("resize",layout);
+  addEventListener("resize",()=>layout());
   /* sinal de vida: o segundo plano só reabre esta camada se ela parar de responder */
   setInterval(()=>OBR.broadcast.sendMessage(CH.idle,{seen:received,idle:false,mid},{destination:"LOCAL"}).catch(()=>{}),15000);
   pull();
+
+  /* posição das fotos: o segundo plano põe uma zona de arrastar transparente por cima de cada uma */
+  let rt=0;
+  const report=()=>{
+    clearTimeout(rt);
+    rt=setTimeout(()=>{
+      const rects=ARR?[]:[...box.children].map(c=>{const r=c.querySelector(".hp").getBoundingClientRect();return{id:c.dataset.id,x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)}});
+      OBR.broadcast.sendMessage("ordem.hud/layout",{rects},{destination:"LOCAL"}).catch(()=>{});
+    },200);
+  };
+  const baseLayout=layout;
+  layout=()=>{baseLayout();report()};
+  setInterval(report,10000);
+  /* arrastar pela foto (vem da zona transparente) */
+  let gd=null;
+  const gmove=(dx,dy)=>{
+    const c=gd.c,w=c.offsetWidth*scale,h=c.offsetHeight*scale;
+    c.style.left=Math.max(0,Math.min(innerWidth-w,gd.x+dx))+"px";c.style.top=Math.max(0,Math.min(innerHeight-h,gd.y+dy))+"px";
+  };
+  OBR.broadcast.onMessage("ordem.hud/drag",ev=>{
+    const m=ev.data||{},c=cards.get(String(m.id));if(!c)return;
+    if(m.ph==="s"){gd={c,x:parseFloat(c.style.left)||0,y:parseFloat(c.style.top)||0};c.classList.add("drag");drag={c};box.append(c)}
+    else if(!gd||gd.c!==c)return;
+    else if(m.ph==="m"){gmove(+m.dx||0,+m.dy||0)}
+    else if(m.ph==="e"){
+      c.classList.remove("drag");pos[c.dataset.id]={x:parseFloat(c.style.left)/innerWidth,y:parseFloat(c.style.top)/innerHeight};
+      lss("hud-pos",JSON.stringify(pos));gd=null;drag=null;report();
+    }
+  });
 
   if(!ARR)return;
   /* ----- modo organizar: arrastar cartões, tamanho, restaurar ----- */
