@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menu de Luta</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;600&family=Cinzel:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e1213;--card:#161b1d;--card2:#1c2326;--ink:#eef0ee;--muted:#8f9a99;
+  --line:#2d3639;--gold:#f0d28a;--gold2:#d0a93f;--pv:#e0524f;--pd:#4f9fe0;--ok:#5fd38a;--warn:#e9a23b;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.35 Barlow,system-ui,sans-serif;overflow-x:hidden}
+body{background:radial-gradient(110% 50% at 50% 0%,#2b2412 0,var(--bg) 65%) no-repeat,var(--bg);display:flex;flex-direction:column}
+
+/* Cabeçalho estilo HUD tático / Pokémon dinâmico */
+header{padding:10px 12px;border-bottom:1px solid var(--line);background:#121617ee;display:flex;align-items:center;gap:10px}
+.tok-av{width:42px;height:42px;border:1px solid var(--gold2);background:#0a0c0d center/cover no-repeat;flex:none;display:grid;place-items:center;font:800 1.2rem Cinzel,serif;color:var(--gold);position:relative}
+.tok-av .lv{position:absolute;right:-4px;bottom:-4px;background:var(--gold2);color:#111;font:800 .65rem "Barlow Condensed",sans-serif;padding:0 4px;letter-spacing:.05em}
+.tok-in{flex:1;min-width:0}
+.tok-nm{display:flex;align-items:center;gap:6px}
+.tok-nm b{font:700 1.15rem/1 "Barlow Condensed",sans-serif;color:var(--gold);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tok-sub{font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.bars{display:flex;gap:8px;margin-top:5px}
+.bar-w{flex:1;display:flex;align-items:center;gap:4px;font:700 .7rem "Barlow Condensed",sans-serif}
+.bar-w span{color:var(--muted)}
+.bar-i{flex:1;height:6px;background:#090b0c;border:1px solid #283033;overflow:hidden}
+.bar-i u{display:block;height:100%;transition:width .3s}
+.bar-w.pv u{background:linear-gradient(90deg,#a82f2d,#f0655f)}
+.bar-w.pd u{background:linear-gradient(90deg,#2d6fa8,#63b5f2)}
+.icon-btn{background:#1b2123;border:1px solid var(--line);color:var(--gold);padding:6px 9px;font:700 .75rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:.15s}
+.icon-btn:hover{border-color:var(--gold2);background:#262012}
+
+/* Barra de Alvo & Rolagem Rápida */
+.hud-bar{padding:8px 12px;background:#14191b;border-bottom:1px solid var(--line);display:grid;gap:7px}
+.tgt-row{display:flex;align-items:center;gap:6px}
+.tgt-row label{font:700 .72rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);flex:none}
+select{flex:1;background:#0b0e0f;color:var(--ink);border:1px solid var(--line);padding:5px 8px;font:600 .85rem Barlow,sans-serif}
+select:focus{outline:none;border-color:var(--gold2)}
+.dist-btn{padding:5px 8px;font:700 .72rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.06em;background:#0b0e0f;border:1px solid var(--line);color:var(--muted);cursor:pointer}
+.dist-btn.on{border-color:var(--gold2);color:var(--gold);background:#231e10}
+
+.quick-rolls{display:grid;grid-template-columns:1.3fr 1fr .9fr;gap:6px}
+.qbtn{padding:7px 8px;border:1px solid var(--gold2);background:linear-gradient(180deg,#282111,#17140c);color:var(--gold);font:800 .88rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:.15s}
+.qbtn:hover{background:var(--gold2);color:#121516}
+.qbtn.sec{border-color:var(--line);background:#1a2022;color:var(--ink)}
+.qbtn.sec:hover{border-color:var(--gold2);color:var(--gold)}
+
+/* Resumo de Buffs / Debuffs ativos no topo */
+.cond-strip{display:flex;flex-wrap:wrap;gap:4px;padding:6px 12px;background:#101415;border-bottom:1px solid var(--line)}
+.c-pill{font:700 .68rem "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border:1px solid var(--line);display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.c-pill.buff{border-color:#3a8f5b;color:var(--ok);background:#112419}
+.c-pill.debuff{border-color:#9e3a38;color:#ff7b78;background:#261313}
+.c-pill.warn{border-color:#b98a3a;color:var(--warn);background:#241c0e}
+
+/* Abas estilo menu Pokémon */
+nav.tabs{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);background:#121618}
+nav.tabs button{border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);padding:8px 4px;font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:.15s}
+nav.tabs button:hover{color:var(--ink)}
+nav.tabs button.on{color:var(--gold);border-bottom-color:var(--gold);background:#1b180f}
+
+/* Conteúdo rolável */
+main{flex:1;overflow-y:auto;padding:10px 12px 14px}
+.sec-h{font:700 .74rem "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:8px 0 6px;display:flex;align-items:center;gap:8px}
+.sec-h::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* Grid de Manobras / Ações */
+.act-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.act-card{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);padding:8px 10px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:.15s;position:relative}
+.act-card:hover{border-color:var(--gold2);transform:translateY(-1px)}
+.act-card.full{grid-column:1/-1}
+.act-card.hi{border-color:#9e7d2b;background:linear-gradient(180deg,#251f10,#18150c)}
+.act-card b{font:700 .95rem "Barlow Condensed",sans-serif;color:var(--gold);letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center}
+.act-card b span{font:600 .68rem "Barlow Condensed",sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border:1px solid var(--line);padding:0 5px}
+.act-card small{color:var(--muted);font-size:.76rem;line-height:1.25}
+
+/* Banner de Agarrar Ativo (Attach) */
+.grapple-box{border:1px solid var(--warn);background:#22190b;padding:8px 10px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px}
+.grapple-box b{color:var(--warn);font:700 .88rem "Barlow Condensed",sans-serif;letter-spacing:.05em;text-transform:uppercase}
+.grapple-btns{display:flex;gap:6px;flex-wrap:wrap}
+.grapple-btns button{flex:1;padding:5px 8px;font:700 .76rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.06em;background:#141008;border:1px solid var(--warn);color:var(--gold);cursor:pointer}
+.grapple-btns button:hover{background:var(--warn);color:#111}
+
+/* Condições & Modificadores */
+.mod-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--card);border:1px solid var(--line);margin-bottom:6px}
+.mod-row b{font:700 .88rem "Barlow Condensed",sans-serif;letter-spacing:.04em;color:var(--gold)}
+.mod-ctrl{display:flex;align-items:center;gap:6px}
+.mod-ctrl button{width:26px;height:24px;background:#0d1011;border:1px solid var(--line);color:var(--ink);font-weight:700;cursor:pointer}
+.mod-ctrl button:hover{border-color:var(--gold2);color:var(--gold)}
+.mod-ctrl em{font:700 .95rem "Barlow Condensed",sans-serif;min-width:56px;text-align:center;font-style:normal}
+
+.cond-list{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.cond-btn{padding:6px 8px;background:var(--card);border:1px solid var(--line);color:var(--ink);text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;transition:.12s}
+.cond-btn:hover{border-color:var(--gold2)}
+.cond-btn.on.buff{border-color:var(--ok);background:#12251a}
+.cond-btn.on.debuff{border-color:var(--pv);background:#281414}
+.cond-btn.on.warn{border-color:var(--warn);background:#261d0e}
+.cond-btn b{font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.03em}
+.cond-btn small{font-size:.68rem;color:var(--muted);line-height:1.15}
+
+/* Aba Entrar (Vincular Ficha) */
+.enter-card{border:1px solid var(--gold2);background:linear-gradient(180deg,#231d0f,#14120b);padding:14px;text-align:center;margin-bottom:10px}
+.enter-card h3{margin:0 0 5px;font:800 1.15rem Cinzel,serif;color:var(--gold)}
+.enter-card p{margin:0 0 12px;color:#c5beaa;font-size:.82rem}
+.btn-enter{width:100%;padding:10px;font:800 1rem "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;background:linear-gradient(180deg,#f6dea0,#d0a93f);color:#141718;border:0;cursor:pointer;margin-bottom:6px}
+.btn-enter:hover{filter:brightness(1.08)}
+.btn-sub{width:100%;padding:7px;font:700 .82rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;background:#191f21;color:var(--ink);border:1px solid var(--line);cursor:pointer}
+.btn-sub:hover{border-color:var(--gold2);color:var(--gold)}
+
+/* Rodapé de feedback da última ação */
+footer{padding:7px 12px;background:#0b0e0f;border-top:1px solid var(--line);font-size:.78rem;color:var(--gold);min-height:30px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+footer span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+</head>
+<body>
+<header>
+  <div class="tok-av" id="av">?</div>
+  <div class="tok-in">
+    <div class="tok-nm"><b id="nm">Token</b></div>
+    <div class="tok-sub" id="sub">Sem ficha vinculada — clique em Entrar</div>
+    <div class="bars" id="bars" hidden>
+      <div class="bar-w pv"><span>PV</span><div class="bar-i"><u id="b-pv"></u></div><em id="t-pv">10/10</em></div>
+      <div class="bar-w pd"><span>PD</span><div class="bar-i"><u id="b-pd"></u></div><em id="t-pd">10/10</em></div>
+    </div>
+  </div>
+  <button class="icon-btn" id="b-open-ficha" title="Abrir a ficha completa">Ficha</button>
+</header>
+
+<div class="hud-bar">
+  <div class="tgt-row">
+    <label for="tgt">🎯 Alvo:</label>
+    <select id="tgt"><option value="">(Nenhum alvo na cena)</option></select>
+    <button class="dist-btn on" id="b-dist" title="Alternar entre Alcance Curto (DT 7) e Longo (DT 10)">Curto (DT 7)</button>
+  </div>
+  <div class="quick-rolls">
+    <button class="qbtn" id="q-luta" title="Gira o teste de Luta da sua ficha imediatamente">⚔️ Lutar (Gira Luta)</button>
+    <button class="qbtn sec" id="q-pont" title="Gira o teste de Pontaria da sua ficha">🏹 Pontaria</button>
+    <button class="qbtn sec" id="q-acro" title="Gira Acrobacia (defesa ou escapar)">🤸 Acrobacia</button>
+  </div>
+</div>
+
+<div class="cond-strip" id="c-strip" hidden></div>
+
+<nav class="tabs">
+  <button data-tab="manobras" class="on">⚔️ Manobras</button>
+  <button data-tab="geral">⚡ Ações</button>
+  <button data-tab="conds">🛡️ Buff/Debuff</button>
+  <button data-tab="entrar">📥 Entrar</button>
+</nav>
+
+<main>
+  <!-- ABA 1: MANOBRAS E ATAQUES (Fase Corpo a Corpo / Distância) -->
+  <section id="v-manobras">
+    <div id="grapple-ui" hidden></div>
+    <div class="sec-h">Ataque Padrão</div>
+    <div class="act-grid">
+      <button class="act-card hi" data-act="agredir_cac">
+        <b>⚔️ Agredir (Corpo a Corpo) <span>Luta</span></b>
+        <small>Teste de Luta (DT 7). Se o alvo também atacar CaC, vira teste oposto. Dano = rolagem alta + arma.</small>
+      </button>
+      <button class="act-card hi" data-act="agredir_dist">
+        <b>🏹 Agredir (À Distância) <span>Pontaria</span></b>
+        <small>Teste de Pontaria (Curto DT 7 / Longo DT 10). Contra alvo em CaC: −2 passos (ou 1d6 50% errar alvo).</small>
+      </button>
+    </div>
+
+    <div class="sec-h">Manobras Corpo a Corpo (Substituem Ataque)</div>
+    <div class="act-grid">
+      <button class="act-card full" data-act="agarrar">
+        <b>🤼 Agarrar (Attach no Alvo) <span>Manobra</span></b>
+        <small>Gruda seu token no alvo automaticamente! Alvo fica Imóvel e com −1 passo nos ataques; você fica Sobrecarregado e arrasta o alvo junto ao mover.</small>
+      </button>
+      <button class="act-card" data-act="derrubar">
+        <b>💥 Derrubar <span>Manobra</span></b>
+        <small>Deixa o alvo Caído (−1 passo físico). Se vencer por 5+, causa dano de impacto igual à rolagem baixa.</small>
+      </button>
+      <button class="act-card" data-act="empurrar">
+        <b>✋ Empurrar <span>Manobra</span></b>
+        <small>Empurra o alvo para trás. Se vencer por 5+, deixa Desequilibrado (−1 passo até fim da próx. rodada).</small>
+      </button>
+      <button class="act-card" data-act="desarmar">
+        <b>🗡️ Desarmar <span>Manobra</span></b>
+        <small>Derruba item empunhado pelo alvo. Se vencer por 5+, pega o item para si ou o arremessa.</small>
+      </button>
+      <button class="act-card" data-act="quebrar">
+        <b>🔨 Quebrar <span>Manobra</span></b>
+        <small>Atinge um item empunhado ou vestido pelo alvo; se vencer, causa o dano do ataque no objeto.</small>
+      </button>
+    </div>
+  </section>
+
+  <!-- ABA 2: AÇÕES GERAIS (Fase Geral) -->
+  <section id="v-geral" hidden>
+    <div class="sec-h">Fase Geral (Antes dos Ataques)</div>
+    <div class="act-grid">
+      <button class="act-card" data-act="fintar">
+        <b>🎭 Fintar (+2 Passos) <span>Enganação</span></b>
+        <small>Enganação vs Intuição em alcance curto. Se vencer, ganha +2 passos no próximo ataque contra o alvo!</small>
+      </button>
+      <button class="act-card" data-act="atrapalhar">
+        <b>💨 Atrapalhar (−1 Passo) <span>Perícia</span></b>
+        <small>Teste oposto à Percepção do alvo em alcance curto. Se vencer, alvo sofre −1 passo em todos os testes na rodada.</small>
+      </button>
+      <button class="act-card" data-act="mirar">
+        <b>🎯 Mirar (+1d6 Pontaria) <span>Ação</span></b>
+        <small>Mira em um alvo visível. Recebe +1d6 em testes de ataque à distância contra ele na próxima rodada.</small>
+      </button>
+      <button class="act-card" data-act="defender">
+        <b>🛡️ Defender-se (+1d6) <span>Defesa</span></b>
+        <small>Rola Acrobacia ou Luta +1d6 oposto a um ataque declarado nesta rodada. Se vencer, evita todo o dano.</small>
+      </button>
+      <button class="act-card" data-act="erguer_padrao">
+        <b>🦵 Erguer-se (Padrão) <span>Sem Penalidade</span></b>
+        <small>Levanta do chão gastando sua ação padrão sem sofrer penalidade nos testes.</small>
+      </button>
+      <button class="act-card" data-act="erguer_livre">
+        <b>⚡ Erguer-se / Sacar (Livre) <span>−1 Passo</span></b>
+        <small>Levanta ou saca/guarda item como ação livre, mas sofre −1 passo em todos os testes nesta rodada.</small>
+      </button>
+      <button class="act-card" data-act="jogar_chao">
+        <b>⏬ Jogar-se no Chão <span>Ação Livre</span></b>
+        <small>Fica Caído (+3 DT contra tiros inimigos, mas −1 passo físico e +1 passo para ataques CaC contra você).</small>
+      </button>
+      <button class="act-card" data-act="preparar">
+        <b>⏳ Preparar Ação <span>Reação</span></b>
+        <small>Prepara uma ação para disparar como reação antes que um gatilho específico aconteça na rodada.</small>
+      </button>
+    </div>
+  </section>
+
+  <!-- ABA 3: BUFFS, DEBUFFS E SITUAÇÕES ESPECÍFICAS -->
+  <section id="v-conds" hidden>
+    <div class="sec-h">Ajuste Rápido de Bônus / Penalidade</div>
+    <div class="mod-row">
+      <b>Passos Extras (Buff / Debuff)</b>
+      <div class="mod-ctrl">
+        <button id="m-step-dn">−</button>
+        <em id="m-step-val">0 passos</em>
+        <button id="m-step-up">+</button>
+      </div>
+    </div>
+    <div class="mod-row">
+      <b>Dados d6 Extras (Mirar / Ajuda)</b>
+      <div class="mod-ctrl">
+        <button id="m-d6-dn">−</button>
+        <em id="m-d6-val">0d6</em>
+        <button id="m-d6-up">+</button>
+      </div>
+    </div>
+
+    <div class="sec-h">Condições e Situações de Combate</div>
+    <div class="cond-list" id="cond-grid"></div>
+  </section>
+
+  <!-- ABA 4: ENTRAR COM A FICHA NO TOKEN -->
+  <section id="v-entrar" hidden>
+    <div class="enter-card">
+      <h3>Vincular Ficha a este Token</h3>
+      <p>Clique em <b>Entrar com Minha Ficha</b> para conectar a sua ficha do Ordem Paranormal a este token. Suas rolagens de Luta, manobras, buffs e debuffs ficarão sincronizados automaticamente!</p>
+      <button class="btn-enter" id="b-bind-me">📥 Entrar com Minha Ficha</button>
+      <button class="btn-sub" id="b-open-sheet2">📄 Abrir e Editar Minha Ficha</button>
+    </div>
+
+    <div id="gm-npc-bind" hidden>
+      <div class="sec-h">Opções do Mestre — Vincular NPC</div>
+      <div class="mod-row">
+        <select id="sel-npc"><option value="">(Escolha um NPC para colocar neste token)</option></select>
+        <button class="icon-btn" id="b-bind-npc">Vincular NPC</button>
+      </div>
+    </div>
+
+    <div class="sec-h">Desvincular</div>
+    <button class="btn-sub" id="b-unbind">Remover vínculo de ficha deste token</button>
+  </section>
+</main>
+
+<footer id="foot">
+  <span id="status-msg">Selecione um alvo e clique na manobra ou em Lutar!</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
+<script src="engine.js?v=2.6.1"></script>
+<script src="efeitos.js?v=2.6.1"></script>
+<script type="module">
+import {loadOBR,ready} from "./obr.js?v=2.6.1";
+import {KEY,KEY_NPC,KEY_TOKEN,LS,COND_DEFS,store,npcs,npcSheet,setNpcSheet,npcImg,npcInfo,npcOculto,getCombatState,setCombatState,calcCombatMods,openFicha} from "./mesa-lib.js?v=2.6.1";
+
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+const qs=new URLSearchParams(location.search),tokenId=qs.get("token")||"";
+const F=[4,6,8,10,12,20],FJ=[4,6,8,10,12,14,16,18,20];
+const NM={fis:"Físico",men:"Mente",emo:"Emoção"};
+const SK=[["Acrobacia","fis"],["Animais","emo"],["Aptidão","men"],["Atletismo","fis"],["Bruxaria","men"],["Crime","fis"],["Disciplina","emo"],["Enganação","emo"],["Furtividade","fis"],["Inspecionar","men"],["Intimidar","emo"],["Intuição","emo"],["Luta","fis"],["Medicina","men"],["Percepção","men"],["Persuasão","emo"],["Pontaria","fis"],["Sobrevivência","men"],["Vigor","fis"]];
+
+let OBR=null,role="PLAYER",myId="",myName="Jogador",myColor="#ecc962";
+let sceneTokens=[],thisToken=null,distLong=false,tab="manobras";
+
+const stp=(f,s,isJJ)=>{const a=isJJ?FJ:F;let i=a.indexOf(f);if(i<0)i=a.findIndex(x=>x>=f);if(i<0)i=a.length-1;return a[Math.min(a.length-1,Math.max(0,i+s))]};
+const setMsg=t=>{$("#status-msg").textContent=t};
+const nudge=()=>OBR&&OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"}).catch(()=>{});
+
+/* Descobre de qual ficha este token puxa dados (minha ficha ou NPC do mestre) */
+function activeNpcId(){
+  const meta=thisToken&&thisToken.metadata&&thisToken.metadata[KEY_TOKEN];
+  if(meta&&meta.npcId&&role==="GM")return meta.npcId;
+  return null;
+}
+function loadSheetData(npcId){
+  if(npcId)return npcSheet(npcId);
+  try{return JSON.parse(store.get(LS.sheet)||"{}")||{}}catch(e){return{}}
+}
+function saveSheetData(d,npcId){
+  if(npcId)setNpcSheet(npcId,d);
+  else store.set(LS.sheet,JSON.stringify(d));
+}
+function tokenName(it){
+  if(!it)return"Token";
+  const m=it.metadata&&it.metadata[KEY_TOKEN];
+  if(m&&m.nome)return m.nome;
+  if(it.text&&it.text.plainText)return it.text.plainText.trim();
+  return it.name||"Token";
+}
+
+/* Atualiza os metadados públicos do token na cena para todos verem quem é e suas condições */
+async function syncTokenMeta(extra={}){
+  if(!OBR||!tokenId)return;
+  const npcId=activeNpcId();
+  const d=loadSheetData(npcId);
+  const st=getCombatState(npcId);
+  const nome=((d.nome||"")+" "+(d.sob||"")).trim()||myName||"Personagem";
+  const pv=parseInt(d.pv,10)||10,pvmax=parseInt(d.pvmax,10)||10;
+  const pd=parseInt(d.pd,10)||10,pdmax=parseInt(d.pdmax,10)||10;
+  await OBR.scene.items.updateItems([tokenId],items=>{
+    for(const it of items){
+      const cur=(it.metadata&&it.metadata[KEY_TOKEN])||{};
+      it.metadata[KEY_TOKEN]={
+        ...cur,
+        ownerId:myId,
+        npcId:npcId||cur.npcId||"",
+        nome,pv,pvmax,pd,pdmax,
+        conds:st.conds,
+        stepMod:st.stepMod,
+        d6Mod:st.d6Mod,
+        grapplingId:st.grapplingId||"",
+        ...extra,
+        t:Date.now()
+      };
+    }
+  }).catch(e=>console.warn("[luta] falha ao atualizar token",e));
+}
+
+/* Executa uma rolagem de perícia 3D usando a ficha vinculada + buffs/debuffs de combate */
+function rollSkillFromMenu(skillName,opts={}){
+  const npcId=activeNpcId();
+  const d=loadSheetData(npcId);
+  const st=getCombatState(npcId);
+  const basePair=SK.find(x=>x[0]===skillName)||["Luta","fis"];
+  const attrKey=d["at-"+skillName]||basePair[1];
+  const baseSkillDie=d["s-"+skillName]||4;
+  const attrDie=d["a-"+attrKey]||6;
+
+  /* Soma passos das condições ativas + passos extras da ação (ex: Defender-se +1d6, Atirar em CaC -2p) */
+  const mods=calcCombatMods(st,skillName);
+  const totalStep=mods.step+(opts.extraStep||0);
+  const totalD6=Math.max(0,mods.d6+(opts.extraD6||0));
+  const adjSkillDie=stp(baseSkillDie,totalStep,!!d.jujutsu);
+
+  const stepLabel=totalStep!==0?` (${totalStep>0?"+":"−"}${Math.abs(totalStep)}p)`:"";
+  const list=[[skillName+stepLabel,adjSkillDie],[NM[attrKey],attrDie]];
+  const pv=!!d.pavorOn;
+  if(pv)list.push(["Pavor",d.pavor||4]);
+  for(let i=0;i<Math.min(4,totalD6);i++)list.push(["Bônus",6]);
+
+  const seed=window.crypto.getRandomValues(new Uint32Array(1))[0];
+  let res=null,dbl=list.map(()=>false);const foco=!!d.foco;
+  try{const sim=new ENG.Sim(list.map(([n,f])=>[n,f]),seed);res=sim.runAll();if(foco&&sim.hits)dbl=sim.hits()}catch(e){res=null}
+  if(!res)res=list.map(([n,f])=>[n,f,Math.floor(Math.random()*f)+1]);
+
+  const a=res[0][2]*(dbl[0]?2:1),b=res[1][2]*(dbl[1]?2:1),p=pv?res[2][2]*(dbl[2]?2:1):0;
+  const gone=[pv&&a<=p,pv&&b<=p];
+  let extraSum=0;
+  const bonusStart=pv?3:2;
+  for(let i=bonusStart;i<res.length;i++)extraSum+=res[i][2]*(dbl[i]?2:1);
+
+  const total=(gone[0]?0:a)+(gone[1]?0:b)+extraSum;
+  const highRoll=Math.max(gone[0]?0:a,gone[1]?0:b);
+  const lowRoll=Math.min(gone[0]?0:a,gone[1]?0:b);
+  const pos=a===b&&a>=6&&!gone[0],neg=(a===1&&b===1)||(gone[0]&&gone[1]);
+
+  const rows=res.map(([n,f,x],i)=>({
+    l:n+" · d"+f+(dbl[i]?" ×2":""),
+    v:String(x*(dbl[i]?2:1)),
+    c:[gone[i]?"x":"",dbl[i]?"x2":"",pv&&i===2?"pv":""].filter(Boolean).join(" ")
+  }));
+  const dt=opts.dt||0;
+  const hit=dt?total>=dt:true;
+  const c=pos?"ok":neg?"bad":dt?(hit?"ok":"bad"):"";
+  rows.push({l:dt?`Total (DT ${dt})`:"Valor do teste",v:String(total),c});
+  if(opts.showDmg)rows.push({l:"Dano Base (RA)",v:String(highRoll),c:"ok"});
+  if(opts.showLowDmg)rows.push({l:"Rolagem Baixa",v:String(lowRoll),c:""});
+
+  let crit=null;
+  if(pos||neg)crit={t:pos?"Crítico!":"Falha crítica!",c:pos?"ok":"bad"};
+  else if(dt)crit={t:hit?"Acertou!":"Errou!",c:hit?"ok":"bad"};
+
+  const who=((d.nome||"")+" "+(d.sob||"")).trim()||tokenName(thisToken)||myName;
+  const title=opts.title||skillName;
+  const note=opts.note||"";
+  const text=`${who} · ${title}: ${total}`+(dt?` vs DT ${dt} (${hit?"Acertou":"Errou"})`:"");
+
+  const kinds=list.map((_,i)=>pv&&i===2?"pv":"");
+  const isHidden=npcId&&typeof npcOculto==="function"&&npcOculto(npcId);
+  const payload={id:String(Date.now()),seed,who,color:myColor,title,list:list.map(([n,f])=>[n,f]),kinds,res:res.map(r=>r[2]),dbl,foco,pid:String(myId||""),gm:role==="GM",anim:true,rows,crit,note,text};
+  if(OBR)OBR.broadcast.sendMessage(ENG.CH.roll,payload,{destination:isHidden?"LOCAL":"ALL"}).catch(()=>{});
+
+  /* Consome condições de uso único (ex: Fintar +2p, Mirar +1d6, Desequilibrado -1p) */
+  let consumed=false;
+  for(const cd of mods.active){
+    if(cd.once){
+      st.conds=st.conds.filter(x=>x!==cd.id);
+      consumed=true;
+    }
+  }
+  if(consumed){
+    setCombatState(st,npcId);
+    syncTokenMeta();
+    nudge();
+    render();
+  }
+  setMsg(`${title}: rolou ${total} (RA ${highRoll}, RB ${lowRoll})`);
+  return{total,highRoll,lowRoll,hit};
+}
+
+/* Envia uma condição ou efeito para o token alvo (e para a ficha do dono daquele token) */
+async function applyToTarget(targetItem,effect){
+  if(!OBR||!targetItem)return;
+  const tMeta=(targetItem.metadata&&targetItem.metadata[KEY_TOKEN])||{};
+  let conds=Array.isArray(tMeta.conds)?[...tMeta.conds]:[];
+  if(effect.addCond&&!conds.includes(effect.addCond))conds.push(effect.addCond);
+  if(effect.remCond)conds=conds.filter(c=>c!==effect.remCond);
+
+  await OBR.scene.items.updateItems([targetItem.id],items=>{
+    for(const it of items){
+      const cur=(it.metadata&&it.metadata[KEY_TOKEN])||{};
+      it.metadata[KEY_TOKEN]={...cur,conds,t:Date.now()};
+    }
+  }).catch(()=>{});
+
+  if(tMeta.ownerId||tMeta.npcId){
+    await OBR.broadcast.sendMessage("ordem.luta/event",{
+      toPlayer:tMeta.ownerId||"",
+      toNpc:tMeta.npcId||"",
+      ...effect
+    },{destination:"ALL"}).catch(()=>{});
+  }
+}
+
+/* MANOBRA AGARRAR: Move e dá Attach do token no inimigo! */
+async function doGrappleAttach(targetItem){
+  if(!OBR||!thisToken||!targetItem)return;
+  const npcId=activeNpcId();
+  const st=getCombatState(npcId);
+  if(!st.conds.includes("agarrando"))st.conds.push("agarrando");
+  st.grapplingId=targetItem.id;
+  setCombatState(st,npcId);
+
+  /* Move o token do alvo para colar ao lado do atacante e usa attachedTo = thisToken.id
+     Assim, quando o atacante se mover, ele arrasta o ser agarrado automaticamente! */
+  const myPos=thisToken.position||{x:0,y:0};
+  const offset=35;
+  await OBR.scene.items.updateItems([thisToken.id,targetItem.id],items=>{
+    for(const it of items){
+      if(it.id===thisToken.id){
+        const cur=(it.metadata&&it.metadata[KEY_TOKEN])||{};
+        const c=Array.isArray(cur.conds)?[...cur.conds]:[];
+        if(!c.includes("agarrando"))c.push("agarrando");
+        it.metadata[KEY_TOKEN]={...cur,conds:c,grapplingId:targetItem.id,t:Date.now()};
+      }else if(it.id===targetItem.id){
+        it.position={x:myPos.x+offset,y:myPos.y+offset*.4};
+        it.attachedTo=thisToken.id;
+        const cur=(it.metadata&&it.metadata[KEY_TOKEN])||{};
+        const c=Array.isArray(cur.conds)?[...cur.conds]:[];
+        if(!c.includes("agarrado"))c.push("agarrado");
+        it.metadata[KEY_TOKEN]={...cur,conds:c,grappledBy:thisToken.id,t:Date.now()};
+      }
+    }
+  }).catch(e=>console.warn("[luta] falha no attach do agarrar",e));
+
+  await applyToTarget(targetItem,{addCond:"agarrado"});
+  nudge();
+  render();
+}
+
+/* Soltar vítima agarrada (Ação Livre) ou Escapar */
+async function releaseGrapple(){
+  if(!OBR)return;
+  const npcId=activeNpcId();
+  const st=getCombatState(npcId);
+  const victimId=st.grapplingId;
+  st.conds=st.conds.filter(c=>c!=="agarrando"&&c!=="agarrado");
+  st.grapplingId="";
+  setCombatState(st,npcId);
+
+  const idsToUpdate=[tokenId,victimId].filter(Boolean);
+  for(const it of sceneTokens){
+    if(it.attachedTo===tokenId&&!idsToUpdate.includes(it.id))idsToUpdate.push(it.id);
+  }
+  await OBR.scene.items.updateItems(idsToUpdate,items=>{
+    for(const it of items){
+      if(it.attachedTo===tokenId||it.id===tokenId)it.attachedTo=undefined;
+      const cur=(it.metadata&&it.metadata[KEY_TOKEN])||{};
+      const c=(cur.conds||[]).filter(x=>x!=="agarrando"&&x!=="agarrado");
+      it.metadata[KEY_TOKEN]={...cur,conds:c,grapplingId:"",grappledBy:"",t:Date.now()};
+    }
+  }).catch(()=>{});
+
+  if(victimId){
+    const vic=sceneTokens.find(x=>x.id===victimId);
+    if(vic)await applyToTarget(vic,{remCond:"agarrado"});
+  }
+  nudge();
+  setMsg("Soltou o alvo! Tokens desanexados.");
+  render();
+}
+
+/* Disparo das Ações de Combate e Manobras */
+async function handleAction(act){
+  const npcId=activeNpcId();
+  const st=getCombatState(npcId);
+  const tgtId=$("#tgt").value;
+  const tgt=sceneTokens.find(x=>x.id===tgtId)||null;
+  const tgtNm=tgt?tokenName(tgt):"Alvo";
+
+  if(act==="agredir_cac"){
+    const targetCaido=tgt&&tgt.metadata&&tgt.metadata[KEY_TOKEN]&&(tgt.metadata[KEY_TOKEN].conds||[]).includes("caido");
+    const targetOcul=tgt&&tgt.metadata&&tgt.metadata[KEY_TOKEN]&&(tgt.metadata[KEY_TOKEN].conds||[]).includes("ocul_leve");
+    const extraStep=(targetCaido?1:0)+(targetOcul?-1:0);
+    const note=[targetCaido?"Alvo Caído (+1p)":"",targetOcul?"Ocultação Leve (−1p)":""].filter(Boolean).join(" · ")||`Contra ${tgtNm}`;
+    rollSkillFromMenu("Luta",{title:`Agredir CaC → ${tgtNm}`,dt:7,extraStep,showDmg:true,note});
+    return;
+  }
+
+  if(act==="agredir_dist"){
+    const baseDt=distLong?10:7;
+    const tConds=(tgt&&tgt.metadata&&tgt.metadata[KEY_TOKEN]&&tgt.metadata[KEY_TOKEN].conds)||[];
+    const extraDt=(tConds.includes("caido")?3:0)+(tConds.includes("cob_leve")?3:0);
+    const extraStep=tConds.includes("ocul_leve")?-1:0;
+    let note=`Alcance ${distLong?"Longo":"Curto"}`;
+    if(tConds.includes("agarrado")||tConds.includes("agarrando")){
+      const r50=Math.floor(Math.random()*6)+1;
+      note+=` · Alvo em Agarrar (1d6=${r50}: ${r50%2===1?"⚠️ 50% atingiu o outro combatente!":"Mirado no alvo certo"})`;
+    }
+    rollSkillFromMenu("Pontaria",{title:`Disparo → ${tgtNm}`,dt:baseDt+extraDt,extraStep,showDmg:true,note});
+    return;
+  }
+
+  if(act==="agarrar"){
+    if(!tgt){setMsg("⚠️ Selecione um token Alvo no topo para Agarrar!");return}
+    await doGrappleAttach(tgt);
+    rollSkillFromMenu("Luta",{
+      title:`Manobra Agarrar → ${tgtNm}`,
+      showDmg:false,
+      note:`Token grudado (Attach) em ${tgtNm}! Alvo fica Imóvel e −1p em ataques.`
+    });
+    return;
+  }
+
+  if(act==="derrubar"){
+    const r=rollSkillFromMenu("Luta",{
+      title:`Manobra Derrubar → ${tgtNm}`,
+      showLowDmg:true,
+      note:`Teste oposto. Alvo fica Caído! Se vencer por 5+, causa ${"rolagem baixa"} de dano.`
+    });
+    if(tgt)await applyToTarget(tgt,{addCond:"caido"});
+    return;
+  }
+
+  if(act==="empurrar"){
+    rollSkillFromMenu("Luta",{
+      title:`Manobra Empurrar → ${tgtNm}`,
+      note:`Empurra ${tgtNm}. Se vencer por 5+, deixa Desequilibrado (−1p).`
+    });
+    if(tgt)await applyToTarget(tgt,{addCond:"desequilibrado"});
+    return;
+  }
+
+  if(act==="desarmar"){
+    rollSkillFromMenu("Luta",{
+      title:`Manobra Desarmar → ${tgtNm}`,
+      note:`Faz ${tgtNm} derrubar o item. Se vencer por 5+, você pega ou arremessa o item!`
+    });
+    return;
+  }
+
+  if(act==="quebrar"){
+    rollSkillFromMenu("Luta",{
+      title:`Manobra Quebrar → ${tgtNm}`,
+      showDmg:true,
+      note:`Se vencer o teste oposto, causa o dano no item de ${tgtNm}.`
+    });
+    return;
+  }
+
+  if(act==="fintar"){
+    if(!st.conds.includes("fintado"))st.conds.push("fintado");
+    setCombatState(st,npcId);syncTokenMeta();nudge();render();
+    rollSkillFromMenu("Enganação",{
+      title:`Fintar → ${tgtNm}`,
+      note:`Oposto à Intuição de ${tgtNm}. Bônus Fintou (+2 passos no próx. ataque) ativado!`
+    });
+    return;
+  }
+
+  if(act==="atrapalhar"){
+    rollSkillFromMenu("Enganação",{
+      title:`Atrapalhar → ${tgtNm}`,
+      note:`Oposto à Percepção de ${tgtNm}. Alvo recebe −1 passo em todos os testes na rodada!`
+    });
+    if(tgt)await applyToTarget(tgt,{addCond:"atrapalhado"});
+    return;
+  }
+
+  if(act==="mirar"){
+    if(!st.conds.includes("mirando"))st.conds.push("mirando");
+    setCombatState(st,npcId);syncTokenMeta();nudge();render();
+    setMsg(`🎯 Mirando em ${tgtNm}! Você ganhou +1d6 no próximo teste de Pontaria.`);
+    if(OBR)OBR.notification.show(`${tokenName(thisToken)} está mirando em ${tgtNm} (+1d6 Pontaria)`).catch(()=>{});
+    return;
+  }
+
+  if(act==="defender"){
+    if(!st.conds.includes("defendendo"))st.conds.push("defendendo");
+    setCombatState(st,npcId);syncTokenMeta();nudge();render();
+    rollSkillFromMenu("Acrobacia",{
+      title:"Defender-se (+1d6)",
+      extraD6:1,
+      note:"Oposto ao teste de ataque sofrido. Se vencer, não sofre dano!"
+    });
+    return;
+  }
+
+  if(act==="erguer_padrao"){
+    st.conds=st.conds.filter(c=>c!=="caido");
+    setCombatState(st,npcId);syncTokenMeta();nudge();render();
+    setMsg("🦵 Ergueu-se com ação padrão (condição Caído removida).");
+    return;
+  }
+
+  if(act==="erguer_livre"){
+    st.conds=st.conds.filter(c=>c!=="caido");
+    if(!st.conds.includes("erguer_livre"))st.conds.push("erguer_livre");
+    setCombatState(st,npcId);syncTokenMeta();nudge();render();
+    setMsg("⚡ Ação livre usada: −1 passo aplicado em todos os testes nesta rodada.");
+    return;
+  }
+
+  if(act==="jogar_chao"){
+    if(!st.conds.includes("caido"))st.conds.push("caido");
+    setCombatState(st,npcId);syncTokenMeta();nudge();render();
+    setMsg("⏬ Jogou-se no chão! Condição Caído ativada.");
+    return;
+  }
+
+  if(act==="preparar"){
+    if(!st.conds.includes("preparado"))st.conds.push("preparado");
+    setCombatState(st,npcId);syncTokenMeta();nudge();render();
+    setMsg("⏳ Ação preparada! Dispare sua reação quando o evento ocorrer.");
+    if(OBR)OBR.notification.show(`${tokenName(thisToken)} preparou uma ação!`).catch(()=>{});
+  }
+}
+
+/* Renderização da interface */
+function render(){
+  const npcId=activeNpcId();
+  const d=loadSheetData(npcId);
+  const st=getCombatState(npcId);
+  const meta=(thisToken&&thisToken.metadata&&thisToken.metadata[KEY_TOKEN])||{};
+  const isLinked=!!(meta.ownerId||meta.npcId||(d.nome||"").trim());
+
+  const nome=((d.nome||"")+" "+(d.sob||"")).trim()||tokenName(thisToken);
+  $("#nm").textContent=nome;
+  const img=npcId?npcImg(npcId):store.get(LS.img);
+  const av=$("#av");
+  if(img){av.style.backgroundImage=`url(${img})`;av.textContent=""}
+  else if(thisToken&&thisToken.image&&thisToken.image.url){av.style.backgroundImage=`url(${thisToken.image.url})`;av.textContent=""}
+  else{av.style.backgroundImage="none";av.textContent=nome.charAt(0).toUpperCase()||"?"}
+
+  if(isLinked){
+    const pv=parseInt(d.pv,10)||10,pvmax=parseInt(d.pvmax,10)||10;
+    const pd=parseInt(d.pd,10)||10,pdmax=parseInt(d.pdmax,10)||10;
+    $("#sub").textContent=[d.perfil||"Personagem",npcId?"NPC":"Nível "+(d.nivel||1),`Luta d${d["s-Luta"]||4}+d${d["a-"+(d["at-Luta"]||"fis")]||6}`].join(" · ");
+    $("#bars").hidden=false;
+    $("#b-pv").style.width=Math.max(0,Math.min(100,pv/pvmax*100))+"%";
+    $("#t-pv").textContent=`${pv}/${pvmax}`;
+    $("#b-pd").style.width=Math.max(0,Math.min(100,pd/pdmax*100))+"%";
+    $("#t-pd").textContent=`${pd}/${pdmax}`;
+  }else{
+    $("#sub").textContent="Sem ficha vinculada — clique na aba Entrar";
+    $("#bars").hidden=true;
+  }
+
+  /* Pílulas de Buffs / Debuffs ativos no topo */
+  const strip=$("#c-strip");
+  strip.replaceChildren();
+  const activeDefs=st.conds.map(id=>COND_DEFS.find(x=>x.id===id)).filter(Boolean);
+  if(st.stepMod!==0){
+    const p=document.createElement("span");
+    p.className="c-pill "+(st.stepMod>0?"buff":"debuff");
+    p.textContent=`Passo Manual: ${st.stepMod>0?"+":"−"}${Math.abs(st.stepMod)}`;
+    p.title="Clique para zerar os passos manuais";
+    p.onclick=()=>{st.stepMod=0;setCombatState(st,npcId);syncTokenMeta();nudge();render()};
+    strip.append(p);
+  }
+  if(st.d6Mod!==0){
+    const p=document.createElement("span");
+    p.className="c-pill "+(st.d6Mod>0?"buff":"debuff");
+    p.textContent=`Dados Extras: ${st.d6Mod>0?"+":"−"}${Math.abs(st.d6Mod)}d6`;
+    p.title="Clique para zerar os d6 manuais";
+    p.onclick=()=>{st.d6Mod=0;setCombatState(st,npcId);syncTokenMeta();nudge();render()};
+    strip.append(p);
+  }
+  activeDefs.forEach(c=>{
+    const p=document.createElement("span");
+    p.className="c-pill "+c.tipo;
+    p.textContent=c.nome+" ✕";
+    p.title=c.desc+" (Clique para remover)";
+    p.onclick=()=>{
+      st.conds=st.conds.filter(x=>x!==c.id);
+      setCombatState(st,npcId);syncTokenMeta();nudge();render();
+    };
+    strip.append(p);
+  });
+  strip.hidden=strip.children.length===0;
+
+  /* Caixa especial quando está Agarrando ou Agarrado */
+  const gBox=$("#grapple-ui");
+  gBox.replaceChildren();
+  const isGrappling=st.conds.includes("agarrando")||!!st.grapplingId;
+  const isGrappled=st.conds.includes("agarrado")||!!(thisToken&&thisToken.attachedTo);
+  if(isGrappling||isGrappled){
+    gBox.hidden=false;
+    const box=document.createElement("div");
+    box.className="grapple-box";
+    const vic=sceneTokens.find(x=>x.id===st.grapplingId);
+    const title=document.createElement("b");
+    title.textContent=isGrappling?`🤼 Agarrando ${vic?tokenName(vic):"Alvo"} (Attach Ativo)`:`⛓️ Você está Agarrado! (−1 passo nos ataques)`;
+    const btns=document.createElement("div");
+    btns.className="grapple-btns";
+    if(isGrappling){
+      const bCrush=document.createElement("button");
+      bCrush.textContent="💥 Esmagar / Sufocar (Dano = RA)";
+      bCrush.onclick=()=>rollSkillFromMenu("Luta",{title:"Esmagar/Sufocar (Agarrar)",showDmg:true,note:"Se vencer o teste oposto de agarrar, causa dano de impacto igual à Rolagem Alta!"});
+      const bAtk=document.createElement("button");
+      bAtk.textContent="🗡️ Atacar c/ Mão Livre";
+      bAtk.onclick=()=>rollSkillFromMenu("Luta",{title:"Ataque c/ Mão Livre",dt:7,showDmg:true});
+      btns.append(bCrush,bAtk);
+    }
+    if(isGrappled){
+      const bEsc=document.createElement("button");
+      bEsc.textContent="🤸 Tentar se Soltar (Luta/Acrobacia)";
+      bEsc.onclick=()=>rollSkillFromMenu("Luta",{title:"Escapar de Agarrar",note:"Teste de manobra oposto (ação padrão) para se soltar!"});
+      btns.append(bEsc);
+    }
+    const bFree=document.createElement("button");
+    bFree.textContent="🔓 Soltar / Desanexar Tokens";
+    bFree.onclick=releaseGrapple;
+    btns.append(bFree);
+    box.append(title,btns);
+    gBox.append(box);
+  }else{
+    gBox.hidden=true;
+  }
+
+  /* Controles de Buff/Debuff na aba 3 */
+  $("#m-step-val").textContent=(st.stepMod>0?"+":"")+st.stepMod+" passo(s)";
+  $("#m-d6-val").textContent=(st.d6Mod>0?"+":"")+st.d6Mod+"d6";
+
+  const cGrid=$("#cond-grid");
+  cGrid.replaceChildren();
+  COND_DEFS.forEach(c=>{
+    const on=st.conds.includes(c.id);
+    const b=document.createElement("button");
+    b.className=`cond-btn ${c.tipo}${on?" on":""}`;
+    b.innerHTML=`<b>${on?"✓ ":""}${c.nome}</b><small>${c.desc}</small>`;
+    b.onclick=()=>{
+      if(on)st.conds=st.conds.filter(x=>x!==c.id);
+      else st.conds.push(c.id);
+      setCombatState(st,npcId);syncTokenMeta();nudge();render();
+    };
+    cGrid.append(b);
+  });
+
+  /* Aba Entrar (Mestre vê opção de NPCs) */
+  if(role==="GM"){
+    $("#gm-npc-bind").hidden=false;
+    const sel=$("#sel-npc"),curV=sel.value;
+    sel.innerHTML=`<option value="">(Escolha um NPC para vincular)</option>`+npcs().map(n=>`<option value="${n.id}">${npcInfo(n.id).nome}</option>`).join("");
+    if(curV)sel.value=curV;
+  }
+
+  /* Abas visíveis */
+  $$("nav.tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab));
+  $("#v-manobras").hidden=tab!=="manobras";
+  $("#v-geral").hidden=tab!=="geral";
+  $("#v-conds").hidden=tab!=="conds";
+  $("#v-entrar").hidden=tab!=="entrar";
+}
+
+/* Atualiza a lista de tokens da cena para escolher quem Agarrar / Atacar */
+async function refreshTokens(){
+  if(!OBR)return;
+  const items=await OBR.scene.items.getItems(it=>it.layer==="CHARACTER");
+  sceneTokens=items;
+  thisToken=items.find(x=>x.id===tokenId)||items[0]||null;
+  const others=items.filter(x=>!thisToken||x.id!==thisToken.id);
+  const sel=$("#tgt"),prev=sel.value;
+  if(!others.length){
+    sel.innerHTML=`<option value="">(Coloque outro token de Personagem na cena)</option>`;
+  }else{
+    /* Ordena pelos mais próximos do token atual */
+    const mp=(thisToken&&thisToken.position)||{x:0,y:0};
+    others.sort((a,b)=>{
+      const da=Math.hypot((a.position?.x||0)-mp.x,(a.position?.y||0)-mp.y);
+      const db=Math.hypot((b.position?.x||0)-mp.x,(b.position?.y||0)-mp.y);
+      return da-db;
+    });
+    sel.innerHTML=others.map((it,i)=>{
+      const m=it.metadata&&it.metadata[KEY_TOKEN];
+      const condTxt=m&&m.conds&&m.conds.length?` [${m.conds.join(", ")}]`:"";
+      return `<option value="${it.id}">Token ${i+1}: ${tokenName(it)}${condTxt}</option>`;
+    }).join("");
+    if(prev&&others.some(x=>x.id===prev))sel.value=prev;
+  }
+  render();
+}
+
+/* Eventos de UI */
+$$("nav.tabs button").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});
+$$("[data-act]").forEach(b=>b.onclick=()=>handleAction(b.dataset.act));
+
+$("#b-dist").onclick=()=>{
+  distLong=!distLong;
+  $("#b-dist").textContent=distLong?"Longo (DT 10)":"Curto (DT 7)";
+  $("#b-dist").classList.toggle("on",!distLong);
+};
+
+$("#q-luta").onclick=()=>rollSkillFromMenu("Luta",{title:"Teste de Luta",dt:7,showDmg:true});
+$("#q-pont").onclick=()=>rollSkillFromMenu("Pontaria",{title:"Teste de Pontaria",dt:distLong?10:7,showDmg:true});
+$("#q-acro").onclick=()=>rollSkillFromMenu("Acrobacia",{title:"Teste de Acrobacia"});
+
+$("#b-open-ficha").onclick=()=>openFicha(OBR,activeNpcId());
+$("#b-open-sheet2").onclick=()=>openFicha(OBR,activeNpcId());
+
+$("#m-step-dn").onclick=()=>{const n=activeNpcId(),s=getCombatState(n);s.stepMod=Math.max(-5,(+s.stepMod||0)-1);setCombatState(s,n);syncTokenMeta();nudge();render()};
+$("#m-step-up").onclick=()=>{const n=activeNpcId(),s=getCombatState(n);s.stepMod=Math.min(5,(+s.stepMod||0)+1);setCombatState(s,n);syncTokenMeta();nudge();render()};
+$("#m-d6-dn").onclick=()=>{const n=activeNpcId(),s=getCombatState(n);s.d6Mod=Math.max(-4,(+s.d6Mod||0)-1);setCombatState(s,n);syncTokenMeta();nudge();render()};
+$("#m-d6-up").onclick=()=>{const n=activeNpcId(),s=getCombatState(n);s.d6Mod=Math.min(4,(+s.d6Mod||0)+1);setCombatState(s,n);syncTokenMeta();nudge();render()};
+
+/* Botão ENTRAR: vincula a ficha do link ao token e coloca o jogador na mesa */
+$("#b-bind-me").onclick=async()=>{
+  store.set(LS.joined,"1");
+  const st=getCombatState(null);
+  st.tokenId=tokenId;
+  setCombatState(st,null);
+  await syncTokenMeta({ownerId:myId,npcId:""});
+  nudge();
+  await refreshTokens();
+  tab="manobras";
+  render();
+  setMsg("✓ Sua ficha entrou neste token! Clique em Lutar ou escolha uma manobra.");
+};
+
+$("#b-bind-npc").onclick=async()=>{
+  const npcId=$("#sel-npc").value;
+  if(!npcId){setMsg("Escolha um NPC na lista primeiro.");return}
+  const st=getCombatState(npcId);
+  st.tokenId=tokenId;
+  setCombatState(st,npcId);
+  const d=npcSheet(npcId);
+  await OBR.scene.items.updateItems([tokenId],items=>{
+    for(const it of items){
+      it.metadata[KEY_TOKEN]={
+        ownerId:myId,
+        npcId,
+        nome:((d.nome||"")+" "+(d.sob||"")).trim()||"NPC",
+        pv:parseInt(d.pv,10)||10,pvmax:parseInt(d.pvmax,10)||10,
+        pd:parseInt(d.pd,10)||10,pdmax:parseInt(d.pdmax,10)||10,
+        conds:st.conds,stepMod:st.stepMod,d6Mod:st.d6Mod,
+        t:Date.now()
+      };
+    }
+  });
+  nudge();
+  await refreshTokens();
+  tab="manobras";
+  render();
+  setMsg("✓ Ficha do NPC vinculada a este token!");
+};
+
+$("#b-unbind").onclick=async()=>{
+  if(!OBR||!tokenId)return;
+  await OBR.scene.items.updateItems([tokenId],items=>{
+    for(const it of items)delete it.metadata[KEY_TOKEN];
+  });
+  await refreshTokens();
+  setMsg("Vínculo removido deste token.");
+};
+
+addEventListener("storage",()=>render());
+
+(async()=>{
+  render();
+  OBR=await loadOBR();
+  if(!OBR||!(await ready(OBR))){setMsg("Abra dentro do Owlbear Rodeo.");return}
+  try{
+    role=await OBR.player.getRole();
+    myId=OBR.player.id;
+    myName=await OBR.player.getName();
+    myColor=await OBR.player.getColor();
+  }catch(e){}
+  await refreshTokens();
+  OBR.scene.items.onChange(()=>refreshTokens());
+})();
+</script>
+</body>
+</html>
