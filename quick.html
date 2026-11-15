@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rolar dados</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:transparent;font:16px/1.2 "Barlow Condensed",system-ui,sans-serif;color:#eef0ee}
+/* ícone: bem sutil, só aparece de verdade quando o mouse chega perto */
+#ic{position:fixed;inset:0;display:grid;place-items:center;border:0;padding:0;margin:0;background:transparent;cursor:pointer;opacity:.32;transition:opacity .2s,transform .2s}
+#ic:hover,#ic:focus-visible{opacity:.95;transform:scale(1.12);outline:none}
+#ic svg{width:22px;height:22px;stroke:#f0e6c8;fill:none;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round;filter:drop-shadow(0 1px 3px #000)}
+/* caixa de digitar */
+#bx{position:fixed;inset:0;display:flex;align-items:center;gap:8px;padding:0 8px;background:#0f1213f2;border:1px solid #8b9594;box-sizing:border-box}
+#bx[hidden],#ic[hidden]{display:none}
+#in{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid #8b9594;color:#eef0ee;font:600 1.1rem "Barlow Condensed",system-ui,sans-serif;letter-spacing:.04em;padding:3px 2px;outline:none}
+#in:focus{border-bottom-color:#f0d28a}
+#in.err{border-bottom-color:#ff6b6b}
+#go{font:700 .95rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#15191a;background:#f0d28a;border:0;padding:5px 10px;cursor:pointer}
+#go:hover{background:#fff}
+</style>
+</head>
+<body>
+<button id="ic" type="button" title="Rolar dados (ex.: 1d4, 2d6+3)" aria-label="Rolar dados"><svg viewBox="0 0 24 24"><path d="M12 2.5 20.5 7.5v9L12 21.5 3.5 16.5v-9z"/><path d="M12 2.5v6.5m0 0-8.5-1.5M12 9l8.5-1.5M12 9v12.5M12 9l-5.5 8.5M12 9l5.5 8.5"/></svg></button>
+<div id="bx" hidden><input id="in" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="1d4  ou  2d6+3" aria-label="Rolagem"><button id="go" type="button">Rolar</button></div>
+<script type="module">
+/* Dois modos, na mesma página:
+   - ?mode=icon: o dadinho sutil do lado da mesa (um popover pequeno). Clicar pede ao segundo plano para abrir a caixa;
+   - ?mode=in: a caixa de digitar. Enter rola: o pedido vai para a camada de dados, que sorteia e manda para todos. */
+import {loadOBR,ready} from "./obr.js?v=2.6.0";
+const qs=new URLSearchParams(location.search),mode=qs.get("mode")==="in"?"in":"icon",id=qs.get("id")||"quick",pop=qs.get("pop")||"";
+const $=s=>document.querySelector(s);
+let OBR=null;
+const lsg=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const STD=[4,6,8,10,12,20],JJ=[4,6,8,10,12,14,16,18,20];
+const faces=()=>{let d={};try{d=JSON.parse(lsg("ficha-ordem")||"{}")||{}}catch(e){}return d.jujutsu?JJ:STD};
+/* "1d4", "2d6+3", "1d20+1d8-2" (mesmo formato da rolagem personalizada da ficha) */
+function parse(t){
+  t=String(t).toLowerCase().replace(/\s+/g,"").replace(/[−–]/g,"-");
+  if(!t)throw"Escreva, por exemplo, 1d4";
+  if(!/^[+-]?(\d*d\d+|\d+)([+-](\d*d\d+|\d+))*$/.test(t))throw"Use o formato 1d4+1d6+2";
+  const dice=[];let mod=0;
+  for(const m of t.matchAll(/([+-]?)(?:(\d*)d(\d+)|(\d+))/g)){
+    const sg=m[1]==="-"?-1:1;
+    if(m[3]){
+      const n=m[2]===""?1:+m[2],f=+m[3];
+      if(!faces().includes(f))throw"d"+f+" não existe aqui";
+      if(n<1)throw"Quantidade inválida";
+      for(let i=0;i<n;i++)dice.push([sg,f]);
+    }else mod+=sg*+m[4];
+  }
+  if(!dice.length)throw"Inclua um dado";
+  if(dice.length>8)throw"No máximo 8 dados";
+  if(Math.abs(mod)>999)throw"Modificador grande demais";
+  return{dice,mod};
+}
+if(mode==="icon"){
+  $("#ic").onclick=()=>{OBR&&OBR.broadcast.sendMessage("ordem.hud/quick",{open:true},{destination:"LOCAL"}).catch(()=>{})};
+}else{
+  $("#ic").hidden=true;$("#bx").hidden=false;
+  const inp=$("#in"),close=()=>{if(OBR&&pop)OBR.popover.close(pop).catch(()=>{})};
+  try{inp.value=lsg("tray-quick")||""}catch(e){}
+  const go=()=>{
+    let p;try{p=parse(inp.value)}catch(e){inp.classList.add("err");inp.title=typeof e==="string"?e:"Expressão inválida";inp.placeholder=inp.title;return}
+    try{localStorage.setItem("tray-quick",inp.value)}catch(e){}
+    if(OBR)OBR.broadcast.sendMessage("ordem.hud/quickroll",{dice:p.dice,mod:p.mod,exp:inp.value.replace(/\s+/g,"")},{destination:"LOCAL"}).catch(()=>{});
+    close();
+  };
+  inp.oninput=()=>{inp.classList.remove("err");inp.title=""};
+  inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();go()}else if(e.key==="Escape")close()};
+  $("#go").onclick=go;
+  setTimeout(()=>{inp.focus();inp.select()},60);
+}
+(async()=>{
+  OBR=await loadOBR();
+  if(!OBR||!(await ready(OBR))){OBR=null;return}
+  if(mode==="icon"){const alive=()=>OBR.broadcast.sendMessage("ordem.hud/alive",{id},{destination:"LOCAL"}).catch(()=>{});alive();setInterval(alive,5000)}
+})();
+</script>
+</body>
+</html>

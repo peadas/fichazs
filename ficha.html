@@ -371,6 +371,8 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
   <div class="rp" role="dialog" aria-label="Settings">
     <h2><span class="tag">Settings</span><button class="ib" id="sclose" type="button" aria-label="Fechar" title="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></h2>
     <div class="opt"><button class="sw" id="jj" type="button" role="switch" aria-checked="false" aria-label="Jujutsu"><i></i></button><span class="ol">Jujutsu</span></div>
+    <div class="opt"><button class="sw" id="trayon" type="button" role="switch" aria-checked="false" aria-label="Mesa de dados sempre visível"><i></i></button><span class="ol">Mesa de dados sempre visível</span></div>
+    <p class="hint">Ligado, a mesa de dados fica na tela do Owlbear o tempo todo, com o histórico em cima e um dadinho do lado para rolar sem abrir a ficha (digite 1d4, 2d6+3…). Desligado, ela só aparece quando um dado gira. Vale só para este navegador.</p>
   </div>
 </div>
 <div id="rels" hidden>
@@ -425,8 +427,8 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
-<script src="engine.js?v=2.5.0"></script>
-<script src="efeitos.js?v=2.5.0"></script>
+<script src="engine.js?v=2.6.0"></script>
+<script src="efeitos.js?v=2.6.0"></script>
 <input type="file" id="file" accept="image/*" hidden>
 
 <script>
@@ -645,6 +647,13 @@ const TRAP=(n,H,r)=>()=>{const p=[],T=[0,H,0],B=[0,-H,0],U=[],L=[],c=Math.cos(Ma
   for(let i=0;i<n;i++){const a=i*Math.PI*2/n,b=a+Math.PI/n;U.push([Math.cos(a)*r,h,Math.sin(a)*r]);L.push([Math.cos(b)*r,-h,Math.sin(b)*r])}
   for(let i=0;i<n;i++){const j=(i+1)%n;p.push(...T,...U[i],...L[i],...T,...L[i],...U[j],...B,...L[i],...U[j],...B,...U[j],...L[j])}
   const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g};
+/* d16: bipirâmide octogonal (16 triângulos, como no manual); d14 e d18 seguem como trapezoedros */
+const BIPY=n=>()=>{const T=[0,1,0],B=[0,-1,0],E=[],P=[],Q=[];
+  for(let i=0;i<n;i++){const a=i*Math.PI*2/n;E.push([Math.cos(a),0,Math.sin(a)])}
+  for(let i=0;i<n;i++){const j=(i+1)%n;P.push(...T,...E[j],...E[i])}
+  for(let i=0;i<n;i++){const j=(i+1)%n;Q.push(...B,...E[i],...E[j])}
+  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(P.concat(Q),3));g.computeVertexNormals();return g};
+const NUM=(f,i)=>typeof ENG!=="undefined"?ENG.NUM(f,i):i+1;
 const GEO={
  4:()=>new THREE.TetrahedronGeometry(1.15),
  6:()=>new THREE.BoxGeometry(1.35,1.35,1.35),
@@ -655,7 +664,7 @@ const GEO={
   const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g},
  12:()=>new THREE.DodecahedronGeometry(1.05),
  14:TRAP(7,1.1,.95),
- 16:TRAP(8,1.1,.95),
+ 16:BIPY(8),
  18:TRAP(9,1.1,.95),
  20:()=>new THREE.IcosahedronGeometry(1.1)
 };
@@ -734,8 +743,13 @@ function makeDie(f,pv,rad){
         pl.quaternion.setFromAxisAngle(F.n,a).multiply(q);grp.add(pl);
       });
     }else{
-      const s=F.R*1.15,pl=new THREE.Mesh(new THREE.PlaneGeometry(s,s),numMat(i+1,pv));
-      pl.position.copy(F.c).addScaledVector(F.n,.025);pl.quaternion.copy(q);grp.add(pl);
+      const s=F.R*1.15,pl=new THREE.Mesh(new THREE.PlaneGeometry(s,s),numMat(NUM(f,i),pv));
+      pl.position.copy(F.c).addScaledVector(F.n,.025);pl.quaternion.copy(q);
+      if(f===14||f===16||f===18){      // número com o alto virado para a ponta do dado
+        const ap=F.vi.map(vi=>V[vi]).reduce((m,v)=>Math.abs(v.y)>Math.abs(m.y)?v:m),yv=ap.clone().sub(F.c);yv.addScaledVector(F.n,-yv.dot(F.n));
+        if(yv.lengthSq()>1e-8){yv.normalize();pl.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3().crossVectors(yv,F.n),yv,F.n))}
+      }
+      grp.add(pl);
     }
   });
   grp.add(new THREE.Mesh(mk(all),M[pv||"gold"]));
@@ -1009,6 +1023,15 @@ function applyJJ(){
   $("#cok").textContent=steps().map(x=>"d"+x).join(", ");
 }
 $("#jj").onclick=()=>{d.jujutsu=!d.jujutsu;save();applyJJ();dice()};
+/* Settings: mesa de dados sempre visível (fica neste navegador; a camada de dados lê o mesmo valor) */
+const trayAlways=()=>{try{return localStorage.getItem("tray-always")==="1"}catch(e){return false}};
+function trayUI(){$("#trayon").setAttribute("aria-checked",String(trayAlways()))}
+$("#trayon").onclick=()=>{
+  try{localStorage.setItem("tray-always",trayAlways()?"0":"1")}catch(e){}
+  trayUI();
+  const X=window.OBRX;if(X)X.OBR.broadcast.sendMessage("ordem.hud/cfg",{},{destination:"LOCAL"}).catch(()=>{});
+};
+trayUI();
 $("#setbtn").onclick=()=>{$("#sett").hidden=false};
 $("#sclose").onclick=()=>{$("#sett").hidden=true};
 $("#sett").onclick=e=>{if(e.target.id==="sett")$("#sett").hidden=true};
@@ -1187,7 +1210,7 @@ function throwDice(list,pv,rb,render){
         const rd=bodies.map(b=>PH.readout(b,b.f===4));
         if(rd.some(r=>r.tilt>PH.P.TILT)&&kicks<3&&el<8000){
           kicks++;rd.forEach((r,i)=>{if(r.tilt>PH.P.TILT)PH.kick(bodies[i],rnd)});W.slowT=0;
-        }else{show(list.map(([n,f],i)=>[n,f,rd[i].idx+1]));return}
+        }else{show(list.map(([n,f],i)=>[n,f,NUM(f,rd[i].idx)]));return}
       }
       anim=requestAnimationFrame(frame);
     }catch(e){show(fb())}
@@ -1241,8 +1264,8 @@ window.fichaRecarregar=()=>{
 };
 </script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.5.0";
-import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.5.0";
+import {loadOBR,ready} from "./obr.js?v=2.6.0";
+import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.6.0";
 (async()=>{
   if(document.documentElement.classList.contains("view"))return;
   const OBR=await loadOBR();

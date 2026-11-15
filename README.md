@@ -33,7 +33,7 @@ Avatar > Profile > Extensions > Add Extension > cole a URL do manifest. Cada jog
 
 ## v2.2: ícones, Settings e cartões na tela
 - A barra de baixo da ficha agora é só ícones: rolar dados, relações, **Settings** (engrenagem), exportar, importar e limpar (a lixeira fica vermelha e pede um segundo clique).
-- **Settings > Jujutsu**: ligado, a perícia Bruxaria vira **Maldição** e os passos de dado ganham d14, d16 e d18 (d4 a d20), inclusive no pavor e em *Rolar dados*. A escolha fica salva na ficha.
+- **Settings > Jujutsu**: ligado, a perícia Bruxaria vira **Maldição** e os passos de dado ganham d14, d16 e d18 (d4 a d20), inclusive no pavor e em *Rolar dados* (a forma 3D deles está descrita na v2.6). A escolha fica salva na ficha.
 - **Cartões na tela do Owlbear**: quem entra na mesa aparece direto na tela de todos com foto, nome, PV e PD, sem fundo (NPCs mostrados pelo mestre também). No menu da Mesa: interruptor **Cartões na tela** e botão **Organizar** (arraste cada cartão para onde quiser, **− / +** muda o tamanho, **Restaurar**, **Concluir** ou Esc). A posição é de cada jogador, salva no navegador dele.
 - Os dados 3D e os cartões usam a mesma camada transparente (`overlay.html`), que agora fica aberta enquanto os cartões estiverem ligados.
 
@@ -59,9 +59,17 @@ Embaixo dos atributos há um cartão com a habilidade do **Perfil** escolhido no
 - **Foco** (botão com ícone de alvo, acima do Pavor): ligado, a mesa mostra o círculo **2x** (`mesa2x.webp`). O dado cujo **centro parar dentro do círculo** vale o **dobro** (ex.: 1d4 + 1d6, o d4 caiu no 2x com 4: vira 8). O dado fica dourado com **×2**, a mesa brilha, e o valor do teste, crítico e a nota *"Foco: … caiu no 2×"* já usam o valor dobrado. Não existe sorteio escondido: é a física que decide, então a chance é pequena (cerca de 3% por dado) e totalmente aleatória. Para mudar o tamanho do círculo, edite `ENG.FOCO.r` em `engine.js`.
 - A física agora é um hexágono (paredes calculadas a partir da imagem); todos os computadores continuam chegando ao mesmo resultado pela mesma semente.
 
+## v2.6: resultado no nome, histórico, mesa sempre visível, d14/d16/d18 e névoa Jujutsu
+- **Resultado ao lado do nome:** no cartão, os dados saem na mesma linha do nome (ex.: `da da  ▲1 ■1 = 2`), com crítico em amarelo e falha crítica em vermelho; ficam até a próxima rolagem.
+- **Histórico em cima da mesa de dados:** sem fundo, só o nome de quem rolou e os resultados. Aparecem no máximo **3 linhas**; a nova entra por baixo e as antigas sobem e somem. Sem a mesa fixa, cada linha some sozinha depois de uns 14 s.
+- **Settings > Mesa de dados sempre visível** (também no menu da Mesa): ligado, a mesa fica sempre na tela (e mesmo com *Cartões na tela* desligado). Desligado, ela só aparece quando um dado gira. Fica salvo por navegador (`tray-always`).
+- **Dadinho do lado da mesa:** ícone bem sutil à esquerda da mesa (à direita se não houver espaço). Clique, digite `1d4`, `2d6+3`, `1d20+1d8-2`… e Enter: o dado cai para todos, com o nome e o histórico normais. Com *Jujutsu* ligado aceita também d14, d16 e d18. Arquivo: `quick.html`.
+- **d14, d16 e d18 de verdade no 3D:** o **d16** é a bipirâmide de 16 triângulos do manual (faces opostas somam 17); o **d14** e o **d18** são trapezoedros (como o d10) com faces opostas somando 15 e 19, então sempre param retos. Os números ficam com o alto virado para a ponta do dado, e o resultado lido é o número da face de cima.
+- **Névoa Jujutsu:** com Jujutsu ligado, a névoa da ficha e do menu fica translúcida e azulada (energia amaldiçoada).
+
 ## O que mudou
 - Mesa e ficha agora são **uma extensão só**, no mesmo domínio. Por isso a ficha é lida direto do navegador e sumiram: `netlify.toml`, proxy `/ficha/*`, `sync.js`, função `ficha-sync`, banco Postgres e Drizzle.
 - O que a Mesa mostra é publicado nos metadados do jogador no Owlbear (some quando o jogador sai da sala).
 
 ## Arquivos
-`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `mesa.webp` + `mesa2x.webp` (mesa de dados) · `gm.html` (ficha do jogador aberta pelo mestre) · `efeitos.js` · `nevoa.png` · `moldura-menu.jpg` · `mesa-lib.js` · `obr.js` · `icon.svg`
+`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `mesa.webp` + `mesa2x.webp` (mesa de dados) · `gm.html` (ficha do jogador aberta pelo mestre) · `efeitos.js` · `nevoa.png` · `moldura-menu.jpg` · `quick.html` (ícone e caixa de rolagem rápida) · `mesa-lib.js` · `obr.js` · `icon.svg`

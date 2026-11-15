@@ -22,15 +22,28 @@ body.arr #tray{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outl
 .dd.dbl{background:#f2c230;color:#2a1d00}
 .x2m{font:800 .8rem Cinzel,serif;color:#f2c230;margin-left:-3px;text-shadow:0 1px 3px #000}
 .rv.x2 strong{color:#f2c230}
-/* resultado do jogador no cartão dele (fica até a próxima rolagem) */
-.hr{display:flex;flex-direction:column;gap:3px;justify-content:center;border-left:2px solid var(--c,#ecc962);padding-left:10px;min-width:70px;text-shadow:0 0 3px #000,0 1px 5px #000}
-.hr.pop{animation:rpop .45s ease-out}
+/* resultado do jogador no cartão dele: na linha do nome, logo depois dele (fica até a próxima rolagem) */
+.hl{display:flex;align-items:center;gap:10px;min-height:30px}
+.hres{display:flex;align-items:center;gap:8px;text-shadow:0 0 3px #000,0 1px 5px #000}
+.hres:empty{display:none}
+.hres.pop{animation:rpop .45s ease-out}
 @keyframes rpop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
-.hr .hrt{font:600 .85rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#c9d0cf;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hr .dz{gap:5px}
-.hr .dd{width:30px;height:30px;font-size:.92rem}.hr .dd.s2{font-size:.78rem}
-.hr .tot{font-size:1.5rem}
-.hr .crit{font-size:.95rem;margin:0}
+.hres .dz{gap:5px;flex-wrap:nowrap}
+.hres .dd{width:28px;height:28px;font-size:.85rem}.hres .dd.s2{font-size:.72rem}
+.hres .tot{font-size:1.3rem}
+.hres .x2m{font-size:.7rem}
+/* histórico: fica em cima da mesa de dados, sem fundo; só 3 linhas, as antigas sobem e somem */
+#hist{position:fixed;display:flex;flex-direction:column;justify-content:flex-end;gap:3px;pointer-events:none;max-width:min(560px,94vw);z-index:2}
+#hist:empty{display:none}
+#hist.push{animation:hpush .32s ease-out}
+@keyframes hpush{from{transform:translateY(16px)}to{transform:none}}
+.hh{display:flex;align-items:center;gap:8px;white-space:nowrap;text-shadow:0 0 3px #000,0 1px 5px #000,0 0 12px #000;transition:opacity .8s}
+.hh.n1{opacity:.55}.hh.n2{opacity:.8}.hh.old{opacity:.18}
+.hh .hw{font:700 1.05rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.07em;max-width:190px;overflow:hidden;text-overflow:ellipsis}
+.hh .dz{gap:4px;flex-wrap:nowrap}
+.hh .dd{width:24px;height:24px;font-size:.74rem}.hh .dd.s2{font-size:.62rem}
+.hh .tot{font-size:1.1rem}
+.hh .x2m{font-size:.65rem}
 #chips{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;width:max-content;max-width:calc(100% - 24px);pointer-events:none}
 .chip{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 14px;background:#0f1213ee;border:1px solid #8b9594;padding:7px 16px;max-width:min(94vw,760px);box-shadow:0 6px 20px #000a;animation:in .3s ease-out both;transition:opacity .5s,transform .5s}
 .chip .who{margin:0;font:700 1.2rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.08em}
@@ -98,17 +111,18 @@ body.arr #hbar{display:flex}
 </style>
 </head>
 <body>
-<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.5.0" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.5.0" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
+<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.6.0" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.6.0" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
+<div id="hist" aria-hidden="true"></div>
 <div id="hud" aria-hidden="true"></div>
 <div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
 <div id="hbar"><span>Arraste os cartões e a mesa</span><button id="t-menos" title="Mesa menor" aria-label="Mesa menor">Mesa −</button><button id="t-mais" title="Mesa maior" aria-label="Mesa maior">Mesa +</button><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js?v=2.5.0"></script>
+<script src="engine.js?v=2.6.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.5.0";
-import {KEY,npcsOf} from "./mesa-lib.js?v=2.5.0";
+import {loadOBR,ready} from "./obr.js?v=2.6.0";
+import {KEY,npcsOf} from "./mesa-lib.js?v=2.6.0";
 const $=s=>document.querySelector(s);
-const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1";
+const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",KEEP=HUD||qs.get("tray")==="1";
 const CH=ENG.CH,HOLD=4500,CHIP_LIFE=9000;
 let OBR=null,received=0,idleTimer=0;
 const queue=[];let cur=null,raf=0,raf2=0;
@@ -194,8 +208,13 @@ function makeDie(f,kind){
         pl.quaternion.setFromAxisAngle(F.n,an).multiply(q);grp.add(pl);
       });
     }else{
-      const s=F.R*1.15,pl=new THREE.Mesh(new THREE.PlaneGeometry(s,s),numMat(i+1,kind));
-      pl.position.copy(F.c).addScaledVector(F.n,.025);pl.quaternion.copy(q);grp.add(pl);
+      const s=F.R*1.15,pl=new THREE.Mesh(new THREE.PlaneGeometry(s,s),numMat(ENG.NUM(f,i),kind));
+      pl.position.copy(F.c).addScaledVector(F.n,.025);pl.quaternion.copy(q);
+      if(f===14||f===16||f===18){      // número com o alto virado para a ponta do dado
+        const ap=F.vi.map(vi=>a.V[vi]).reduce((m,v)=>Math.abs(v.y)>Math.abs(m.y)?v:m),yv=ap.clone().sub(F.c);yv.addScaledVector(F.n,-yv.dot(F.n));
+        if(yv.lengthSq()>1e-8){yv.normalize();pl.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3().crossVectors(yv,F.n),yv,F.n))}
+      }
+      grp.add(pl);
     }
   });
   grp.add(new THREE.Mesh(mk(all),M[kind||"gold"]));
@@ -271,10 +290,12 @@ function diceRow(p){
   });
   return dz;
 }
-function totalEl(p){
+function totalEl(p,compact){
   const tr=(p.rows||[]).filter(r=>r.l==="Valor do teste"||r.l==="Total").pop();
   if(!tr)return null;
-  const t=el("span","tot"+(p.crit?" "+p.crit.c:""));t.append(el("small",null,tr.l==="Total"?"Total":"Valor"),document.createTextNode(tr.v));return t;
+  const t=el("span","tot"+(p.crit?" "+p.crit.c:""));
+  if(!compact)t.append(el("small",null,tr.l==="Total"?"Total":"Valor"));
+  t.append(document.createTextNode(compact?"= "+tr.v:tr.v));return t;
 }
 /* aviso temporário no topo (rolagens do mestre/NPC, ou de quem não tem cartão na tela) */
 function showChip(p){
@@ -292,6 +313,7 @@ function showChip(p){
 let cardRes=null;
 function showResult(p){
   if(OBR&&p.text){try{OBR.notification.show(p.text)}catch(e){}}
+  histAdd(p);
   if(!p.gm&&p.pid&&cardRes&&cardRes(p))return;
   showChip(p);
 }
@@ -357,7 +379,7 @@ function loop(now){
         c.sim.bodies.forEach((b,i)=>{
           const want=c.p.res[i];
           if(c.sim.results[i][2]!==want){
-            const from=c.meshes[i].quaternion.clone(),t=ENG.PH.targetQuat(b,want-1,b.f===4);
+            const from=c.meshes[i].quaternion.clone(),t=ENG.PH.targetQuat(b,b.f===4?want-1:ENG.IDX(b.f,want),b.f===4);
             c.fix.push({i,from,to:new THREE.Quaternion(t[0],t[1],t[2],t[3])});
           }
         });
@@ -393,7 +415,7 @@ function maybeIdle(){
   if(!OBR)return;
   OBR.broadcast.sendMessage(CH.idle,{seen:received,idle:true,mid},{destination:"LOCAL"}).catch(()=>{});
   clearTimeout(idleTimer);
-  if(!HUD)idleTimer=setTimeout(()=>{if(mid)OBR.modal.close(mid).catch(()=>{})},12000);   // garantia: fecha sozinha
+  if(!KEEP)idleTimer=setTimeout(()=>{if(mid)OBR.modal.close(mid).catch(()=>{})},12000);   // garantia: fecha sozinha
 }
 
 
@@ -411,11 +433,13 @@ function placeTray(){
   let x=tpos?tpos.x*innerWidth:innerWidth-w-20,y=tpos?tpos.y*innerHeight:innerHeight-h-20;     // padrão: canto de baixo, à direita
   x=Math.max(0,Math.min(innerWidth-w,x));y=Math.max(0,Math.min(innerHeight-h,y));
   tray.style.left=x+"px";tray.style.top=y+"px";
+  placeHist(x,y,w,h);
 }
 function layoutTray(){placeTray();reportAll()}
 function moveTray(x,y){
   const w=tray.offsetWidth,h=tray.offsetHeight;
   tray.style.left=Math.max(0,Math.min(innerWidth-w,x))+"px";tray.style.top=Math.max(0,Math.min(innerHeight-h,y))+"px";
+  placeHist(parseFloat(tray.style.left),parseFloat(tray.style.top),w,h);
 }
 function saveTray(){
   tpos={x:(parseFloat(tray.style.left)||0)/innerWidth,y:(parseFloat(tray.style.top)||0)/innerHeight};
@@ -431,8 +455,9 @@ function showTray(foco){
   tray.classList.remove("out","hit");tray.classList.add("on");
   placeTray();reportAll();
 }
+const alwaysOn=()=>lsg("tray-always")==="1";
 function hideTray(){
-  if(ARR)return;
+  if(ARR||alwaysOn())return;
   clearTimeout(tHide);tray.classList.add("out");
   tHide=setTimeout(()=>{tray.classList.remove("on","out");reportAll()},380);
 }
@@ -446,13 +471,93 @@ function reportAll(){
     const rects=[];
     if(!ARR){
       document.querySelectorAll("#hud .hc").forEach(c=>{const r=c.querySelector(".hp").getBoundingClientRect();rects.push({id:c.dataset.id,x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)})});
-      if(tray.classList.contains("on")&&!tray.classList.contains("out")){const r=TB[0].getBoundingClientRect();rects.push({id:"tray",x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)})}
+      if(tray.classList.contains("on")&&!tray.classList.contains("out")){
+        const r=tray.getBoundingClientRect();rects.push({id:"tray",x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)});
+        /* ícone de rolar do lado da mesa (esquerda; se não couber, direita) */
+        const S=30;let qx=r.left-S-2;if(qx<2)qx=r.right+2;if(qx+S>innerWidth-2)qx=Math.max(2,r.left+6);
+        rects.push({id:"quick",x:Math.round(qx),y:Math.round(Math.max(2,Math.min(innerHeight-S-2,r.top+r.height/2-S/2))),w:S,h:S});
+      }
     }
     OBR.broadcast.sendMessage("ordem.hud/layout",{rects},{destination:"LOCAL"}).catch(()=>{});
   },200);
 }
+
+/* ---------- histórico em cima da mesa (sem fundo, só 3 linhas) ---------- */
+const histEl=$("#hist"),HMAX=3,HLIFE=14000;
+let hlist=[];
+try{hlist=JSON.parse(lsg("tray-hist")||"[]")}catch(e){hlist=[]}
+hlist=(Array.isArray(hlist)?hlist:[]).map(h=>({p:ENG.clean(h&&h.p),t:+(h&&h.t)||0})).filter(h=>h.p).slice(-HMAX);
+let hbox={x:0,y:0,w:0,h:0};
+function placeHist(x,y,w,h){
+  hbox={x,y,w,h};
+  histEl.style.left=Math.max(4,Math.min(innerWidth-120,x))+"px";
+  if(y>120){histEl.style.top="auto";histEl.style.bottom=(innerHeight-y+2)+"px"}      // em cima da mesa
+  else{histEl.style.bottom="auto";histEl.style.top=(y+h+2)+"px"}                       // sem espaço em cima: embaixo
+}
+function histSave(){lss("tray-hist",JSON.stringify(hlist.map(h=>({p:h.p,t:h.t}))))}
+function histDraw(push){
+  histEl.replaceChildren();
+  const now=Date.now(),n=hlist.length;
+  hlist.forEach((h,i)=>{
+    const p=h.p,r=el("div","hh"+(n-1-i===1?" n1":n-1-i>=2?" n2":"")),w=el("span","hw",p.who);
+    w.style.color=p.color;r.append(w,diceRow(p));
+    const t=totalEl(p,true);if(t)r.append(t);
+    if(!alwaysOn()&&now-h.t>HLIFE-2500)r.classList.add("old");
+    r.title=p.title||"";histEl.append(r);
+  });
+  if(push){histEl.classList.remove("push");void histEl.offsetWidth;histEl.classList.add("push")}
+}
+function histAdd(p){
+  const now=Date.now(),last=hlist[hlist.length-1];
+  /* resultado refeito (Análise, Prontidão): troca a linha da própria rolagem em vez de criar outra */
+  if(!p.anim&&last&&last.p.pid===p.pid&&last.p.who===p.who&&now-last.t<60000)hlist[hlist.length-1]={p,t:now};
+  else hlist.push({p,t:now});
+  while(hlist.length>HMAX)hlist.shift();
+  histSave();histDraw(true);
+}
+setInterval(()=>{
+  if(alwaysOn()||!hlist.length)return;
+  const now=Date.now(),keep=hlist.filter(h=>now-h.t<HLIFE);
+  if(keep.length!==hlist.length){hlist=keep;histSave()}
+  histDraw(false);
+},1000);
+if(!alwaysOn())hlist=hlist.filter(h=>Date.now()-h.t<HLIFE);
+histDraw(false);
+addEventListener("storage",ev=>{
+  if(ev.key!=="tray-always")return;
+  if(alwaysOn()){if(!tray.classList.contains("on")||tray.classList.contains("out"))showTray(false)}
+  else if(!cur&&!queue.length)hideTray();
+  histDraw(false);
+});
+
+/* ---------- rolagem rápida (ícone do lado da mesa): "1d4", "2d6+3"... ---------- */
+let meCache=null;
+async function quickRoll(m){
+  if(!OBR||!m)return;
+  const ok=Array.isArray(m.dice)?m.dice.filter(x=>Array.isArray(x)&&(x[0]===1||x[0]===-1)&&ENG.FACES.includes(+x[1])).slice(0,8):[];
+  if(!ok.length)return;
+  const mod=Math.max(-999,Math.min(999,Math.trunc(+m.mod)||0)),exp=String(m.exp||"").slice(0,30);
+  let sheet={};try{sheet=JSON.parse(lsg("ficha-ordem")||"{}")||{}}catch(e){}
+  if(!meCache){try{meCache={id:OBR.player.id,name:await OBR.player.getName(),color:await OBR.player.getColor(),gm:(await OBR.player.getRole())==="GM"}}catch(e){meCache={id:String(OBR.player.id||""),name:"Jogador",color:"#ecc962",gm:false}}}
+  const who=((sheet.nome||"")+" "+(sheet.sob||"")).trim()||meCache.name||"Jogador";
+  const seed=crypto.getRandomValues(new Uint32Array(1))[0],foco=!!sheet.foco;
+  const list=ok.map(([sg,f])=>[(sg<0?"−":"")+"d"+f,f]);
+  let res,dbl=list.map(()=>false);
+  try{
+    if(!window.THREE)throw new Error("sem three");
+    const sim=new ENG.Sim(list.map(([n,f])=>[n,f]),seed);res=sim.runAll();if(foco)dbl=sim.hits();
+  }catch(e){res=list.map(([n,f])=>[n,f,1+Math.floor(Math.random()*f)]);dbl=list.map(()=>false)}   // os outros jogadores giram o dado até o número certo
+  let tot=mod;
+  const rows=res.map(([n,f,x],i)=>{const v=x*(dbl[i]?2:1);tot+=ok[i][0]*v;return{l:n,v:(ok[i][0]<0?"−":"")+v,c:dbl[i]?"x2":""}});
+  if(mod)rows.push({l:"Modificador",v:(mod>0?"+":"−")+Math.abs(mod),c:""});
+  if(res.length>1||mod)rows.push({l:"Total",v:String(tot),c:"ok"});
+  const title=("Rolagem "+exp).slice(0,40);
+  const payload={id:String(Date.now()),seed,who,color:meCache.color,title,list:list.map(([n,f])=>[n,f]),kinds:list.map(()=>""),res:res.map(r=>r[2]),dbl,foco,pid:String(meCache.id),gm:!!meCache.gm,anim:true,rows,crit:null,note:foco&&dbl.some(Boolean)?"Foco: caiu no 2×":"",text:who+" · "+title+": "+tot};
+  OBR.broadcast.sendMessage(CH.roll,payload,{destination:"ALL"}).catch(()=>{});
+}
 function initTray(){
   let base=null;
+  OBR.broadcast.onMessage("ordem.hud/quickroll",ev=>quickRoll(ev.data));
   OBR.broadcast.onMessage("ordem.hud/drag",ev=>{                 // vem da zona transparente por cima da mesa
     const m=ev.data||{};if(m.id!=="tray")return;
     if(m.ph==="s"){base={x:parseFloat(tray.style.left)||0,y:parseFloat(tray.style.top)||0};tray.classList.add("drag")}
@@ -475,19 +580,19 @@ function initTray(){
   showTray(false);                                               // mostra a mesa vazia para o jogador posicionar
 }
 
+
 function startHud(){
   const box=$("#hud"),cards=new Map();
   const res=new Map();                              // id do jogador -> último resultado (fica até a próxima rolagem)
   try{const o=JSON.parse(lsg("hud-res")||"{}");for(const k in o){const q=ENG.clean(o[k]);if(q)res.set(k,q)}}catch(e){}
   function setRes(c,pop){
-    const old=c.querySelector(".hr");if(old)old.remove();
+    const b=c.querySelector(".hres");if(!b)return;
+    b.replaceChildren();b.className="hres";
     const p=res.get(c.dataset.id);if(!p)return;
-    const b=el("div","hr"+(pop?" pop":""));
-    if(p.title)b.append(el("div","hrt",p.title));
+    b.title=((p.title?p.title+" · ":"")+(p.crit?p.crit.t:"")).trim();
     b.append(diceRow(p));
-    const t=totalEl(p);if(t)b.append(t);
-    if(p.crit)b.append(el("span","crit "+p.crit.c,p.crit.t));
-    c.append(b);
+    const t=totalEl(p,true);if(t)b.append(t);
+    if(pop){void b.offsetWidth;b.classList.add("pop")}
   }
   cardRes=p=>{
     const c=cards.get(p.pid);if(!c)return false;           // sem cartão na tela: o aviso temporário cobre
@@ -512,8 +617,9 @@ function startHud(){
     c.style.setProperty("--c",col);c.replaceChildren();
     const p=el("div","hp");
     if(okImg(e.th))p.style.backgroundImage="url("+e.th+")";else p.textContent=(x.nome||"?").trim().charAt(0).toUpperCase()||"?";
-    const i=el("div","hi"),n=el("div","hn"+(x.npc?" npc":""),x.nome);
-    i.append(n,bar("pvv","PV",num(e.pv,0),num(e.pvmax,10)),bar("pdv","PD",num(e.pd,0),num(e.pdmax,10)));
+    const i=el("div","hi"),n=el("div","hn"+(x.npc?" npc":""),x.nome),hl=el("div","hl");
+    hl.append(n,el("div","hres"));
+    i.append(hl,bar("pvv","PV",num(e.pv,0),num(e.pvmax,10)),bar("pdv","PD",num(e.pd,0),num(e.pdmax,10)));
     c.append(p,i);setRes(c);
   }
   function place(c,i){
@@ -615,6 +721,7 @@ function startHud(){
     OBR.broadcast.onMessage(CH.feed,ev=>{const d=ev.data||{};enqueue(d.p,+d.seq||0)});
     OBR.broadcast.sendMessage(CH.idle,{seen:s0,idle:false,mid},{destination:"LOCAL"}).catch(()=>{});
     initTray();
+    if(alwaysOn()&&!ARR)showTray(false);                       // setting "mesa sempre visível"
     if(HUD)startHud();
   }
   if(qs.get("p")){try{enqueue(ENG.unb64(qs.get("p")),s0)}catch(e){maybeIdle()}}

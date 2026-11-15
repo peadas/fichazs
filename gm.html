@@ -21,8 +21,8 @@ iframe{flex:1;width:100%;border:0;background:#161a1b}
 <div class="bar"><b id="who">Ficha</b><span id="mode">você pode editar; o jogador recebe as mudanças</span><span id="st"></span><span class="sp"></span><button id="close">Fechar</button></div>
 <iframe id="f" title="Ficha do jogador"></iframe>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.5.0";
-import {KEY,pack,unpack} from "./mesa-lib.js?v=2.5.0";
+import {loadOBR,ready} from "./obr.js?v=2.6.0";
+import {KEY,pack,unpack} from "./mesa-lib.js?v=2.6.0";
 const qs=new URLSearchParams(location.search),pid=qs.get("p")||"",pop=qs.get("pop")||"";
 const $=s=>document.querySelector(s),f=$("#f");
 let OBR=null,curSheet="",lastEdit=0,sendT=0,mode="";
@@ -61,7 +61,7 @@ $("#close").onclick=()=>{if(OBR&&pop)OBR.popover.close(pop).catch(()=>{})};
     if(sheet===curSheet&&m===mode)return;                                   // eco do que acabamos de enviar
     if(Date.now()-lastEdit<3000){setTimeout(async()=>show(await all()),3200);return}   // não atrapalha quem está digitando
     curSheet=sheet;window.__FICHA_VIEW={sheet,img:e.th||null};
-    if(!f.getAttribute("src")||m!==mode){mode=m;f.src="ficha.html?v=2.5.0&view=1"+(ro?"&ro=1":"")}
+    if(!f.getAttribute("src")||m!==mode){mode=m;f.src="ficha.html?v=2.6.0&view=1"+(ro?"&ro=1":"")}
     else{const w=f.contentWindow;if(w&&w.__viewSet){w.__viewSet(sheet,e.th||null);if(w.fichaRecarregar)w.fichaRecarregar()}}
   }
   show(await all());

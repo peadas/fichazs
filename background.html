@@ -2,14 +2,14 @@
 <html lang="pt-BR">
 <head><meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
 <body>
-<script src="engine.js?v=2.5.0"></script>
+<script src="engine.js?v=2.6.0"></script>
 <script type="module">
 /* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
    2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
    3) recebe as edições que o mestre faz na ficha do jogador. */
-import {loadOBR,ready} from "./obr.js?v=2.5.0";
-import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.5.0";
+import {loadOBR,ready} from "./obr.js?v=2.6.0";
+import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.6.0";
 (async()=>{
   const OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))return;
@@ -20,11 +20,13 @@ import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "
   let seq=0,open=false,mid="",lastAct=0,helloT=0,hello=false,arrange=false,lastTry=0;
   const log=[];
   const hudOn=()=>store.get("hud-on")!=="0";
+const trayOn=()=>store.get("tray-always")==="1";      // setting "mesa de dados sempre visível"
+const keepOn=()=>hudOn()||trayOn();
   const feed=e=>OBR.broadcast.sendMessage(CH.feed,e,{destination:"LOCAL"}).catch(()=>{});
   async function openOverlay(e){
     const id="ordem.ficha/overlay/"+Date.now();
     open=true;hello=false;mid=id;lastAct=Date.now();lastTry=Date.now();
-    const q="?v=2.5.0&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
+    const q="?v=2.6.0&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
     try{
       await OBR.modal.open({id,url:abs("overlay.html")+q,
         fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:!arrange});
@@ -43,7 +45,7 @@ import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "
     const pid=gid(r.id),g={...r,alive:Date.now(),tried:Date.now()};grabs.set(r.id,g);
     try{await OBR.popover.close(pid)}catch(e){}
     try{
-      await OBR.popover.open({id:pid,url:abs("grab.html")+"?v="+VER+"&id="+encodeURIComponent(r.id),width:r.w,height:r.h,
+      await OBR.popover.open({id:pid,url:abs(r.id==="quick"?"quick.html":"grab.html")+"?v="+VER+"&id="+encodeURIComponent(r.id)+(r.id==="quick"?"&mode=icon":""),width:r.w,height:r.h,
         anchorReference:"POSITION",anchorPosition:{left:r.x,top:r.y},
         anchorOrigin:{horizontal:"LEFT",vertical:"TOP"},transformOrigin:{horizontal:"LEFT",vertical:"TOP"},
         hidePaper:true,disableClickAway:true,marginThreshold:0});
@@ -55,18 +57,28 @@ import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "
     for(const [id] of grabs)if(!want.has(id)){OBR.popover.close(gid(id)).catch(()=>{});grabs.delete(id)}
     for(const r of rects){const g=grabs.get(r.id);if(g&&g.x===r.x&&g.y===r.y&&g.w===r.w&&g.h===r.h)continue;openGrab(r)}
   }
+  /* clicou no dadinho: abre a caixa de digitar ao lado dele (para o lado com espaço) */
+  OBR.broadcast.onMessage("ordem.hud/quick",async()=>{
+    const g=grabs.get("quick");if(!g)return;
+    let vw=1280;try{vw=await OBR.viewport.getWidth()}catch(e){}
+    const W=260,H=44,left=g.x-W-6>=4?g.x-W-6:Math.min(vw-W-4,g.x+g.w+6),top=Math.max(4,g.y+Math.round(g.h/2-H/2)),pid="ordem.hud/quickin";
+    try{await OBR.popover.close(pid)}catch(e){}
+    try{await OBR.popover.open({id:pid,url:abs("quick.html")+"?v="+VER+"&mode=in&pop="+encodeURIComponent(pid),width:W,height:H,
+      anchorReference:"POSITION",anchorPosition:{left,top},anchorOrigin:{horizontal:"LEFT",vertical:"TOP"},transformOrigin:{horizontal:"LEFT",vertical:"TOP"},
+      hidePaper:true,disableClickAway:false,marginThreshold:0})}catch(e){console.warn("[hud] não consegui abrir a caixa de rolagem",e)}
+  });
   OBR.broadcast.onMessage("ordem.hud/layout",ev=>{if(open&&!arrange)syncGrabs((ev.data||{}).rects)});   // fotos dos cartões e a mesa de dados
   OBR.broadcast.onMessage("ordem.hud/alive",ev=>{const g=grabs.get(String((ev.data||{}).id));if(g)g.alive=Date.now()});
-  const ensure=()=>{if(!open&&hudOn())openOverlay(null)};
+  const ensure=()=>{if(!open&&keepOn())openOverlay(null)};
   async function closeOverlay(){const id=mid;open=false;syncGrabs([]);try{await OBR.modal.close(id)}catch(e){}}
-  async function cfg(){                         // ligou/desligou os cartões na tela
-    if(!hudOn()){arrange=false;if(open)await closeOverlay();return}
+  async function cfg(){                         // ligou/desligou os cartões na tela ou a mesa sempre visível
+    if(!keepOn()){arrange=false;if(open)await closeOverlay();return}
     if(open)await closeOverlay();ensure();      // reabre com a configuração nova
   }
   async function setArrange(on){
-    arrange=!!on&&hudOn();
+    arrange=!!on&&keepOn();
     if(open)await closeOverlay();
-    if(hudOn())openOverlay(null);
+    if(keepOn())openOverlay(null);
   }
   OBR.broadcast.onMessage(CH.roll,ev=>{
     const p=ENG.clean(ev.data);if(!p)return;
@@ -81,14 +93,14 @@ import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "
     hello=true;clearTimeout(helloT);lastAct=Date.now();
     const missing=log.filter(e=>e.seq>seen);
     if(missing.length){missing.forEach(feed);return}
-    if(d.idle&&open&&!hudOn()){open=false;syncGrabs([]);OBR.modal.close(mid).catch(()=>{})}
+    if(d.idle&&open&&!keepOn()){open=false;syncGrabs([]);OBR.modal.close(mid).catch(()=>{})}
   });
   OBR.broadcast.onMessage("ordem.hud/cfg",()=>cfg());
   OBR.broadcast.onMessage("ordem.hud/arrange",ev=>setArrange(!!(ev.data&&ev.data.on)));
-  addEventListener("storage",ev=>{if(ev.key==="hud-on")cfg()});
+  addEventListener("storage",ev=>{if(ev.key==="hud-on"||ev.key==="tray-always")cfg()});
   /* garantia: se a camada parou de responder, reabre (no máximo uma vez a cada 20 s) */
   setInterval(()=>{
-    if(!hudOn())return;
+    if(!keepOn())return;
     if(open&&Date.now()-lastAct>45000)open=false;
     if(!open&&Date.now()-lastTry>20000)ensure();
     for(const [,g] of grabs)if(Date.now()-g.alive>20000&&Date.now()-g.tried>20000)openGrab(g);   // a zona sumiu (ex.: outra janela fechou): reabre

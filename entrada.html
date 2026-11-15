@@ -136,6 +136,7 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
   </nav>
   <section id="v-mesa">
     <div id="top"></div>
+    <div class="hudset"><button class="sw" id="tray-sw" type="button" role="switch" aria-checked="false" aria-label="Mesa de dados sempre visível"><i></i></button><span class="t">Mesa de dados sempre visível</span></div>
     <div class="hudset"><button class="sw" id="hud-sw" type="button" role="switch" aria-checked="true" aria-label="Mostrar cartões na tela"><i></i></button><span class="t">Cartões na tela</span><button class="org" id="hud-org" type="button" title="Arrastar os cartões para onde quiser na tela do Owlbear"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3 9 6m3-3 3 3M12 21l-3-3m3 3 3-3M3 12l3-3m-3 3 3 3M21 12l-3-3m3 3-3 3"/></svg>Organizar</button></div>
     <h3 class="sec" id="h2">Na mesa</h3>
     <div id="list"></div>
@@ -152,10 +153,10 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js?v=2.5.0"></script>
+<script src="efeitos.js?v=2.6.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.5.0";
-import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.5.0";
+import {loadOBR,ready} from "./obr.js?v=2.6.0";
+import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.6.0";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";
@@ -300,6 +301,10 @@ function render(){
 const hudOn=()=>store.get("hud-on")!=="0";
 function drawHud(){$("#hud-sw").setAttribute("aria-checked",String(hudOn()));$("#hud-org").disabled=!hudOn()}
 $("#hud-sw").onclick=()=>{store.set("hud-on",hudOn()?"0":"1");drawHud();if(OBR)OBR.broadcast.sendMessage("ordem.hud/cfg",{},{destination:"LOCAL"}).catch(()=>{})};
+const trayOn=()=>store.get("tray-always")==="1";
+function drawTray(){$("#tray-sw").setAttribute("aria-checked",String(trayOn()))}
+$("#tray-sw").onclick=()=>{store.set("tray-always",trayOn()?"0":"1");drawTray();if(OBR)OBR.broadcast.sendMessage("ordem.hud/cfg",{},{destination:"LOCAL"}).catch(()=>{})};
+drawTray();
 drawHud();
 document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;kM=kN="";anim=true;render()});
 addEventListener("storage",()=>{if(role==="GM"&&tab==="npc")renderNpcs();else if(tab==="mesa")renderMesa()});

@@ -152,10 +152,17 @@ return{P,Body,World,toss,kick,readout,targetQuat,qrot,randQuat};
 })();
 
 /* ---------- geometria (precisa do three.js, só na hora de usar) ---------- */
+/* d14 e d18: trapezoedros ímpares (como o d10: a face de baixo é paralela à de cima, então o dado para reto). Faces: topo0, base0, topo1, base1... */
 const TRAP=(n,H,r)=>()=>{const p=[],T=[0,H,0],B=[0,-H,0],U=[],L=[],c=Math.cos(Math.PI/n),h=H*(1-c)/(1+c);
   for(let i=0;i<n;i++){const a=i*Math.PI*2/n,b=a+Math.PI/n;U.push([Math.cos(a)*r,h,Math.sin(a)*r]);L.push([Math.cos(b)*r,-h,Math.sin(b)*r])}
   for(let i=0;i<n;i++){const j=(i+1)%n;p.push(...T,...U[i],...L[i],...T,...L[i],...U[j],...B,...L[i],...U[j],...B,...U[j],...L[j])}
   const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g};
+/* d16: bipirâmide octogonal (16 triângulos, como no manual). Faces: as de cima primeiro (p0..p7), depois as de baixo (q0..q7) */
+const BIPY=n=>()=>{const T=[0,1,0],B=[0,-1,0],E=[],P=[],Q=[];
+  for(let i=0;i<n;i++){const a=i*Math.PI*2/n;E.push([Math.cos(a),0,Math.sin(a)])}
+  for(let i=0;i<n;i++){const j=(i+1)%n;P.push(...T,...E[j],...E[i])}
+  for(let i=0;i<n;i++){const j=(i+1)%n;Q.push(...B,...E[i],...E[j])}
+  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(P.concat(Q),3));g.computeVertexNormals();return g};
 const GEO={
  4:()=>new THREE.TetrahedronGeometry(1.15),
  6:()=>new THREE.BoxGeometry(1.35,1.35,1.35),
@@ -166,7 +173,7 @@ const GEO={
   const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g},
  12:()=>new THREE.DodecahedronGeometry(1.05),
  14:TRAP(7,1.1,.95),
- 16:TRAP(8,1.1,.95),
+ 16:BIPY(8),
  18:TRAP(9,1.1,.95),
  20:()=>new THREE.IcosahedronGeometry(1.1)
 };
@@ -183,9 +190,21 @@ function faces(g){
   F.forEach(f=>{const u=Object.values(f.u);f.c=u.reduce((a,w)=>a.add(w),new THREE.Vector3()).divideScalar(u.length);f.R=u.reduce((a,w)=>a+w.distanceTo(f.c),0)/u.length});
   return F;
 }
+
+/* ---------- numeração das faces ---------- */
+/* d4..d12 e d20: face i = número i+1. d14, d16 e d18 têm numeração própria (faces opostas somam n+1) */
+/* trapezoedro ímpar: o oposto do topo i é a base i+(n-1)/2; faces opostas somam 2n+1 (d14: 15, d18: 19) */
+const TZ=(n,t)=>{const k=(n-1)/2,o=[];for(let i=0;i<n;i++){o.push(t[i],2*n+1-t[((i-k)%n+n)%n])}return o};
+const LAB={
+ 14:TZ(7,[1,13,3,11,5,9,7]),
+ 16:[1,15,3,13,5,11,7,9,  12,6,10,8,16,2,14,4],               // do manual: faces opostas somam 17 (os 6 e 9 do desenho estão de cabeça para baixo)
+ 18:TZ(9,[1,17,3,15,5,13,7,11,9])
+};
+const NUM=(f,i)=>LAB[f]?LAB[f][i]:i+1;                         // índice da face -> número que está escrito nela
+const IDX=(f,n)=>LAB[f]?LAB[f].indexOf(n):n-1;                  // número -> índice da face
 const cache={};
 /* analisa o poliedro de um dado: faces, vértices e o "casco" usado pela física */
-const ENG={PH,GEO,faces,mulberry32};
+const ENG={PH,GEO,faces,mulberry32,NUM,IDX,LAB};
 ENG.analyze=function(f){
   if(cache[f])return cache[f];
   const g=GEO[f](),Fs=faces(g.index?g.toNonIndexed():g),vm={},V=[];
@@ -234,7 +253,7 @@ class Sim{
         this.kicks++;rd.forEach((r,i)=>{if(r.bad)PH.kick(this.bodies[i],this.rnd)});W.slowT=0;
       }else{
         this.finished=true;this.flat=!rd.some(r=>r.bad);
-        this.results=this.list.map(([n,f],i)=>[n,f,rd[i].idx+1]);
+        this.results=this.list.map(([n,f],i)=>[n,f,NUM(f,rd[i].idx)]);
       }
     }
   }
