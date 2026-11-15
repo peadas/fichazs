@@ -210,7 +210,7 @@ function ui(root,onChange){
   let raf=0;const draw=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>preview(cv,S))};
   const sync=()=>{fields.forEach(f=>{f.value=S[f.dataset.k]});draw()};
   const save=()=>{set(S);draw();onChange&&onChange(S)};
-  fields.forEach(f=>f.addEventListener("input",()=>{S[f.dataset.k]=f.value;save()}));
+  fields.forEach(f=>f.addEventListener("input",()=>{S[f.dataset.k]=f.value;if(f.dataset.k!=="st"&&S.st==="classico"){S.st="opaco";sync()}save()}));
   box.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{const p=PRE[+b.dataset.p];Object.assign(S,p);delete S.n;sync();save()});
   box.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{lsSet(LM,b.dataset.m);applyMesa()});
   box.querySelector("#dmesa").addEventListener("input",e=>{lsSet(LM,e.target.value);applyMesa()});
