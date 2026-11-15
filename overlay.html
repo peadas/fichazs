@@ -111,16 +111,16 @@ body.arr #hbar{display:flex}
 </style>
 </head>
 <body>
-<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.6.0" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.6.0" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
+<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.6.1" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.6.1" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
 <div id="hist" aria-hidden="true"></div>
 <div id="hud" aria-hidden="true"></div>
 <div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
 <div id="hbar"><span>Arraste os cartões e a mesa</span><button id="t-menos" title="Mesa menor" aria-label="Mesa menor">Mesa −</button><button id="t-mais" title="Mesa maior" aria-label="Mesa maior">Mesa +</button><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js?v=2.6.0"></script>
+<script src="engine.js?v=2.6.1"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.6.0";
-import {KEY,npcsOf} from "./mesa-lib.js?v=2.6.0";
+import {loadOBR,ready} from "./obr.js?v=2.6.1";
+import {KEY,npcsOf} from "./mesa-lib.js?v=2.6.1";
 const $=s=>document.querySelector(s);
 const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",KEEP=HUD||qs.get("tray")==="1";
 const CH=ENG.CH,HOLD=4500,CHIP_LIFE=9000;
@@ -312,7 +312,6 @@ function showChip(p){
 /* jogador com cartão na tela: o resultado fica no cartão dele até a próxima rolagem; mestre/NPC: aviso que some */
 let cardRes=null;
 function showResult(p){
-  if(OBR&&p.text){try{OBR.notification.show(p.text)}catch(e){}}
   histAdd(p);
   if(!p.gm&&p.pid&&cardRes&&cardRes(p))return;
   showChip(p);
@@ -378,7 +377,7 @@ function loop(now){
         c.fix=[];
         c.sim.bodies.forEach((b,i)=>{
           const want=c.p.res[i];
-          if(c.sim.results[i][2]!==want){
+          if(c.sim.results[i][2]!==want||b.odd){      // d14/d18: a face do resultado é virada para cima
             const from=c.meshes[i].quaternion.clone(),t=ENG.PH.targetQuat(b,b.f===4?want-1:ENG.IDX(b.f,want),b.f===4);
             c.fix.push({i,from,to:new THREE.Quaternion(t[0],t[1],t[2],t[3])});
           }

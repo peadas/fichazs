@@ -131,8 +131,13 @@ function kick(b,rnd){
 }
 /* lê o resultado: face voltada para cima (d4: vértice voltado para cima); bad = está torto */
 function readout(b,d4){
-  let bi=0,best=d4?1e9:-1e9;
-  b.planes.forEach((p,i)=>{const y=qrot(b.q,p.n)[1];if(d4?y<best:y>best){best=y;bi=i}});
+  let bi=0,best=d4?1e9:-1e9,lo=1e9,li=0;
+  b.planes.forEach((p,i)=>{const y=qrot(b.q,p.n)[1];if(y<lo){lo=y;li=i}if(d4?y<best:y>best){best=y;bi=i}});
+  if(b.odd){
+    /* bipirâmide ímpar (d14, d18): não há face exatamente oposta, então vale a face "par" da que está apoiada no chão (as duas somam 2n+1) */
+    const n=b.planes.length/2,k=(n-1)/2;
+    return{idx:li<n?n+(li+k)%n:((li-n-k)%n+n)%n,bad:lo>-P.TILT_COS};
+  }
   const bad=Math.abs(best)<P.TILT_COS;
   if(!d4)return{idx:bi,bad};
   const used=b.planes[bi].vi;let o=0;
@@ -152,12 +157,7 @@ return{P,Body,World,toss,kick,readout,targetQuat,qrot,randQuat};
 })();
 
 /* ---------- geometria (precisa do three.js, só na hora de usar) ---------- */
-/* d14 e d18: trapezoedros ímpares (como o d10: a face de baixo é paralela à de cima, então o dado para reto). Faces: topo0, base0, topo1, base1... */
-const TRAP=(n,H,r)=>()=>{const p=[],T=[0,H,0],B=[0,-H,0],U=[],L=[],c=Math.cos(Math.PI/n),h=H*(1-c)/(1+c);
-  for(let i=0;i<n;i++){const a=i*Math.PI*2/n,b=a+Math.PI/n;U.push([Math.cos(a)*r,h,Math.sin(a)*r]);L.push([Math.cos(b)*r,-h,Math.sin(b)*r])}
-  for(let i=0;i<n;i++){const j=(i+1)%n;p.push(...T,...U[i],...L[i],...T,...L[i],...U[j],...B,...L[i],...U[j],...B,...U[j],...L[j])}
-  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g};
-/* d16: bipirâmide octogonal (16 triângulos, como no manual). Faces: as de cima primeiro (p0..p7), depois as de baixo (q0..q7) */
+/* d14, d16 e d18: bipirâmides (n triângulos em cima e n embaixo, como no manual). Faces: as de cima primeiro (p0..pn-1), depois as de baixo (q0..qn-1) */
 const BIPY=n=>()=>{const T=[0,1,0],B=[0,-1,0],E=[],P=[],Q=[];
   for(let i=0;i<n;i++){const a=i*Math.PI*2/n;E.push([Math.cos(a),0,Math.sin(a)])}
   for(let i=0;i<n;i++){const j=(i+1)%n;P.push(...T,...E[j],...E[i])}
@@ -172,9 +172,9 @@ const GEO={
   for(let i=0;i<5;i++){const j=(i+1)%5;p.push(...T,...U[i],...L[i],...T,...L[i],...U[j],...B,...L[i],...U[j],...B,...U[j],...L[j])}
   const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g},
  12:()=>new THREE.DodecahedronGeometry(1.05),
- 14:TRAP(7,1.1,.95),
+ 14:BIPY(7),
  16:BIPY(8),
- 18:TRAP(9,1.1,.95),
+ 18:BIPY(9),
  20:()=>new THREE.IcosahedronGeometry(1.1)
 };
 function faces(g){
@@ -193,12 +193,12 @@ function faces(g){
 
 /* ---------- numeração das faces ---------- */
 /* d4..d12 e d20: face i = número i+1. d14, d16 e d18 têm numeração própria (faces opostas somam n+1) */
-/* trapezoedro ímpar: o oposto do topo i é a base i+(n-1)/2; faces opostas somam 2n+1 (d14: 15, d18: 19) */
-const TZ=(n,t)=>{const k=(n-1)/2,o=[];for(let i=0;i<n;i++){o.push(t[i],2*n+1-t[((i-k)%n+n)%n])}return o};
+/* ímpar (d14, d18): sem face exatamente oposta; a "quase oposta" da de cima i é a de baixo i+(n-1)/2, e as duas somam n*2+1 */
+const BP=(n,t)=>{const k=(n-1)/2,q=[];for(let i=0;i<n;i++)q[(i+k)%n]=2*n+1-t[i];return t.concat(q)};
 const LAB={
- 14:TZ(7,[1,13,3,11,5,9,7]),
+ 14:BP(7,[1,13,3,11,5,9,7]),
  16:[1,15,3,13,5,11,7,9,  12,6,10,8,16,2,14,4],               // do manual: faces opostas somam 17 (os 6 e 9 do desenho estão de cabeça para baixo)
- 18:TZ(9,[1,17,3,15,5,13,7,11,9])
+ 18:BP(9,[1,17,3,15,5,13,7,11,9])
 };
 const NUM=(f,i)=>LAB[f]?LAB[f][i]:i+1;                         // índice da face -> número que está escrito nela
 const IDX=(f,n)=>LAB[f]?LAB[f].indexOf(n):n-1;                  // número -> índice da face
@@ -236,7 +236,7 @@ class Sim{
     this.W=new PH.World(this.ar);this.bodies=[];this.kicks=0;this.finished=false;this.results=null;this.flat=true;
     list.forEach(([n,f],i)=>{
       const a=ENG.analyze(f),b=new PH.Body(a.hull,ENG.RAD/a.mx);
-      b.f=f;PH.toss(b,this.ar,this.rnd,i,list.length);this.W.bodies.push(b);this.bodies.push(b);
+      b.f=f;b.odd=f===14||f===18;PH.toss(b,this.ar,this.rnd,i,list.length);this.W.bodies.push(b);this.bodies.push(b);
     });
   }
   stepOnce(){

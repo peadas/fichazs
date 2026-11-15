@@ -427,8 +427,8 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
-<script src="engine.js?v=2.6.0"></script>
-<script src="efeitos.js?v=2.6.0"></script>
+<script src="engine.js?v=2.6.1"></script>
+<script src="efeitos.js?v=2.6.1"></script>
 <input type="file" id="file" accept="image/*" hidden>
 
 <script>
@@ -631,8 +631,9 @@ function kick(b,rnd){
 }
 /* lê o resultado: face voltada para cima (d4: vértice voltado para cima) e o quanto está torto */
 function readout(b,d4){
-  let bi=0,best=d4?1e9:-1e9;
-  b.planes.forEach((p,i)=>{const y=qrot(b.q,p.n)[1];if(d4?y<best:y>best){best=y;bi=i}});
+  let bi=0,best=d4?1e9:-1e9,lo=1e9,li=0;
+  b.planes.forEach((p,i)=>{const y=qrot(b.q,p.n)[1];if(y<lo){lo=y;li=i}if(d4?y<best:y>best){best=y;bi=i}});
+  if(b.f===14||b.f===18){const n=b.planes.length/2,k=(n-1)/2;return{idx:li<n?n+(li+k)%n:((li-n-k)%n+n)%n,tilt:Math.acos(Math.min(1,Math.max(0,-lo)))}}   // bipirâmide ímpar: vale a face par da que está no chão
   const tilt=Math.acos(Math.min(1,Math.abs(best)));
   if(!d4)return{idx:bi,tilt};
   const used=b.planes[bi].vi;let o=0;
@@ -663,9 +664,9 @@ const GEO={
   for(let i=0;i<5;i++){const j=(i+1)%5;p.push(...T,...U[i],...L[i],...T,...L[i],...U[j],...B,...L[i],...U[j],...B,...U[j],...L[j])}
   const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g},
  12:()=>new THREE.DodecahedronGeometry(1.05),
- 14:TRAP(7,1.1,.95),
+ 14:BIPY(7),
  16:BIPY(8),
- 18:TRAP(9,1.1,.95),
+ 18:BIPY(9),
  20:()=>new THREE.IcosahedronGeometry(1.1)
 };
 let R,scene,cam,M,meshes=[],anim=0,rolling=false,shTex;
@@ -1264,8 +1265,8 @@ window.fichaRecarregar=()=>{
 };
 </script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.6.0";
-import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.6.0";
+import {loadOBR,ready} from "./obr.js?v=2.6.1";
+import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.6.1";
 (async()=>{
   if(document.documentElement.classList.contains("view"))return;
   const OBR=await loadOBR();

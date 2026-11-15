@@ -64,7 +64,7 @@ Embaixo dos atributos há um cartão com a habilidade do **Perfil** escolhido no
 - **Histórico em cima da mesa de dados:** sem fundo, só o nome de quem rolou e os resultados. Aparecem no máximo **3 linhas**; a nova entra por baixo e as antigas sobem e somem. Sem a mesa fixa, cada linha some sozinha depois de uns 14 s.
 - **Settings > Mesa de dados sempre visível** (também no menu da Mesa): ligado, a mesa fica sempre na tela (e mesmo com *Cartões na tela* desligado). Desligado, ela só aparece quando um dado gira. Fica salvo por navegador (`tray-always`).
 - **Dadinho do lado da mesa:** ícone bem sutil à esquerda da mesa (à direita se não houver espaço). Clique, digite `1d4`, `2d6+3`, `1d20+1d8-2`… e Enter: o dado cai para todos, com o nome e o histórico normais. Com *Jujutsu* ligado aceita também d14, d16 e d18. Arquivo: `quick.html`.
-- **d14, d16 e d18 de verdade no 3D:** o **d16** é a bipirâmide de 16 triângulos do manual (faces opostas somam 17); o **d14** e o **d18** são trapezoedros (como o d10) com faces opostas somando 15 e 19, então sempre param retos. Os números ficam com o alto virado para a ponta do dado, e o resultado lido é o número da face de cima.
+- **d14, d16 e d18 de verdade no 3D:** o **d16** é a bipirâmide de 16 triângulos do manual (faces opostas somam 17); o **d14** e o **d18** também são bipirâmides (7 e 9 triângulos em cima e embaixo), e o resultado é a face "par" da que fica no chão (somam 15 e 19). Os números ficam com o alto virado para a ponta do dado, e o resultado lido é o número da face de cima.
 - **Névoa Jujutsu:** com Jujutsu ligado, a névoa da ficha e do menu fica translúcida e azulada (energia amaldiçoada).
 
 ## O que mudou

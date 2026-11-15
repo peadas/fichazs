@@ -2,14 +2,14 @@
 <html lang="pt-BR">
 <head><meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
 <body>
-<script src="engine.js?v=2.6.0"></script>
+<script src="engine.js?v=2.6.1"></script>
 <script type="module">
 /* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
    2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
    3) recebe as edições que o mestre faz na ficha do jogador. */
-import {loadOBR,ready} from "./obr.js?v=2.6.0";
-import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.6.0";
+import {loadOBR,ready} from "./obr.js?v=2.6.1";
+import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.6.1";
 (async()=>{
   const OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))return;
@@ -26,7 +26,7 @@ const keepOn=()=>hudOn()||trayOn();
   async function openOverlay(e){
     const id="ordem.ficha/overlay/"+Date.now();
     open=true;hello=false;mid=id;lastAct=Date.now();lastTry=Date.now();
-    const q="?v=2.6.0&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
+    const q="?v=2.6.1&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
     try{
       await OBR.modal.open({id,url:abs("overlay.html")+q,
         fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:!arrange});

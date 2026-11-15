@@ -6,10 +6,10 @@
 <title>Rolar dados</title>
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:transparent;font:16px/1.2 "Barlow Condensed",system-ui,sans-serif;color:#eef0ee}
-/* ícone: bem sutil, só aparece de verdade quando o mouse chega perto */
-#ic{position:fixed;inset:0;display:grid;place-items:center;border:0;padding:0;margin:0;background:transparent;cursor:pointer;opacity:.32;transition:opacity .2s,transform .2s}
-#ic:hover,#ic:focus-visible{opacity:.95;transform:scale(1.12);outline:none}
-#ic svg{width:22px;height:22px;stroke:#f0e6c8;fill:none;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round;filter:drop-shadow(0 1px 3px #000)}
+/* ícone: discreto, mas com fundo escuro redondo para aparecer em qualquer mapa (claro ou escuro) */
+#ic{position:fixed;inset:1px;display:grid;place-items:center;border:1px solid #f0e6c866;border-radius:50%;padding:0;margin:0;background:#0f1213cc;cursor:pointer;opacity:.7;transition:opacity .2s,transform .2s,border-color .2s;box-shadow:0 2px 8px #0009}
+#ic:hover,#ic:focus-visible{opacity:1;transform:scale(1.1);border-color:#f0d28a;outline:none}
+#ic svg{width:18px;height:18px;stroke:#f0e6c8;fill:none;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
 /* caixa de digitar */
 #bx{position:fixed;inset:0;display:flex;align-items:center;gap:8px;padding:0 8px;background:#0f1213f2;border:1px solid #8b9594;box-sizing:border-box}
 #bx[hidden],#ic[hidden]{display:none}
@@ -27,7 +27,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:transparent;font:16px/
 /* Dois modos, na mesma página:
    - ?mode=icon: o dadinho sutil do lado da mesa (um popover pequeno). Clicar pede ao segundo plano para abrir a caixa;
    - ?mode=in: a caixa de digitar. Enter rola: o pedido vai para a camada de dados, que sorteia e manda para todos. */
-import {loadOBR,ready} from "./obr.js?v=2.6.0";
+import {loadOBR,ready} from "./obr.js?v=2.6.1";
 const qs=new URLSearchParams(location.search),mode=qs.get("mode")==="in"?"in":"icon",id=qs.get("id")||"quick",pop=qs.get("pop")||"";
 const $=s=>document.querySelector(s);
 let OBR=null;
