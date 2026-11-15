@@ -106,6 +106,13 @@ button.t:disabled{opacity:.4;cursor:default}
 .crit{width:100%;font:800 1.6rem Cinzel,serif}
 .ok,.ok strong{color:#5fd38a}
 .bad,.bad strong{color:#ff6b6b}
+.rv.x2 small,.rv.x2 strong{color:#f2c230}
+.focow{margin-top:10px}
+.foco{display:inline-flex;align-items:center;gap:8px;font:700 1rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.foco svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.foco.on{border-color:#f2c230;color:#f2c230;box-shadow:0 0 12px #f2c23055}
+.foco.on svg{filter:drop-shadow(0 0 3px #f2c230)}
+.foco small{font:600 .75rem Barlow,sans-serif;letter-spacing:.02em;text-transform:none;color:var(--muted)}
 .rv.x{opacity:.45}
 .rv.x strong{text-decoration:line-through}
 .rv.pv small,.rv.pv strong{color:#e9a23b}
@@ -321,6 +328,7 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
       <img id="img" alt="Imagem do personagem" hidden>
     </div>
     <button class="ib danger" id="rmimg" type="button" aria-label="Remover imagem" title="Remover imagem" hidden><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg></button>
+    <div class="focow"><button class="t foco" id="foco" type="button" aria-pressed="false" title="Foco: com ele ligado, o dado que parar com o centro sobre o círculo 2x da mesa de dados vale o dobro (a chance é pequena e totalmente aleatória)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="1" fill="currentColor"/><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/></svg>Foco <small id="focost">desligado</small></button></div>
     <div class="pavor">
       <div class="ph">Pavor <button class="t sm" id="pvon" aria-pressed="false">Inativo</button></div>
       <div class="pb">
@@ -417,8 +425,8 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
-<script src="engine.js?v=2.4.0"></script>
-<script src="efeitos.js?v=2.4.0"></script>
+<script src="engine.js?v=2.5.0"></script>
+<script src="efeitos.js?v=2.5.0"></script>
 <input type="file" id="file" accept="image/*" hidden>
 
 <script>
@@ -782,18 +790,19 @@ const PD_PRONT=2;
 
 /* cálculo puro do teste (sem efeitos colaterais): serve para a rolagem e para refazer depois de um ajuste */
 function calc(res,pv,rb,bonus){
-  const two=res.length>1,a=two?res[0][2]:0,b=two?res[1][2]:0,p=pv?res[2][2]:0;
+  const V=r=>r[2]*(r[3]?2:1);                 // valor do dado: a face de cima, dobrada se caiu no círculo 2x (Foco)
+  const two=res.length>1,a=two?V(res[0]):0,b=two?V(res[1]):0,p=pv?V(res[2]):0;
   const gone=[pv&&!bonus&&a<=p,pv&&!bonus&&b<=p];
-  const total=(gone[0]?0:a)+(gone[1]?0:b)+(bonus?p:0)+(rb?res[res.length-1][2]:0);
+  const total=(gone[0]?0:a)+(gone[1]?0:b)+(bonus?p:0)+(rb?V(res[res.length-1]):0);
   const pos=two&&a===b&&a>=6&&!gone[0],neg=two&&((a===1&&b===1)||(gone[0]&&gone[1]));
-  const rows=res.map(([n,f,x],i)=>({l:n+" · d"+f+(pv&&i===2&&bonus?" (bônus)":"")+(rb&&i===res.length-1?" (relação)":""),v:String(x),c:[gone[i]?"x":"",pv&&i===2?"pv":"",rb&&i===res.length-1?"rl":""].filter(Boolean).join(" ")}));
+  const rows=res.map((r,i)=>{const[n,f]=r;return{l:n+" · d"+f+(r[3]?" ×2":"")+(pv&&i===2&&bonus?" (bônus)":"")+(rb&&i===res.length-1?" (relação)":""),v:String(V(r)),c:[gone[i]?"x":"",r[3]?"x2":"",pv&&i===2?"pv":"",rb&&i===res.length-1?"rl":""].filter(Boolean).join(" ")}});
   let crit=null;
   if(two){
     const c=pos?"ok":neg?"bad":"";
     rows.push({l:"Valor do teste",v:String(total),c});
     if(pos||neg)crit={t:pos?"Crítico!":"Falha crítica!",c};
   }
-  return{rows,crit,value:two?total:res[0][2],neg};
+  return{rows,crit,value:two?total:V(res[0]),neg};
 }
 function summary(res,pv,rb){
   const bonus=pv&&emb,c=calc(res,pv,rb,bonus),notes=rollBuff.slice();rollBuff=[];
@@ -823,6 +832,7 @@ function renderBar(key){
 }
 const canAttr=k=>perfil()==="Executor"&&clampN(d.imp)>=3&&!(d.ibuf&&d.ibuf[k]);
 function renderCls(){
+  focoUI();
   const p=perfil();
   document.querySelectorAll("[data-cp]").forEach(e=>e.hidden=e.dataset.cp!==p);
   d.imp=clampN(d.imp);d.ana=clampN(d.ana,"ana");
@@ -890,7 +900,12 @@ $("#acts").addEventListener("click",e=>{
   if(b.dataset.an){const[i,s]=b.dataset.an.split(":").map(Number);analise(i,s)}
   else if(b.dataset.pr!==undefined)prontidao(+b.dataset.pr);
 });
+/* Foco: ligado, o dado que parar sobre o círculo 2x da mesa vale o dobro */
+function focoUI(){const b=document.getElementById("foco");if(!b)return;b.classList.toggle("on",!!d.foco);b.setAttribute("aria-pressed",String(!!d.foco));document.getElementById("focost").textContent=d.foco?"ligado":"desligado"}
+document.getElementById("foco").onclick=()=>{d.foco=!d.foco;save();focoUI()};
 const uid=()=>String(Date.now())+"u"+(++uidN);
+/* quem rolou (para o resultado aparecer no cartão certo) e se é o mestre/NPC (o resultado deles some sozinho) */
+const metaOBR=()=>{const X=window.OBRX||{};return{pid:String(X.id||""),gm:!!(X.gm||window.__NPCID)}};
 function obrSend(p){
   const X=window.OBRX;if(!X||typeof ENG==="undefined")return;
   X.OBR.broadcast.sendMessage(ENG.CH.roll,p,{destination:npcOculto()?"LOCAL":"ALL"}).catch(()=>{});
@@ -901,7 +916,7 @@ function refresh(tag){
   $("#rres").innerHTML=rowsHtml(c.rows,c.crit,note);showActs();
   if(window.OBRX&&LR.who){
     const who=LR.who,tr=c.rows.filter(r=>r.l==="Valor do teste"||r.l==="Total").pop();
-    obrSend({id:uid(),seed:LR.seed||1,who,color:LR.color,title:(tag+" · "+LR.title).slice(0,40),list:LR.res.map(([n,f])=>[n,f]),kinds:LR.kinds,res:LR.res.map(r=>r[2]),anim:false,rows:c.rows,crit:c.crit,note,
+    obrSend({id:uid(),seed:LR.seed||1,who,color:LR.color,title:(tag+" · "+LR.title).slice(0,40),list:LR.res.map(([n,f])=>[n,f]),kinds:LR.kinds,res:LR.res.map(r=>r[2]),dbl:LR.res.map(r=>!!r[3]),foco:LR.res.some(r=>r[3]),...metaOBR(),anim:false,rows:c.rows,crit:c.crit,note,
       text:who+" · "+LR.title+": "+(tr?tr.v:LR.res.map(r=>r[2]).join(", "))+" ("+tag+")"});
   }
 }
@@ -919,17 +934,17 @@ function analise(i,s){
 /* Prontidão: 1x por rodada, 2 PD, rerrola um dado que não tirou 1 */
 function prontidao(i){
   const r=LR.res[i];if(!r||d.pro||r[2]===1||(+d.pd||0)<PD_PRONT)return;
-  const o=r[2],f=r[1];let nv=0,seed=0,ms=0;
+  const o=r[2],f=r[1];let nv=0,seed=0,ms=0,fl=false;
   if(window.OBRX&&typeof ENG!=="undefined"){
     seed=window.crypto.getRandomValues(new Uint32Array(1))[0];
-    try{const sim=new ENG.Sim([[r[0],f]],seed),rs=sim.runAll();nv=rs[0][2];ms=Math.min(9000,sim.W.t*1000+600)}catch(e){nv=0}
+    try{const sim=new ENG.Sim([[r[0],f]],seed),rs=sim.runAll();nv=rs[0][2];ms=Math.min(9000,sim.W.t*1000+600);fl=!!d.foco&&sim.hits()[0]}catch(e){nv=0}
   }
   if(!nv){nv=rolarDados("1d"+f).total;seed=0;ms=0}
   d.pro=true;d.pd=(+d.pd||0)-PD_PRONT;syncPD();bars();save();renderCls();
-  r[2]=nv;LR.acts.push("Prontidão (−"+PD_PRONT+" PD): "+r[0]+" "+o+"→"+nv);LR.lastAn=-1;
+  r[2]=nv;r[3]=fl;LR.acts.push("Prontidão (−"+PD_PRONT+" PD): "+r[0]+" "+o+"→"+nv+(fl?" · Foco ×2":""));LR.lastAn=-1;
   if(seed&&window.OBRX&&LR.who){
     /* o dado rerrolado cai de novo na mesa de todos; depois chega o resultado refeito */
-    obrSend({id:uid(),seed,who:LR.who,color:LR.color,title:("Prontidão · "+r[0]).slice(0,40),list:[[r[0],f]],kinds:[LR.kinds[i]||""],res:[nv],anim:true,rows:[],crit:null,note:"",text:""});
+    obrSend({id:uid(),seed,who:LR.who,color:LR.color,title:("Prontidão · "+r[0]).slice(0,40),list:[[r[0],f]],kinds:[LR.kinds[i]||""],res:[nv],dbl:[fl],foco:!!d.foco,...metaOBR(),anim:true,rows:[],crit:null,note:"",text:""});
     rolling=true;$("#acts").innerHTML="";
     setTimeout(()=>{rolling=false;refresh("Prontidão")},ms);
   }else refresh("Prontidão");
@@ -1113,16 +1128,19 @@ function throwOBR(list,pv,rb,render){
   const X=window.OBRX;
   if(!X||typeof ENG==="undefined")return false;
   const seed=window.crypto.getRandomValues(new Uint32Array(1))[0];
-  let res=null,ms=3500;
-  try{const sim=new ENG.Sim(list.map(([n,f])=>[n,f]),seed);res=sim.runAll();ms=Math.min(9000,sim.W.t*1000+600)}catch(e){res=null}
+  let res=null,ms=3500,dbl=list.map(()=>false);const foco=!!d.foco;
+  try{const sim=new ENG.Sim(list.map(([n,f])=>[n,f]),seed);res=sim.runAll();ms=Math.min(9000,sim.W.t*1000+600);if(foco)dbl=sim.hits()}catch(e){res=null;dbl=list.map(()=>false)}
   if(!res)res=list.map(([n,f])=>[n,f,rolarDados("1d"+f).total]);
+  /* Foco: o dado que parou com o centro sobre o círculo 2x vale o dobro (a face de cima continua a mesma) */
+  res=res.map((r,i)=>[r[0],r[1],r[2],!!dbl[i]]);
+  res.forEach(r=>{if(r[3])rollBuff.push("Foco: "+r[0]+" caiu no 2× ("+r[2]+"→"+r[2]*2+")")});
   const o=render(res);
   const who=((d.nome||"")+" "+(d.sob||"")).trim()||X.name||"Jogador";
   const kinds=list.map((_,i)=>pv&&i===2?"pv":rb&&i===list.length-1?"rel":"");
   const tr=o.rows.filter(r=>r.l==="Valor do teste"||r.l==="Total").pop();
   const text=who+" · "+rollTitle+": "+(tr?tr.v:res.map(r=>r[2]).join(", "))+(o.crit?" ("+o.crit.t+")":"");
-  const payload={id:String(Date.now()),seed,who,color:X.color,title:rollTitle,list:list.map(([n,f])=>[n,f]),kinds,res:res.map(r=>r[2]),anim:true,rows:o.rows,crit:o.crit,note:o.note,text};
-  if(LR){LR.who=who;LR.color=X.color;LR.kinds=kinds;LR.seed=seed}
+  const payload={id:String(Date.now()),seed,who,color:X.color,title:rollTitle,list:list.map(([n,f])=>[n,f]),kinds,res:res.map(r=>r[2]),dbl:res.map(r=>!!r[3]),foco,...metaOBR(),anim:true,rows:o.rows,crit:o.crit,note:o.note,text};
+  if(LR){LR.who=who;LR.color=X.color;LR.kinds=kinds;LR.seed=seed;LR.foco=foco}
   /* NPC com o olho fechado: o dado cai só para o mestre (destino LOCAL), os outros jogadores não recebem nada */
   X.OBR.broadcast.sendMessage(ENG.CH.roll,payload,{destination:npcOculto()?"LOCAL":"ALL"}).catch(()=>{});
   rolling=true;$("#roll").hidden=false;$("#rres").innerHTML="";$("#acts").innerHTML="";
@@ -1223,15 +1241,16 @@ window.fichaRecarregar=()=>{
 };
 </script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.4.0";
-import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.4.0";
+import {loadOBR,ready} from "./obr.js?v=2.5.0";
+import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.5.0";
 (async()=>{
   if(document.documentElement.classList.contains("view"))return;
   const OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))return;
   let name="",color="#ecc962";
   try{name=await OBR.player.getName();color=await OBR.player.getColor()}catch(e){}
-  window.OBRX={OBR,name,color};
+  let gm=false;try{gm=(await OBR.player.getRole())==="GM"}catch(e){}
+  window.OBRX={OBR,name,color,id:OBR.player.id,gm};
   if(window.__SHEETKEY!=="ficha-ordem")return;        // ficha de NPC não vai para a mesa
 
   /* ao salvar, atualiza o meu cartão na mesa (direto daqui; não depende do segundo plano) */

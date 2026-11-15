@@ -31,7 +31,9 @@ class Body{
 class World{
   constructor(b){this.setBounds(b);this.bodies=[];this.slowT=0;this.t=0}
   setBounds(b){
-    this.pl=[[[0,1,0],0,true],[[1,0,0],b.minX,false],[[-1,0,0],-b.maxX,false],[[0,0,1],b.minZ,false],[[0,0,-1],-b.maxZ,false]];
+    this.pl=[[[0,1,0],0,true]];
+    if(b.walls)b.walls.forEach(w=>this.pl.push([[w[0],0,w[1]],w[2],false]));      // paredes da mesa hexagonal: [nx,nz,desloc]
+    else this.pl.push([[1,0,0],b.minX,false],[[-1,0,0],-b.maxX,false],[[0,0,1],b.minZ,false],[[0,0,-1],-b.maxZ,false]);
   }
   step(dt){
     const B=this.bodies;
@@ -108,21 +110,23 @@ class World{
     }
   }
 }
-/* lança o dado a partir do meio da arena; i/n = posição na fila para não nascerem sobrepostos */
+/* lança o dado de cima, em um ponto sorteado perto do meio da mesa; i/n = posição na fila para não nascerem sobrepostos.
+   A mesa é pequena: velocidades e alturas são proporcionais ao tamanho dela */
 function toss(b,ar,rnd,i,n){
-  const cx=(ar.minX+ar.maxX)/2,cz=(ar.minZ+ar.maxZ)/2,sp=Math.min(b.rad*2.2,(ar.maxX-ar.minX-4*b.rad)/Math.max(1,n-1));
-  /* caem de cima, juntos, quase um em cima do outro: batem entre si e se espalham */
-  b.p=[cx+(i-(n-1)/2)*sp+(rnd()-.5)*b.rad*1.2,300+rnd()*160+i*(b.rad*2.6),cz+(rnd()-.5)*b.rad*2.2];
+  const k=ar.k||1;
+  let px,pz,l;do{px=rnd()*2-1;pz=rnd()*2-1;l=px*px+pz*pz}while(l>1||l<.0001);
+  const sp=ar.R*.62;
+  b.p=[px*sp,230+rnd()*140+i*(b.rad*2.7),pz*sp];
   /* direção horizontal sorteada sem trigonometria (resultado idêntico em qualquer navegador) */
-  let x,z,l;do{x=rnd()*2-1;z=rnd()*2-1;l=x*x+z*z}while(l>1||l<.01);l=Math.sqrt(l);
-  const s=800+rnd()*900;
+  let x,z;do{x=rnd()*2-1;z=rnd()*2-1;l=x*x+z*z}while(l>1||l<.01);l=Math.sqrt(l);
+  const s=(380+rnd()*520)*k;
   b.v=[x/l*s,-100-rnd()*200,z/l*s];
   const ax=[rnd()*2-1,rnd()*2-1,rnd()*2-1],ln=len(ax)||1,m=22+rnd()*26;
   b.w=mul(ax,m/ln);b.q=randQuat(rnd);
 }
 /* dado "torto" (apoiado na parede, em outro dado…): pega e joga de novo */
 function kick(b,rnd){
-  b.v=[(rnd()-.5)*300,320+rnd()*220,(rnd()-.5)*300];
+  b.v=[(rnd()-.5)*200,320+rnd()*220,(rnd()-.5)*200];
   const ax=[rnd()*2-1,rnd()*2-1,rnd()*2-1],l=len(ax)||1;b.w=mul(ax,(14+rnd()*10)/l);
 }
 /* lê o resultado: face voltada para cima (d4: vértice voltado para cima); bad = está torto */
@@ -192,9 +196,17 @@ ENG.analyze=function(f){
 };
 
 /* ---------- arena fixa (igual para todo mundo; a tela só muda o zoom) ---------- */
-ENG.ARENA={minX:-540,maxX:540,minZ:-300,maxZ:300};
-ENG.RAD=38;
-ENG.VIEW={w:1140,h:660};
+/* A mesa é um hexágono (as imagens mesa.webp / mesa2x.webp têm 1290x1140 px "de projeto", centro = centro da mesa).
+   S = unidades do mundo por pixel de projeto; o raio do hexágono (ponta a ponta/2) é R = 550 px de projeto. */
+const S=300/550,HX=[[550,0],[260,489.5],[-260,489.5],[-550,0],[-260,-489.5],[260,-489.5]].map(v=>[v[0]*S,v[1]*S]);
+const WALLS=HX.map((v,i)=>{const w=HX[(i+1)%6],dx=w[0]-v[0],dz=w[1]-v[1],l=Math.sqrt(dx*dx+dz*dz);
+  let nx=-dz/l,nz=dx/l;if(nx*(-v[0])+nz*(-v[1])<0){nx=-nx;nz=-nz}   // normal apontando para dentro
+  return[nx,nz,nx*v[0]+nz*v[1]]});
+ENG.ARENA={minX:-550*S,maxX:550*S,minZ:-489.5*S,maxZ:489.5*S,walls:WALLS,R:550*S,k:550*S/540};
+ENG.RAD=30;
+ENG.VIEW={w:1290*S,h:1140*S};              // trecho do mundo coberto pela imagem inteira da mesa
+/* círculo "2x" do Foco: o dado vale dobrado se o CENTRO dele parar dentro */
+ENG.FOCO={x:-1*S,z:-7.5*S,r:88*S};
 ENG.DT=1/120;
 ENG.FACES=[4,6,8,10,12,14,16,18,20];
 
@@ -226,6 +238,8 @@ class Sim{
       }
     }
   }
+  /* quais dados pararam com o centro dentro do círculo 2x (só vale depois de terminar) */
+  hits(){const F=ENG.FOCO;return this.bodies.map(b=>{const dx=b.p[0]-F.x,dz=b.p[2]-F.z;return dx*dx+dz*dz<F.r*F.r})}
   /* roda tudo de uma vez (sem desenhar): é assim que a ficha descobre o resultado */
   runAll(){let n=0;while(!this.finished&&n++<4000)this.stepOnce();if(!this.finished)throw new Error("simulação não terminou");return this.results}
 }
@@ -233,7 +247,7 @@ ENG.Sim=Sim;
 
 /* ---------- validação de dados vindos de outros jogadores ---------- */
 const str=(s,n)=>String(s==null?"":s).replace(/[\u0000-\u001f\u007f]/g," ").slice(0,n);
-const KIND=["","pv","rel"],CLS=["x","pv","rl","ok","bad"];
+const KIND=["","pv","rel"],CLS=["x","pv","rl","ok","bad","x2"];
 ENG.clean=function(p){
   if(!p||typeof p!=="object"||!Array.isArray(p.list))return null;
   const list=[],kinds=[],res=[];
@@ -246,11 +260,12 @@ ENG.clean=function(p){
     const r=Math.floor(+(p.res&&p.res[i]));res.push(r>=1&&r<=f?r:1);
   }
   if(!list.length)return null;
+  const dbl=list.map((_,i)=>!!(p.foco&&Array.isArray(p.dbl)&&p.dbl[i]));
   const cls=s=>str(s,20).split(/\s+/).filter(t=>CLS.includes(t)).join(" ");
   const rows=(Array.isArray(p.rows)?p.rows:[]).slice(0,14).map(r=>({l:str(r&&r.l,60),v:str(r&&r.v,12),c:cls(r&&r.c)}));
   const crit=p.crit&&typeof p.crit==="object"?{t:str(p.crit.t,50),c:cls(p.crit.c)}:null;
   return{id:str(p.id,32),seed:(+p.seed)>>>0,who:str(p.who,40)||"Jogador",color:/^#[0-9a-f]{6}$/i.test(p.color)?p.color:"#ecc962",
-    title:str(p.title,40),list,kinds,res,anim:p.anim!==false,rows,crit,note:p.note?str(p.note,120):"",text:str(p.text,160)};
+    pid:str(p.pid,64),gm:!!p.gm,foco:!!p.foco,dbl,title:str(p.title,40),list,kinds,res,anim:p.anim!==false,rows,crit,note:p.note?str(p.note,120):"",text:str(p.text,160)};
 };
 ENG.b64=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 ENG.unb64=s=>JSON.parse(decodeURIComponent(escape(atob(String(s).replace(/-/g,"+").replace(/_/g,"/")))));

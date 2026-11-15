@@ -2,14 +2,14 @@
 <html lang="pt-BR">
 <head><meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
 <body>
-<script src="engine.js?v=2.4.0"></script>
+<script src="engine.js?v=2.5.0"></script>
 <script type="module">
 /* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
    2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
    3) recebe as edições que o mestre faz na ficha do jogador. */
-import {loadOBR,ready} from "./obr.js?v=2.4.0";
-import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.4.0";
+import {loadOBR,ready} from "./obr.js?v=2.5.0";
+import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.5.0";
 (async()=>{
   const OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))return;
@@ -24,7 +24,7 @@ import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "
   async function openOverlay(e){
     const id="ordem.ficha/overlay/"+Date.now();
     open=true;hello=false;mid=id;lastAct=Date.now();lastTry=Date.now();
-    const q="?v=2.4.0&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
+    const q="?v=2.5.0&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
     try{
       await OBR.modal.open({id,url:abs("overlay.html")+q,
         fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:!arrange});
@@ -50,12 +50,12 @@ import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "
     }catch(e){console.warn("[hud] não consegui abrir a zona de arrastar",e)}
   }
   function syncGrabs(list){
-    const ok=r=>r&&typeof r.id==="string"&&[r.x,r.y,r.w,r.h].every(Number.isFinite)&&r.w>=20&&r.w<=400&&r.h>=20&&r.h<=400;
+    const ok=r=>r&&typeof r.id==="string"&&[r.x,r.y,r.w,r.h].every(Number.isFinite)&&r.w>=20&&r.w<=900&&r.h>=20&&r.h<=900;
     const rects=(Array.isArray(list)?list:[]).filter(ok).slice(0,12),want=new Set(rects.map(r=>r.id));
     for(const [id] of grabs)if(!want.has(id)){OBR.popover.close(gid(id)).catch(()=>{});grabs.delete(id)}
     for(const r of rects){const g=grabs.get(r.id);if(g&&g.x===r.x&&g.y===r.y&&g.w===r.w&&g.h===r.h)continue;openGrab(r)}
   }
-  OBR.broadcast.onMessage("ordem.hud/layout",ev=>{if(open&&hudOn()&&!arrange)syncGrabs((ev.data||{}).rects)});
+  OBR.broadcast.onMessage("ordem.hud/layout",ev=>{if(open&&!arrange)syncGrabs((ev.data||{}).rects)});   // fotos dos cartões e a mesa de dados
   OBR.broadcast.onMessage("ordem.hud/alive",ev=>{const g=grabs.get(String((ev.data||{}).id));if(g)g.alive=Date.now()});
   const ensure=()=>{if(!open&&hudOn())openOverlay(null)};
   async function closeOverlay(){const id=mid;open=false;syncGrabs([]);try{await OBR.modal.close(id)}catch(e){}}
@@ -81,7 +81,7 @@ import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "
     hello=true;clearTimeout(helloT);lastAct=Date.now();
     const missing=log.filter(e=>e.seq>seen);
     if(missing.length){missing.forEach(feed);return}
-    if(d.idle&&open&&!hudOn()){open=false;OBR.modal.close(mid).catch(()=>{})}
+    if(d.idle&&open&&!hudOn()){open=false;syncGrabs([]);OBR.modal.close(mid).catch(()=>{})}
   });
   OBR.broadcast.onMessage("ordem.hud/cfg",()=>cfg());
   OBR.broadcast.onMessage("ordem.hud/arrange",ev=>setArrange(!!(ev.data&&ev.data.on)));

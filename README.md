@@ -53,9 +53,15 @@ Embaixo dos atributos há um cartão com a habilidade do **Perfil** escolhido no
 - Os dados 3D carregam o three.js de até 3 CDNs. Se o navegador não tiver WebGL (aceleração de hardware desligada), os dados aparecem **desenhados em 2D**, com o mesmo resultado e o mesmo painel de resultado para todos.
 - Entrar na mesa publica o cartão direto da tela da Mesa; se o navegador bloquear o armazenamento do site, a tela avisa.
 
+## v2.5: mesa de dados, resultado no cartão e Foco
+- **Mesa de dados:** a cada rolagem aparece uma janelinha no canto da tela do Owlbear (de todos os jogadores) com a mesa hexagonal (`mesa.webp`). Os dados rolam *dentro* dela, bem menores, e batem nas paredes do hexágono. **Arraste a mesa clicando nela**; a **roda do mouse** muda o tamanho. A posição e o tamanho ficam salvos. Ela some sozinha uns segundos depois de os dados pararem. No menu, *Organizar* também mostra a mesa para posicionar (botões *Mesa −/+*).
+- **Resultado no cartão:** para jogadores, o resultado (dados, valor, crítico) aparece **ao lado da foto e do nome** e **fica até o jogador rolar de novo**. As rolagens do **mestre** e de **NPCs** continuam aparecendo no topo e **desaparecem sozinhas**. Quem não tem cartão na tela (não entrou na mesa, ou cartões desligados) também vê o aviso temporário no topo.
+- **Foco** (botão com ícone de alvo, acima do Pavor): ligado, a mesa mostra o círculo **2x** (`mesa2x.webp`). O dado cujo **centro parar dentro do círculo** vale o **dobro** (ex.: 1d4 + 1d6, o d4 caiu no 2x com 4: vira 8). O dado fica dourado com **×2**, a mesa brilha, e o valor do teste, crítico e a nota *"Foco: … caiu no 2×"* já usam o valor dobrado. Não existe sorteio escondido: é a física que decide, então a chance é pequena (cerca de 3% por dado) e totalmente aleatória. Para mudar o tamanho do círculo, edite `ENG.FOCO.r` em `engine.js`.
+- A física agora é um hexágono (paredes calculadas a partir da imagem); todos os computadores continuam chegando ao mesmo resultado pela mesma semente.
+
 ## O que mudou
 - Mesa e ficha agora são **uma extensão só**, no mesmo domínio. Por isso a ficha é lida direto do navegador e sumiram: `netlify.toml`, proxy `/ficha/*`, `sync.js`, função `ficha-sync`, banco Postgres e Drizzle.
 - O que a Mesa mostra é publicado nos metadados do jogador no Owlbear (some quando o jogador sai da sala).
 
 ## Arquivos
-`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `gm.html` (ficha do jogador aberta pelo mestre) · `efeitos.js` · `nevoa.png` · `moldura-menu.jpg` · `mesa-lib.js` · `obr.js` · `icon.svg`
+`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `mesa.webp` + `mesa2x.webp` (mesa de dados) · `gm.html` (ficha do jogador aberta pelo mestre) · `efeitos.js` · `nevoa.png` · `moldura-menu.jpg` · `mesa-lib.js` · `obr.js` · `icon.svg`

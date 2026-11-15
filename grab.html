@@ -16,7 +16,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:transparent}
 <script type="module">
 /* Fica por cima da foto de um cartão (a camada dos cartões não recebe cliques para não bloquear o mapa).
    Quem aperta e arrasta a foto aqui move o cartão lá na camada. */
-import {loadOBR,ready} from "./obr.js?v=2.4.0";
+import {loadOBR,ready} from "./obr.js?v=2.5.0";
 const id=new URLSearchParams(location.search).get("id")||"",g=document.getElementById("g");
 let OBR=null,st=null,raf=0,last=null;
 const send=d=>OBR&&OBR.broadcast.sendMessage("ordem.hud/drag",{id,...d},{destination:"LOCAL"}).catch(()=>{});
@@ -31,6 +31,7 @@ g.addEventListener("pointermove",e=>{
   if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(last)send({ph:"m",...last})});
 });
 const end=e=>{if(!st)return;if(last)send({ph:"m",...last});st=null;last=null;g.classList.remove("on");send({ph:"e"})};
+g.addEventListener("wheel",e=>{e.preventDefault();send({ph:"w",dy:e.deltaY})},{passive:false});   // roda do mouse: tamanho da mesa de dados
 g.addEventListener("pointerup",end);g.addEventListener("pointercancel",end);
 (async()=>{
   OBR=await loadOBR();

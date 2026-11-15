@@ -7,8 +7,30 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;600&family=Cinzel:wght@700;800&display=swap" rel="stylesheet">
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:transparent;font:16px/1.4 Barlow,system-ui,sans-serif;color:#eef0ee}
-#cv,#cv2{position:fixed;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+/* mesa de dados: janelinha que o jogador arrasta (a camada não recebe cliques; uma zona transparente por cima faz o arrastar) */
+#tray{position:fixed;left:0;top:0;width:var(--tw,400px);aspect-ratio:860/760;display:none;pointer-events:none;user-select:none;-webkit-user-select:none;touch-action:none;opacity:1;transition:opacity .35s}
+#tray.on{display:block}
+#tray.out{opacity:0}
+#tray .tbg{position:absolute;inset:0;width:100%;height:100%;display:block;filter:drop-shadow(0 8px 18px #000c);pointer-events:none}
+#tray .tbg[hidden]{display:none}
+#cv,#cv2{position:absolute;left:-10%;top:-10%;width:120%;height:120%;display:block;pointer-events:none}
 #cv2[hidden]{display:none}
+#tray.hit .tbg{animation:hit 1.6s ease-out}
+@keyframes hit{0%,30%{filter:drop-shadow(0 0 22px #f2c230) drop-shadow(0 0 8px #f2c230)}100%{filter:drop-shadow(0 8px 18px #000c)}}
+body.arr #tray{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outline-offset:6px}
+#tray.drag{cursor:grabbing}
+.dd.dbl{background:#f2c230;color:#2a1d00}
+.x2m{font:800 .8rem Cinzel,serif;color:#f2c230;margin-left:-3px;text-shadow:0 1px 3px #000}
+.rv.x2 strong{color:#f2c230}
+/* resultado do jogador no cartão dele (fica até a próxima rolagem) */
+.hr{display:flex;flex-direction:column;gap:3px;justify-content:center;border-left:2px solid var(--c,#ecc962);padding-left:10px;min-width:70px;text-shadow:0 0 3px #000,0 1px 5px #000}
+.hr.pop{animation:rpop .45s ease-out}
+@keyframes rpop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+.hr .hrt{font:600 .85rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#c9d0cf;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hr .dz{gap:5px}
+.hr .dd{width:30px;height:30px;font-size:.92rem}.hr .dd.s2{font-size:.78rem}
+.hr .tot{font-size:1.5rem}
+.hr .crit{font-size:.95rem;margin:0}
 #chips{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;width:max-content;max-width:calc(100% - 24px);pointer-events:none}
 .chip{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 14px;background:#0f1213ee;border:1px solid #8b9594;padding:7px 16px;max-width:min(94vw,760px);box-shadow:0 6px 20px #000a;animation:in .3s ease-out both;transition:opacity .5s,transform .5s}
 .chip .who{margin:0;font:700 1.2rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.08em}
@@ -76,19 +98,18 @@ body.arr #hbar{display:flex}
 </style>
 </head>
 <body>
-<canvas id="cv" aria-hidden="true"></canvas>
-<canvas id="cv2" aria-hidden="true" hidden></canvas>
+<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.5.0" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.5.0" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
 <div id="hud" aria-hidden="true"></div>
 <div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
-<div id="hbar"><span>Arraste os cartões</span><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
+<div id="hbar"><span>Arraste os cartões e a mesa</span><button id="t-menos" title="Mesa menor" aria-label="Mesa menor">Mesa −</button><button id="t-mais" title="Mesa maior" aria-label="Mesa maior">Mesa +</button><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js?v=2.4.0"></script>
+<script src="engine.js?v=2.5.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.4.0";
-import {KEY,npcsOf} from "./mesa-lib.js?v=2.4.0";
+import {loadOBR,ready} from "./obr.js?v=2.5.0";
+import {KEY,npcsOf} from "./mesa-lib.js?v=2.5.0";
 const $=s=>document.querySelector(s);
 const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1";
-const CH=ENG.CH,HOLD=5500,CHIP_LIFE=9000;
+const CH=ENG.CH,HOLD=4500,CHIP_LIFE=9000;
 let OBR=null,received=0,idleTimer=0;
 const queue=[];let cur=null,raf=0,raf2=0;
 
@@ -130,16 +151,17 @@ function init3d(){
 }
 /* câmera de cima; a arena é sempre a mesma, a tela só muda o zoom. Se a janela ainda não tem tamanho, tenta de novo depois */
 function setView(){
-  const w=innerWidth||document.documentElement.clientWidth,h=innerHeight||document.documentElement.clientHeight;
+  const cvEl=$("#cv"),w=cvEl.clientWidth,h=cvEl.clientHeight;
   if(!(w>1&&h>1))return false;
   vw=w;vh=h;
-  const k=Math.min(w/ENG.VIEW.w,h/ENG.VIEW.h);
+  /* o canvas é 20% maior que a mesa (os dados no ar não são cortados); a imagem da mesa cobre ENG.VIEW no mundo */
+  const k=Math.min(w/(ENG.VIEW.w*1.2),h/(ENG.VIEW.h*1.2));
   R.setSize(w,h,false);cam.aspect=w/h;
   const H=(h/k/2)/Math.tan(cam.fov*Math.PI/360);
   cam.position.set(0,H,0);cam.up.set(0,0,-1);cam.lookAt(0,0,0);cam.updateProjectionMatrix();
   return true;
 }
-addEventListener("resize",()=>{if(gl&&setView())R.render(scene,cam)});
+addEventListener("resize",()=>{layoutTray();if(gl&&setView())R.render(scene,cam)});
 const texC={};
 function numMat(n,pv){
   const key=n+(pv||"");
@@ -192,11 +214,12 @@ function disposeGroup(c){
 const SIDES={4:3,6:4,8:4,10:5,12:5,14:7,16:8,18:9,20:6};
 const KS={"":{f:"#0b0b0e",s:"#d0a93f",t:"#ecc962"},pv:{f:"#14171c",s:"#e9a23b",t:"#e9a23b"},rel:{f:"#e9e3d3",s:"#8c2f3a",t:"#8c2f3a"}};
 function play2d(p){
-  const cv=$("#cv2"),w=Math.max(2,innerWidth||800),h=Math.max(2,innerHeight||600),dpr=Math.min(2,devicePixelRatio||1);
-  cv.hidden=false;cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+  const cv=$("#cv2");cv.hidden=false;
+  const w=Math.max(2,cv.clientWidth||480),h=Math.max(2,cv.clientHeight||420),dpr=Math.min(2,devicePixelRatio||1);
+  cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
   const x=cv.getContext("2d");
-  if(!x){cur=null;showChip(p);pump();return}
-  const n=p.list.length,rad=Math.max(20,Math.min(44,w/(n*2.6+1),h/7)),floor=h*.5+rad*.7;
+  if(!x){cur=null;showResult(p);pump();return}
+  const n=p.list.length,rad=Math.max(10,Math.min(20,w/(n*3+2),h/10)),floor=h*.5+rad*.7;
   const rnd=ENG.mulberry32(p.seed||1);
   const ds=p.list.map(([nm,f],i)=>({f,k:KS[p.kinds[i]]||KS[""],res:p.res[i],x:w/2+(i-(n-1)/2)*rad*2.5+(rnd()-.5)*rad,y:-rad*(1+i*.8),
     vx:(rnd()-.5)*110,vy:0,a:rnd()*6.283,w:(rnd()<.5?-1:1)*(9+rnd()*9),stop:1300+i*160+rnd()*350,n:1+Math.floor(rnd()*f),tn:0,done:false}));
@@ -221,9 +244,9 @@ function play2d(p){
       x.fillStyle=d.k.t;x.textAlign="center";x.textBaseline="middle";x.font=`italic 700 ${Math.round(rad*(d.n>9?.85:1.1))}px Georgia,serif`;x.fillText(d.n,0,rad*.05);x.restore();
     }
     x.globalAlpha=1;
-    if(phase==="roll"&&t>lastStop+350){phase="hold";t1=now;showChip(p)}
+    if(phase==="roll"&&t>lastStop+350){phase="hold";t1=now;showResult(p);if(p.dbl.some(Boolean))flashHit()}
     else if(phase==="hold"&&now-t1>=(queue.length?1300:HOLD)){phase="out";t1=now}
-    else if(phase==="out"){al=Math.max(0,1-(now-t1)/300);if(al<=0){x.clearRect(0,0,w,h);cv.hidden=true;cur=null;pump();return}}
+    else if(phase==="out"){al=Math.max(0,1-(now-t1)/300);if(al<=0){x.clearRect(0,0,w,h);cv.hidden=true;cur=null;if(!queue.length)hideTray();pump();return}}
     raf2=requestAnimationFrame(frame);
   };
   raf2=requestAnimationFrame(frame);
@@ -232,28 +255,45 @@ function play2d(p){
 /* ---------- resultado na tela ---------- */
 const chips=$("#chips");
 const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
-function showChip(p){
-  const c=el("div","chip"),w=el("span","who",p.who);w.style.color=p.color;c.append(w);
-  if(p.title)c.append(el("span","ttl",p.title));
+/* fileira de dados do resultado (valor já com o Foco: dado que caiu no 2x aparece dobrado, em dourado, com ×2) */
+function diceRow(p){
   const dz=el("div","dz");
   p.list.forEach(([n,f],i)=>{
-    const k=p.kinds[i],x=p.res[i],r=p.rows&&p.rows[i];
+    const k=p.kinds[i],r=p.rows&&p.rows[i],dbl=p.dbl&&p.dbl[i],x=p.res[i]*(dbl?2:1);
     let cl="dd";
-    if(k==="pv")cl+=" pv";else if(k==="rel")cl+=" rel";else if(p.crit&&i<2)cl+=p.crit.c==="ok"?" dcrit":p.crit.c==="bad"?" dfail":"";
+    if(dbl)cl+=" dbl";
+    else if(k==="pv")cl+=" pv";else if(k==="rel")cl+=" rel";else if(p.crit&&i<2)cl+=p.crit.c==="ok"?" dcrit":p.crit.c==="bad"?" dfail":"";
     if(r&&/(^|\s)x(\s|$)/.test(r.c))cl+=" x";
     if(String(n).charAt(0)==="−")cl+=" neg";
     if(x>9)cl+=" s2";
-    const dd=el("span",cl,String(x));dd.dataset.f=f;dd.title=n+" · d"+f;dz.append(dd);
+    const dd=el("span",cl,String(x));dd.dataset.f=f;dd.title=n+" · d"+f+(dbl?" · caiu no 2x ("+p.res[i]+" → "+x+")":"");dz.append(dd);
+    if(dbl)dz.append(el("i","x2m","×2"));
   });
-  c.append(dz);
+  return dz;
+}
+function totalEl(p){
   const tr=(p.rows||[]).filter(r=>r.l==="Valor do teste"||r.l==="Total").pop();
-  if(tr){const t=el("span","tot"+(p.crit?" "+p.crit.c:""));t.append(el("small",null,tr.l==="Total"?"Total":"Valor"),document.createTextNode(tr.v));c.append(t)}
+  if(!tr)return null;
+  const t=el("span","tot"+(p.crit?" "+p.crit.c:""));t.append(el("small",null,tr.l==="Total"?"Total":"Valor"),document.createTextNode(tr.v));return t;
+}
+/* aviso temporário no topo (rolagens do mestre/NPC, ou de quem não tem cartão na tela) */
+function showChip(p){
+  const c=el("div","chip"),w=el("span","who",p.who);w.style.color=p.color;c.append(w);
+  if(p.title)c.append(el("span","ttl",p.title));
+  c.append(diceRow(p));
+  const t=totalEl(p);if(t)c.append(t);
   if(p.crit)c.append(el("span","crit "+p.crit.c,p.crit.t));
   if(p.note)c.append(el("div","note",p.note));
   chips.append(c);
   while(chips.children.length>4)chips.firstChild.remove();
   setTimeout(()=>{c.classList.add("out");setTimeout(()=>{c.remove();maybeIdle()},520)},CHIP_LIFE);
+}
+/* jogador com cartão na tela: o resultado fica no cartão dele até a próxima rolagem; mestre/NPC: aviso que some */
+let cardRes=null;
+function showResult(p){
   if(OBR&&p.text){try{OBR.notification.show(p.text)}catch(e){}}
+  if(!p.gm&&p.pid&&cardRes&&cardRes(p))return;
+  showChip(p);
 }
 
 /* ---------- fila de rolagens ---------- */
@@ -268,10 +308,11 @@ function pump(){
   if(cur)return;
   if(threeOK===null)return;                 // ainda decidindo se o three.js carregou
   const p=queue.shift();if(!p)return maybeIdle();
-  if(!p.anim){showChip(p);return pump()}
+  if(!p.anim){showResult(p);return pump()}
   if(threeOK&&!glFailed){
     const meshes=[];
     try{
+      showTray(p.foco);
       if(!gl)init3d();
       setView();
       const sim=new ENG.Sim(p.list,p.seed);
@@ -288,6 +329,7 @@ function pump(){
     }
     if(cur){if(!raf)raf=requestAnimationFrame(loop);return}
   }
+  showTray(p.foco);
   play2d(p);
 }
 function sync(c){
@@ -303,7 +345,7 @@ function loop(now){
   if(!c||c.mode==="2d"){return}
   try{
     if(ctxLost)throw new Error("o navegador perdeu o contexto do WebGL");
-    if(innerWidth!==vw||innerHeight!==vh)setView();        // a janela pode ganhar tamanho depois de abrir
+    if($("#cv").clientWidth!==vw||$("#cv").clientHeight!==vh)setView();        // a janela pode ganhar tamanho depois de abrir
     const dt=Math.min(.1,Math.max(0,(now-c.last)/1000));c.last=now;
     if(c.phase==="roll"){
       c.acc+=dt;let n=0;
@@ -325,13 +367,13 @@ function loop(now){
     if(c.phase==="snap"){
       const k=Math.min(1,(now-c.t0)/300);
       c.fix.forEach(f=>{c.meshes[f.i].quaternion.copy(f.from).slerp(f.to,k)});
-      if(k>=1){c.phase="hold";c.t0=now;showChip(c.p)}
+      if(k>=1){c.phase="hold";c.t0=now;showResult(c.p);if(c.p.dbl.some(Boolean))flashHit()}
     }else if(c.phase==="hold"){
       if(now-c.t0>=(queue.length?1300:HOLD)){c.phase="out";c.t0=now}
     }else if(c.phase==="out"){
       const k=Math.min(1,(now-c.t0)/300);
       c.meshes.forEach(m=>{m.scale.setScalar(m.userData.s*(1-k));m.userData.sh.material.opacity*=(1-k)});
-      if(k>=1){disposeGroup(c);cur=null;R.render(scene,cam);pump();return}
+      if(k>=1){disposeGroup(c);cur=null;R.render(scene,cam);if(!queue.length)hideTray();pump();return}
     }
     R.render(scene,cam);
   }catch(e){
@@ -357,8 +399,102 @@ function maybeIdle(){
 
 /* ---------- cartões dos jogadores na tela ---------- */
 const lsg=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lss=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
+/* ---------- mesa de dados: janelinha arrastável onde os dados rolam ---------- */
+const tray=$("#tray"),TB=[$("#tb1"),$("#tb2")];
+let tscale=Math.min(1.8,Math.max(.5,parseFloat(lsg("tray-scale"))||1)),tpos=null,tHide=0,tdrag=null;
+try{tpos=JSON.parse(lsg("tray-pos")||"null")}catch(e){tpos=null}
+if(!(tpos&&Number.isFinite(tpos.x)&&Number.isFinite(tpos.y)))tpos=null;
+const trayW=()=>Math.max(160,Math.min(400*tscale,innerWidth*.92,innerHeight*.92*860/760));
+function placeTray(){
+  const w=trayW(),h=w*760/860;
+  tray.style.setProperty("--tw",w+"px");
+  let x=tpos?tpos.x*innerWidth:innerWidth-w-20,y=tpos?tpos.y*innerHeight:innerHeight-h-20;     // padrão: canto de baixo, à direita
+  x=Math.max(0,Math.min(innerWidth-w,x));y=Math.max(0,Math.min(innerHeight-h,y));
+  tray.style.left=x+"px";tray.style.top=y+"px";
+}
+function layoutTray(){placeTray();reportAll()}
+function moveTray(x,y){
+  const w=tray.offsetWidth,h=tray.offsetHeight;
+  tray.style.left=Math.max(0,Math.min(innerWidth-w,x))+"px";tray.style.top=Math.max(0,Math.min(innerHeight-h,y))+"px";
+}
+function saveTray(){
+  tpos={x:(parseFloat(tray.style.left)||0)/innerWidth,y:(parseFloat(tray.style.top)||0)/innerHeight};
+  lss("tray-pos",JSON.stringify(tpos));
+}
+function setTScale(v){
+  tscale=Math.min(1.8,Math.max(.5,Math.round(v*100)/100));lss("tray-scale",String(tscale));
+  placeTray();if(gl&&setView())R.render(scene,cam);reportAll();
+}
+function showTray(foco){
+  clearTimeout(tHide);
+  TB[0].hidden=!!foco;TB[1].hidden=!foco;                       // com o Foco ligado aparece a mesa com o círculo 2x
+  tray.classList.remove("out","hit");tray.classList.add("on");
+  placeTray();reportAll();
+}
+function hideTray(){
+  if(ARR)return;
+  clearTimeout(tHide);tray.classList.add("out");
+  tHide=setTimeout(()=>{tray.classList.remove("on","out");reportAll()},380);
+}
+function flashHit(){tray.classList.remove("hit");void tray.offsetWidth;tray.classList.add("hit")}
+/* o segundo plano põe uma zona de arrastar transparente por cima da mesa (e de cada foto): aqui só informamos onde elas estão */
+let rt=0;
+function reportAll(){
+  clearTimeout(rt);
+  rt=setTimeout(()=>{
+    if(!OBR)return;
+    const rects=[];
+    if(!ARR){
+      document.querySelectorAll("#hud .hc").forEach(c=>{const r=c.querySelector(".hp").getBoundingClientRect();rects.push({id:c.dataset.id,x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)})});
+      if(tray.classList.contains("on")&&!tray.classList.contains("out")){const r=TB[0].getBoundingClientRect();rects.push({id:"tray",x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)})}
+    }
+    OBR.broadcast.sendMessage("ordem.hud/layout",{rects},{destination:"LOCAL"}).catch(()=>{});
+  },200);
+}
+function initTray(){
+  let base=null;
+  OBR.broadcast.onMessage("ordem.hud/drag",ev=>{                 // vem da zona transparente por cima da mesa
+    const m=ev.data||{};if(m.id!=="tray")return;
+    if(m.ph==="s"){base={x:parseFloat(tray.style.left)||0,y:parseFloat(tray.style.top)||0};tray.classList.add("drag")}
+    else if(m.ph==="w"){setTScale(tscale*((+m.dy||0)<0?1.08:1/1.08))}
+    else if(!base)return;
+    else if(m.ph==="m")moveTray(base.x+(+m.dx||0),base.y+(+m.dy||0));
+    else if(m.ph==="e"){tray.classList.remove("drag");saveTray();base=null;reportAll()}
+  });
+  if(!ARR)return;
+  /* modo organizar: arrasta direto, roda do mouse muda o tamanho */
+  tray.addEventListener("pointerdown",e=>{
+    if(e.button>0)return;const r=tray.getBoundingClientRect();tdrag={dx:e.clientX-r.left,dy:e.clientY-r.top};
+    tray.classList.add("drag");try{tray.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();
+  });
+  tray.addEventListener("pointermove",e=>{if(tdrag)moveTray(e.clientX-tdrag.dx,e.clientY-tdrag.dy)});
+  const up=()=>{if(!tdrag)return;tdrag=null;tray.classList.remove("drag");saveTray()};
+  tray.addEventListener("pointerup",up);tray.addEventListener("pointercancel",up);
+  tray.addEventListener("wheel",e=>{e.preventDefault();setTScale(tscale*(e.deltaY<0?1.08:1/1.08))},{passive:false});
+  $("#t-menos").onclick=()=>setTScale(tscale-.1);$("#t-mais").onclick=()=>setTScale(tscale+.1);
+  showTray(false);                                               // mostra a mesa vazia para o jogador posicionar
+}
+
 function startHud(){
   const box=$("#hud"),cards=new Map();
+  const res=new Map();                              // id do jogador -> último resultado (fica até a próxima rolagem)
+  try{const o=JSON.parse(lsg("hud-res")||"{}");for(const k in o){const q=ENG.clean(o[k]);if(q)res.set(k,q)}}catch(e){}
+  function setRes(c,pop){
+    const old=c.querySelector(".hr");if(old)old.remove();
+    const p=res.get(c.dataset.id);if(!p)return;
+    const b=el("div","hr"+(pop?" pop":""));
+    if(p.title)b.append(el("div","hrt",p.title));
+    b.append(diceRow(p));
+    const t=totalEl(p);if(t)b.append(t);
+    if(p.crit)b.append(el("span","crit "+p.crit.c,p.crit.t));
+    c.append(b);
+  }
+  cardRes=p=>{
+    const c=cards.get(p.pid);if(!c)return false;           // sem cartão na tela: o aviso temporário cobre
+    res.set(p.pid,p);while(res.size>16)res.delete(res.keys().next().value);
+    const o={};res.forEach((v,k)=>{o[k]=v});lss("hud-res",JSON.stringify(o));
+    setRes(c,true);layout();return true;
+  };
   let ents=[],pos={},scale=Math.min(2,Math.max(.5,parseFloat(lsg("hud-scale"))||1)),drag=null;
   try{pos=JSON.parse(lsg("hud-pos")||"{}")||{}}catch(e){pos={}}
   if(ARR)document.body.classList.add("arr");
@@ -378,7 +514,7 @@ function startHud(){
     if(okImg(e.th))p.style.backgroundImage="url("+e.th+")";else p.textContent=(x.nome||"?").trim().charAt(0).toUpperCase()||"?";
     const i=el("div","hi"),n=el("div","hn"+(x.npc?" npc":""),x.nome);
     i.append(n,bar("pvv","PV",num(e.pv,0),num(e.pvmax,10)),bar("pdv","PD",num(e.pd,0),num(e.pdmax,10)));
-    c.append(p,i);
+    c.append(p,i);setRes(c);
   }
   function place(c,i){
     const w=c.offsetWidth*scale,h=c.offsetHeight*scale,p=pos[c.dataset.id];
@@ -417,14 +553,7 @@ function startHud(){
   pull();
 
   /* posição das fotos: o segundo plano põe uma zona de arrastar transparente por cima de cada uma */
-  let rt=0;
-  const report=()=>{
-    clearTimeout(rt);
-    rt=setTimeout(()=>{
-      const rects=ARR?[]:[...box.children].map(c=>{const r=c.querySelector(".hp").getBoundingClientRect();return{id:c.dataset.id,x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)}});
-      OBR.broadcast.sendMessage("ordem.hud/layout",{rects},{destination:"LOCAL"}).catch(()=>{});
-    },200);
-  };
+  const report=reportAll;
   const baseLayout=layout;
   layout=()=>{baseLayout();report()};
   setInterval(report,10000);
@@ -467,7 +596,7 @@ function startHud(){
   const setScale=v=>{scale=Math.min(2,Math.max(.5,Math.round(v*100)/100));lss("hud-scale",String(scale));layout()};
   $("#h-menos").onclick=()=>setScale(scale-.1);
   $("#h-mais").onclick=()=>setScale(scale+.1);
-  $("#h-reset").onclick=()=>{pos={};lss("hud-pos",null);setScale(1)};
+  $("#h-reset").onclick=()=>{pos={};lss("hud-pos",null);setScale(1);tpos=null;lss("tray-pos",null);setTScale(1)};
   const done=()=>OBR.broadcast.sendMessage("ordem.hud/arrange",{on:false},{destination:"LOCAL"}).catch(()=>{});
   $("#h-ok").onclick=done;
   addEventListener("keydown",e=>{if(e.key==="Escape")done()});
@@ -485,6 +614,7 @@ function startHud(){
   if(OBR){
     OBR.broadcast.onMessage(CH.feed,ev=>{const d=ev.data||{};enqueue(d.p,+d.seq||0)});
     OBR.broadcast.sendMessage(CH.idle,{seen:s0,idle:false,mid},{destination:"LOCAL"}).catch(()=>{});
+    initTray();
     if(HUD)startHud();
   }
   if(qs.get("p")){try{enqueue(ENG.unb64(qs.get("p")),s0)}catch(e){maybeIdle()}}
