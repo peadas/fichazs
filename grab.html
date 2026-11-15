@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mover cartão</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:transparent}
+#g{position:fixed;inset:0;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+#g:hover{box-shadow:inset 0 0 0 2px #ffffffaa}
+#g.on{cursor:grabbing;box-shadow:none}
+</style>
+</head>
+<body>
+<div id="g" title="Arraste para mover"></div>
+<script type="module">
+/* Fica por cima da foto de um cartão (a camada dos cartões não recebe cliques para não bloquear o mapa).
+   Quem aperta e arrasta a foto aqui move o cartão lá na camada. */
+import {loadOBR,ready} from "./obr.js?v=2.6.1";
+const id=new URLSearchParams(location.search).get("id")||"",g=document.getElementById("g");
+let OBR=null,st=null,raf=0,last=null;
+const send=d=>OBR&&OBR.broadcast.sendMessage("ordem.hud/drag",{id,...d},{destination:"LOCAL"}).catch(()=>{});
+g.addEventListener("pointerdown",e=>{
+  if(e.button>0)return;
+  st={x:e.clientX,y:e.clientY};g.classList.add("on");
+  try{g.setPointerCapture(e.pointerId)}catch(_){}
+  send({ph:"s"});e.preventDefault();
+});
+g.addEventListener("pointermove",e=>{
+  if(!st)return;last={dx:e.clientX-st.x,dy:e.clientY-st.y};
+  if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(last)send({ph:"m",...last})});
+});
+const end=e=>{if(!st)return;if(last)send({ph:"m",...last});st=null;last=null;g.classList.remove("on");send({ph:"e"})};
+g.addEventListener("wheel",e=>{e.preventDefault();send({ph:"w",dy:e.deltaY})},{passive:false});   // roda do mouse: tamanho da mesa de dados
+g.addEventListener("pointerup",end);g.addEventListener("pointercancel",end);
+(async()=>{
+  OBR=await loadOBR();
+  if(!OBR||!(await ready(OBR))){OBR=null;return}
+  const alive=()=>OBR.broadcast.sendMessage("ordem.hud/alive",{id},{destination:"LOCAL"}).catch(()=>{});
+  alive();setInterval(alive,5000);
+})();
+</script>
+</body>
+</html>
