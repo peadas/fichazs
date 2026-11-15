@@ -2,7 +2,7 @@
   "name": "Ficha Ordem Paranormal",
   "version": "2.7.0",
   "manifest_version": 1,
-  "description": "Ficha de personagem com dados 3D na mesa, painel da mesa e sistema de Luta interativo nos tokens (manobras, agarrar com attach, buffs e debuffs).",
+  "description": "Ficha de personagem .",
   "icon": "/fichazs/icon.svg",
   "action": {
     "title": "Ficha",
