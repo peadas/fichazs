@@ -373,6 +373,8 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
     <div class="opt"><button class="sw" id="jj" type="button" role="switch" aria-checked="false" aria-label="Jujutsu"><i></i></button><span class="ol">Jujutsu</span></div>
     <div class="opt"><button class="sw" id="trayon" type="button" role="switch" aria-checked="false" aria-label="Mesa de dados sempre visível"><i></i></button><span class="ol">Mesa de dados sempre visível</span></div>
     <p class="hint">Ligado, a mesa de dados fica na tela do Owlbear o tempo todo, com o histórico em cima e um dadinho do lado para rolar sem abrir a ficha (digite 1d4, 2d6+3…). Desligado, ela só aparece quando um dado gira. Vale só para este navegador.</p>
+    <details id="dd"><summary class="ol" style="cursor:pointer;padding:12px 0">Personalizar dados</summary><div id="dpanel"></div></details>
+    <p class="hint" id="verinfo"></p>
   </div>
 </div>
 <div id="rels" hidden>
@@ -427,8 +429,9 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
-<script src="engine.js?v=2.6.1"></script>
-<script src="efeitos.js?v=2.6.1"></script>
+<script src="engine.js?v=2.8.0"></script>
+<script src="dice-style.js?v=2.8.0"></script>
+<script src="efeitos.js?v=2.8.0"></script>
 <input type="file" id="file" accept="image/*" hidden>
 
 <script>
@@ -633,7 +636,7 @@ function kick(b,rnd){
 function readout(b,d4){
   let bi=0,best=d4?1e9:-1e9,lo=1e9,li=0;
   b.planes.forEach((p,i)=>{const y=qrot(b.q,p.n)[1];if(y<lo){lo=y;li=i}if(d4?y<best:y>best){best=y;bi=i}});
-  if(b.f===14||b.f===18){const n=b.planes.length/2,k=(n-1)/2;return{idx:li<n?n+(li+k)%n:((li-n-k)%n+n)%n,tilt:Math.acos(Math.min(1,Math.max(0,-lo)))}}   // bipirâmide ímpar: vale a face par da que está no chão
+  if(b.f===14||b.f===16||b.f===18){const A=ENG.analyze(b.f);return{idx:A.pair[li],tilt:Math.acos(Math.min(1,Math.max(0,-lo)))}}   // vale a face par da que está no chão
   const tilt=Math.acos(Math.min(1,Math.abs(best)));
   if(!d4)return{idx:bi,tilt};
   const used=b.planes[bi].vi;let o=0;
@@ -648,12 +651,6 @@ const TRAP=(n,H,r)=>()=>{const p=[],T=[0,H,0],B=[0,-H,0],U=[],L=[],c=Math.cos(Ma
   for(let i=0;i<n;i++){const a=i*Math.PI*2/n,b=a+Math.PI/n;U.push([Math.cos(a)*r,h,Math.sin(a)*r]);L.push([Math.cos(b)*r,-h,Math.sin(b)*r])}
   for(let i=0;i<n;i++){const j=(i+1)%n;p.push(...T,...U[i],...L[i],...T,...L[i],...U[j],...B,...L[i],...U[j],...B,...U[j],...L[j])}
   const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g};
-/* d16: bipirâmide octogonal (16 triângulos, como no manual); d14 e d18 seguem como trapezoedros */
-const BIPY=n=>()=>{const T=[0,1,0],B=[0,-1,0],E=[],P=[],Q=[];
-  for(let i=0;i<n;i++){const a=i*Math.PI*2/n;E.push([Math.cos(a),0,Math.sin(a)])}
-  for(let i=0;i<n;i++){const j=(i+1)%n;P.push(...T,...E[j],...E[i])}
-  for(let i=0;i<n;i++){const j=(i+1)%n;Q.push(...B,...E[i],...E[j])}
-  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(P.concat(Q),3));g.computeVertexNormals();return g};
 const NUM=(f,i)=>typeof ENG!=="undefined"?ENG.NUM(f,i):i+1;
 const GEO={
  4:()=>new THREE.TetrahedronGeometry(1.15),
@@ -664,9 +661,9 @@ const GEO={
   for(let i=0;i<5;i++){const j=(i+1)%5;p.push(...T,...U[i],...L[i],...T,...L[i],...U[j],...B,...L[i],...U[j],...B,...U[j],...L[j])}
   const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g},
  12:()=>new THREE.DodecahedronGeometry(1.05),
- 14:BIPY(7),
- 16:BIPY(8),
- 18:BIPY(9),
+ 14:()=>ENG.GEO[14](),
+ 16:()=>ENG.GEO[16](),
+ 18:()=>ENG.GEO[18](),
  20:()=>new THREE.IcosahedronGeometry(1.1)
 };
 let R,scene,cam,M,meshes=[],anim=0,rolling=false,shTex;
@@ -713,6 +710,8 @@ function numMat(n,pv){
   return texC[key];
 }
 const mk=pos=>{const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));g.computeVertexNormals();return g};
+const mkUV=(pos,uv)=>{const g=mk(pos);g.setAttribute("uv",new THREE.Float32BufferAttribute(uv,2));return g};
+let envTex;const getEnv=()=>envTex===undefined?(envTex=window.DICE?DICE.makeEnv(R):null):envTex;
 function faces(g){
   const p=g.attributes.position,F=[],key=v=>v.toArray().map(x=>x.toFixed(3)).join();
   for(let i=0;i<p.count;i+=3){
@@ -728,23 +727,26 @@ function faces(g){
 }
 /* dado com raio "rad" (px); face i = número i+1. d4: o número fica nos cantos e vale o que aponta pra cima */
 function makeDie(f,pv,rad){
-  const g=GEO[f](),Fs=faces(g.index?g.toNonIndexed():g),grp=new THREE.Group(),all=[],vm={},V=[],z=new THREE.Vector3(0,0,1);
+  const ds=!pv&&window.DICE?DICE.mine():null,st=ds?DICE.mats(ds,getEnv()):null,NM=(n,k)=>st?st.num(n):numMat(n,k);
+  const g=GEO[f](),Fs=faces(g.index?g.toNonIndexed():g),grp=new THREE.Group(),all=[],auv=[],vm={},V=[],z=new THREE.Vector3(0,0,1);
   Fs.forEach(F=>{F.vi=Object.keys(F.u).map(k=>{if(!(k in vm)){vm[k]=V.length;V.push(F.u[k])}return vm[k]})});
   Fs.forEach((F,i)=>{
-    const pos=[];
-    F.t.forEach(t=>t.forEach(v=>{all.push(v.x,v.y,v.z);const w=v.clone().sub(F.c).multiplyScalar(.8).add(F.c).addScaledVector(F.n,.012);pos.push(w.x,w.y,w.z)}));
-    if(!pv)grp.add(new THREE.Mesh(mk(pos),M.ena));
-    const q=new THREE.Quaternion().setFromUnitVectors(z,F.n);
+    const pos=[],uv=[],q=new THREE.Quaternion().setFromUnitVectors(z,F.n);
+    const ux=new THREE.Vector3(1,0,0).applyQuaternion(q),uy=new THREE.Vector3(0,1,0).applyQuaternion(q);
+    const off=st&&!st.fixed?[(i*.618)%1,(i*.382+.17)%1]:[0,0],ins=st?st.inset:.8;
+    const UV=(w,o)=>{const d=w.clone().sub(F.c);o.push(d.dot(ux)/(F.R*2)+.5+off[0],d.dot(uy)/(F.R*2)+.5+off[1])};
+    F.t.forEach(t=>t.forEach(v=>{all.push(v.x,v.y,v.z);const w=v.clone().sub(F.c).multiplyScalar(ins).add(F.c).addScaledVector(F.n,.012);pos.push(w.x,w.y,w.z);if(st){UV(v,auv);UV(w,uv)}}));
+    if(!pv){if(!st)grp.add(new THREE.Mesh(mk(pos),M.ena));else if(st.face)grp.add(new THREE.Mesh(mkUV(pos,uv),st.face))}
     if(f===4){
       const xv=new THREE.Vector3(1,0,0).applyQuaternion(q),yv=new THREE.Vector3(0,1,0).applyQuaternion(q);
       F.vi.forEach(vi=>{
         const t=V[vi].clone().sub(F.c).normalize(),a=Math.atan2(-t.dot(xv),t.dot(yv));
-        const pl=new THREE.Mesh(new THREE.PlaneGeometry(.6,.6),numMat(vi+1,pv));
+        const pl=new THREE.Mesh(new THREE.PlaneGeometry(.6,.6),NM(vi+1,pv));
         pl.position.copy(F.c).addScaledVector(t,F.R*.52).addScaledVector(F.n,.025);
         pl.quaternion.setFromAxisAngle(F.n,a).multiply(q);grp.add(pl);
       });
     }else{
-      const s=F.R*1.15,pl=new THREE.Mesh(new THREE.PlaneGeometry(s,s),numMat(NUM(f,i),pv));
+      const s=F.R*1.15,pl=new THREE.Mesh(new THREE.PlaneGeometry(s,s),NM(NUM(f,i),pv));
       pl.position.copy(F.c).addScaledVector(F.n,.025);pl.quaternion.copy(q);
       if(f===14||f===16||f===18){      // número com o alto virado para a ponta do dado
         const ap=F.vi.map(vi=>V[vi]).reduce((m,v)=>Math.abs(v.y)>Math.abs(m.y)?v:m),yv=ap.clone().sub(F.c);yv.addScaledVector(F.n,-yv.dot(F.n));
@@ -753,7 +755,8 @@ function makeDie(f,pv,rad){
       grp.add(pl);
     }
   });
-  grp.add(new THREE.Mesh(mk(all),M[pv||"gold"]));
+  if(st){grp.add(new THREE.Mesh(mkUV(all,auv),st.body));if(st.inner){const nn=new THREE.Mesh(mkUV(all,auv),st.inner);nn.scale.setScalar(.66);grp.add(nn)}}
+  else grp.add(new THREE.Mesh(mk(all),M[pv||"gold"]));
   const mx=Math.max(...V.map(v=>v.length())),s=rad/mx;
   grp.scale.setScalar(s);
   grp.userData.hull={verts:V.map(v=>v.toArray()),planes:Fs.map(F=>({n:F.n.toArray(),d:F.n.dot(F.c),vi:F.vi}))};
@@ -923,6 +926,7 @@ const uid=()=>String(Date.now())+"u"+(++uidN);
 const metaOBR=()=>{const X=window.OBRX||{};return{pid:String(X.id||""),gm:!!(X.gm||window.__NPCID)}};
 function obrSend(p){
   const X=window.OBRX;if(!X||typeof ENG==="undefined")return;
+  if(!p.ds&&window.DICE)p.ds=DICE.mine();
   X.OBR.broadcast.sendMessage(ENG.CH.roll,p,{destination:npcOculto()?"LOCAL":"ALL"}).catch(()=>{});
 }
 /* mostra o resultado refeito aqui e manda o mesmo resultado (sem animação) para a mesa */
@@ -1033,7 +1037,9 @@ $("#trayon").onclick=()=>{
   const X=window.OBRX;if(X)X.OBR.broadcast.sendMessage("ordem.hud/cfg",{},{destination:"LOCAL"}).catch(()=>{});
 };
 trayUI();
+$("#verinfo").textContent=typeof ENG!=="undefined"&&ENG.VER?"Versão dos dados: "+ENG.VER+" · "+ENG.FORMAS:"engine.js não carregou (arquivo antigo ou em cache)";
 $("#setbtn").onclick=()=>{$("#sett").hidden=false};
+let dui=0;$("#dd").addEventListener("toggle",()=>{if($("#dd").open&&!dui&&window.DICE){dui=1;DICE.ui($("#dpanel"))}});
 $("#sclose").onclick=()=>{$("#sett").hidden=true};
 $("#sett").onclick=e=>{if(e.target.id==="sett")$("#sett").hidden=true};
 applyJJ();
@@ -1163,7 +1169,7 @@ function throwOBR(list,pv,rb,render){
   const kinds=list.map((_,i)=>pv&&i===2?"pv":rb&&i===list.length-1?"rel":"");
   const tr=o.rows.filter(r=>r.l==="Valor do teste"||r.l==="Total").pop();
   const text=who+" · "+rollTitle+": "+(tr?tr.v:res.map(r=>r[2]).join(", "))+(o.crit?" ("+o.crit.t+")":"");
-  const payload={id:String(Date.now()),seed,who,color:X.color,title:rollTitle,list:list.map(([n,f])=>[n,f]),kinds,res:res.map(r=>r[2]),dbl:res.map(r=>!!r[3]),foco,...metaOBR(),anim:true,rows:o.rows,crit:o.crit,note:o.note,text};
+  const payload={id:String(Date.now()),seed,who,color:X.color,title:rollTitle,list:list.map(([n,f])=>[n,f]),kinds,ds:window.DICE?DICE.mine():null,res:res.map(r=>r[2]),dbl:res.map(r=>!!r[3]),foco,...metaOBR(),anim:true,rows:o.rows,crit:o.crit,note:o.note,text};
   if(LR){LR.who=who;LR.color=X.color;LR.kinds=kinds;LR.seed=seed;LR.foco=foco}
   /* NPC com o olho fechado: o dado cai só para o mestre (destino LOCAL), os outros jogadores não recebem nada */
   X.OBR.broadcast.sendMessage(ENG.CH.roll,payload,{destination:npcOculto()?"LOCAL":"ALL"}).catch(()=>{});
@@ -1265,8 +1271,8 @@ window.fichaRecarregar=()=>{
 };
 </script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.6.1";
-import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.6.1";
+import {loadOBR,ready} from "./obr.js?v=2.8.0";
+import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.8.0";
 (async()=>{
   if(document.documentElement.classList.contains("view"))return;
   const OBR=await loadOBR();

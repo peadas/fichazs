@@ -111,16 +111,17 @@ body.arr #hbar{display:flex}
 </style>
 </head>
 <body>
-<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.6.1" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.6.1" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
+<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.8.0" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.8.0" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
 <div id="hist" aria-hidden="true"></div>
 <div id="hud" aria-hidden="true"></div>
 <div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
 <div id="hbar"><span>Arraste os cartões e a mesa</span><button id="t-menos" title="Mesa menor" aria-label="Mesa menor">Mesa −</button><button id="t-mais" title="Mesa maior" aria-label="Mesa maior">Mesa +</button><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js?v=2.6.1"></script>
+<script src="engine.js?v=2.8.0"></script>
+<script src="dice-style.js?v=2.8.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.6.1";
-import {KEY,npcsOf} from "./mesa-lib.js?v=2.6.1";
+import {loadOBR,ready} from "./obr.js?v=2.8.0";
+import {KEY,npcsOf} from "./mesa-lib.js?v=2.8.0";
 const $=s=>document.querySelector(s);
 const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",KEEP=HUD||qs.get("tray")==="1";
 const CH=ENG.CH,HOLD=4500,CHIP_LIFE=9000;
@@ -191,24 +192,29 @@ function numMat(n,pv){
   return texC[key];
 }
 const mk=pos=>{const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));g.computeVertexNormals();return g};
+const mkUV=(pos,uv)=>{const g=mk(pos);g.setAttribute("uv",new THREE.Float32BufferAttribute(uv,2));return g};
+let envTex;const getEnv=()=>envTex===undefined?(envTex=window.DICE?DICE.makeEnv(R):null):envTex;
 /* kind: "" (dourado) | "pv" (pavor) | "rel" (relação). Face i = número i+1. d4: o número fica nos cantos */
-function makeDie(f,kind){
-  const a=ENG.analyze(f),grp=new THREE.Group(),all=[],z=new THREE.Vector3(0,0,1);
+function makeDie(f,kind,ds){
+  const st=!kind&&ds&&window.DICE?DICE.mats(ds,getEnv()):null,NM=(n,k)=>st?st.num(n):numMat(n,k);
+  const a=ENG.analyze(f),grp=new THREE.Group(),all=[],auv=[],z=new THREE.Vector3(0,0,1);
   a.Fs.forEach((F,i)=>{
-    const pos=[];
-    F.t.forEach(t=>t.forEach(v=>{all.push(v.x,v.y,v.z);const w=v.clone().sub(F.c).multiplyScalar(.8).add(F.c).addScaledVector(F.n,.012);pos.push(w.x,w.y,w.z)}));
-    if(!kind)grp.add(new THREE.Mesh(mk(pos),M.ena));
-    const q=new THREE.Quaternion().setFromUnitVectors(z,F.n);
+    const pos=[],uv=[],q=new THREE.Quaternion().setFromUnitVectors(z,F.n);
+    const ux=new THREE.Vector3(1,0,0).applyQuaternion(q),uy=new THREE.Vector3(0,1,0).applyQuaternion(q);
+    const off=st&&!st.fixed?[(i*.618)%1,(i*.382+.17)%1]:[0,0],ins=st?st.inset:.8;
+    const UV=(w,o)=>{const d=w.clone().sub(F.c);o.push(d.dot(ux)/(F.R*2)+.5+off[0],d.dot(uy)/(F.R*2)+.5+off[1])};
+    F.t.forEach(t=>t.forEach(v=>{all.push(v.x,v.y,v.z);const w=v.clone().sub(F.c).multiplyScalar(ins).add(F.c).addScaledVector(F.n,.012);pos.push(w.x,w.y,w.z);if(st){UV(v,auv);UV(w,uv)}}));
+    if(!kind){if(!st)grp.add(new THREE.Mesh(mk(pos),M.ena));else if(st.face)grp.add(new THREE.Mesh(mkUV(pos,uv),st.face))}
     if(f===4){
       const xv=new THREE.Vector3(1,0,0).applyQuaternion(q),yv=new THREE.Vector3(0,1,0).applyQuaternion(q);
       F.vi.forEach(vi=>{
         const t=a.V[vi].clone().sub(F.c).normalize(),an=Math.atan2(-t.dot(xv),t.dot(yv));
-        const pl=new THREE.Mesh(new THREE.PlaneGeometry(.6,.6),numMat(vi+1,kind));
+        const pl=new THREE.Mesh(new THREE.PlaneGeometry(.6,.6),NM(vi+1,kind));
         pl.position.copy(F.c).addScaledVector(t,F.R*.52).addScaledVector(F.n,.025);
         pl.quaternion.setFromAxisAngle(F.n,an).multiply(q);grp.add(pl);
       });
     }else{
-      const s=F.R*1.15,pl=new THREE.Mesh(new THREE.PlaneGeometry(s,s),numMat(ENG.NUM(f,i),kind));
+      const s=F.R*1.15,pl=new THREE.Mesh(new THREE.PlaneGeometry(s,s),NM(ENG.NUM(f,i),kind));
       pl.position.copy(F.c).addScaledVector(F.n,.025);pl.quaternion.copy(q);
       if(f===14||f===16||f===18){      // número com o alto virado para a ponta do dado
         const ap=F.vi.map(vi=>a.V[vi]).reduce((m,v)=>Math.abs(v.y)>Math.abs(m.y)?v:m),yv=ap.clone().sub(F.c);yv.addScaledVector(F.n,-yv.dot(F.n));
@@ -217,7 +223,8 @@ function makeDie(f,kind){
       grp.add(pl);
     }
   });
-  grp.add(new THREE.Mesh(mk(all),M[kind||"gold"]));
+  if(st){grp.add(new THREE.Mesh(mkUV(all,auv),st.body));if(st.inner){const nn=new THREE.Mesh(mkUV(all,auv),st.inner);nn.scale.setScalar(.66);grp.add(nn)}}
+  else grp.add(new THREE.Mesh(mk(all),M[kind||"gold"]));
   grp.userData.s=ENG.RAD/a.mx;grp.scale.setScalar(grp.userData.s);
   /* os dados ficam sempre no meio da arena, perto da câmera: nunca "somem" por corte de visão */
   grp.traverse(o=>{o.frustumCulled=false});
@@ -338,7 +345,7 @@ function pump(){
       setView();
       const sim=new ENG.Sim(p.list,p.seed);
       p.list.forEach(([n,f],i)=>{
-        const m=makeDie(f,p.kinds[i]);
+        const m=makeDie(f,p.kinds[i],p.ds);
         const sh=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:shTex,transparent:true,depthWrite:false}));
         sh.frustumCulled=false;sh.rotation.x=-Math.PI/2;m.userData.sh=sh;scene.add(m,sh);meshes.push(m);
       });
@@ -377,7 +384,7 @@ function loop(now){
         c.fix=[];
         c.sim.bodies.forEach((b,i)=>{
           const want=c.p.res[i];
-          if(c.sim.results[i][2]!==want||b.odd){      // d14/d18: a face do resultado é virada para cima
+          if(c.sim.results[i][2]!==want||b.skew){      // d14/d18: a face do resultado é virada para cima
             const from=c.meshes[i].quaternion.clone(),t=ENG.PH.targetQuat(b,b.f===4?want-1:ENG.IDX(b.f,want),b.f===4);
             c.fix.push({i,from,to:new THREE.Quaternion(t[0],t[1],t[2],t[3])});
           }
@@ -551,7 +558,7 @@ async function quickRoll(m){
   if(mod)rows.push({l:"Modificador",v:(mod>0?"+":"−")+Math.abs(mod),c:""});
   if(res.length>1||mod)rows.push({l:"Total",v:String(tot),c:"ok"});
   const title=("Rolagem "+exp).slice(0,40);
-  const payload={id:String(Date.now()),seed,who,color:meCache.color,title,list:list.map(([n,f])=>[n,f]),kinds:list.map(()=>""),res:res.map(r=>r[2]),dbl,foco,pid:String(meCache.id),gm:!!meCache.gm,anim:true,rows,crit:null,note:foco&&dbl.some(Boolean)?"Foco: caiu no 2×":"",text:who+" · "+title+": "+tot};
+  const payload={id:String(Date.now()),seed,who,color:meCache.color,title,list:list.map(([n,f])=>[n,f]),kinds:list.map(()=>""),ds:window.DICE?DICE.mine():null,res:res.map(r=>r[2]),dbl,foco,pid:String(meCache.id),gm:!!meCache.gm,anim:true,rows,crit:null,note:foco&&dbl.some(Boolean)?"Foco: caiu no 2×":"",text:who+" · "+title+": "+tot};
   OBR.broadcast.sendMessage(CH.roll,payload,{destination:"ALL"}).catch(()=>{});
 }
 function initTray(){

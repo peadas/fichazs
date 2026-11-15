@@ -133,10 +133,9 @@ function kick(b,rnd){
 function readout(b,d4){
   let bi=0,best=d4?1e9:-1e9,lo=1e9,li=0;
   b.planes.forEach((p,i)=>{const y=qrot(b.q,p.n)[1];if(y<lo){lo=y;li=i}if(d4?y<best:y>best){best=y;bi=i}});
-  if(b.odd){
-    /* bipirâmide ímpar (d14, d18): não há face exatamente oposta, então vale a face "par" da que está apoiada no chão (as duas somam 2n+1) */
-    const n=b.planes.length/2,k=(n-1)/2;
-    return{idx:li<n?n+(li+k)%n:((li-n-k)%n+n)%n,bad:lo>-P.TILT_COS};
+  if(b.pair){
+    /* d14, d16 e d18: vale a face "par" (a mais oposta) da que está apoiada no chão; as duas somam n+1 */
+    return{idx:b.pair[li],bad:lo>-P.TILT_COS};
   }
   const bad=Math.abs(best)<P.TILT_COS;
   if(!d4)return{idx:bi,bad};
@@ -157,12 +156,14 @@ return{P,Body,World,toss,kick,readout,targetQuat,qrot,randQuat};
 })();
 
 /* ---------- geometria (precisa do three.js, só na hora de usar) ---------- */
-/* d14, d16 e d18: bipirâmides (n triângulos em cima e n embaixo, como no manual). Faces: as de cima primeiro (p0..pn-1), depois as de baixo (q0..qn-1) */
-const BIPY=n=>()=>{const T=[0,1,0],B=[0,-1,0],E=[],P=[],Q=[];
-  for(let i=0;i<n;i++){const a=i*Math.PI*2/n;E.push([Math.cos(a),0,Math.sin(a)])}
-  for(let i=0;i<n;i++){const j=(i+1)%n;P.push(...T,...E[j],...E[i])}
-  for(let i=0;i<n;i++){const j=(i+1)%n;Q.push(...B,...E[i],...E[j])}
-  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(P.concat(Q),3));g.computeVertexNormals();return g};
+/* d14: octaedro truncado (6 quadrados + 8 hexágonos, como o dado antigo da foto).
+   d16: barril octogonal com uma tampa de pirâmide de 4 lados em cada ponta (8 + 8 faces).
+   d18: cubo chanfrado (6 quadrados + 12 retângulos nas arestas).
+   Em todos, as medidas foram acertadas para as faces terem a mesma chance de sair, e as faces são opostas e paralelas (o dado para reto).
+   Os pontos vieram de um casco convexo calculado fora daqui. */
+const SOL={"14":{"v":[[-1.0,-0.75466,0.0],[-1.0,0.0,-0.75466],[-1.0,0.0,0.75466],[-1.0,0.75466,0.0],[-0.75466,-1.0,0.0],[-0.75466,0.0,-1.0],[-0.75466,0.0,1.0],[-0.75466,1.0,0.0],[0.0,-1.0,-0.75466],[0.0,-1.0,0.75466],[0.0,-0.75466,-1.0],[0.0,-0.75466,1.0],[0.0,0.75466,-1.0],[0.0,0.75466,1.0],[0.0,1.0,-0.75466],[0.0,1.0,0.75466],[0.75466,-1.0,0.0],[0.75466,0.0,-1.0],[0.75466,0.0,1.0],[0.75466,1.0,0.0],[1.0,-0.75466,0.0],[1.0,0.0,-0.75466],[1.0,0.0,0.75466],[1.0,0.75466,0.0]],"t":[[16,4,8],[16,9,4],[11,6,2],[11,2,0],[11,0,4],[11,4,9],[3,1,0],[3,0,2],[10,0,1],[10,1,5],[10,4,0],[10,8,4],[10,5,12],[10,12,17],[14,3,7],[14,5,1],[14,12,5],[14,1,3],[15,6,13],[15,7,3],[15,2,6],[15,3,2],[15,14,7],[15,19,14],[21,20,16],[21,8,10],[21,16,8],[21,10,17],[18,16,20],[18,9,16],[18,11,9],[18,20,22],[18,13,6],[18,6,11],[23,17,12],[23,12,14],[23,14,19],[23,21,17],[23,15,13],[23,19,15],[23,13,18],[23,18,22],[23,20,21],[23,22,20]]},"16":{"v":[[-0.97448,-0.54559,-0.40364],[-0.97448,-0.54559,0.40364],[-0.97448,0.54559,-0.40364],[-0.97448,0.54559,0.40364],[-0.68906,-0.67869,-0.68906],[-0.68906,-0.67869,0.68906],[-0.68906,0.67869,-0.68906],[-0.68906,0.67869,0.68906],[-0.40364,-0.54559,-0.97448],[-0.40364,-0.54559,0.97448],[-0.40364,0.54559,-0.97448],[-0.40364,0.54559,0.97448],[0.0,-1.0,0.0],[0.0,1.0,0.0],[0.40364,-0.54559,-0.97448],[0.40364,-0.54559,0.97448],[0.40364,0.54559,-0.97448],[0.40364,0.54559,0.97448],[0.68906,-0.67869,-0.68906],[0.68906,-0.67869,0.68906],[0.68906,0.67869,-0.68906],[0.68906,0.67869,0.68906],[0.97448,-0.54559,-0.40364],[0.97448,-0.54559,0.40364],[0.97448,0.54559,-0.40364],[0.97448,0.54559,0.40364]],"t":[[19,5,12],[20,6,13],[20,13,21],[4,12,5],[7,21,13],[7,13,6],[18,19,12],[18,12,4],[1,0,4],[1,4,5],[2,10,8],[2,4,0],[2,6,10],[2,8,4],[2,1,3],[2,0,1],[7,9,11],[7,5,9],[7,3,1],[7,1,5],[7,6,2],[7,2,3],[15,9,5],[15,5,19],[24,25,23],[24,23,22],[24,21,25],[24,20,21],[16,10,6],[16,6,20],[17,23,25],[17,25,21],[17,19,23],[17,15,19],[17,7,11],[17,21,7],[17,11,9],[17,9,15],[14,8,10],[14,10,16],[18,24,22],[18,20,24],[18,16,20],[18,14,16],[18,23,19],[18,22,23],[18,4,8],[18,8,14]]},"18":{"v":[[-1.0,-0.39703,-0.39703],[-1.0,-0.39703,0.39703],[-1.0,0.39703,-0.39703],[-1.0,0.39703,0.39703],[-0.69852,-0.69852,-0.69852],[-0.69852,-0.69852,0.69852],[-0.69852,0.69852,-0.69852],[-0.69852,0.69852,0.69852],[-0.39703,-1.0,-0.39703],[-0.39703,-1.0,0.39703],[-0.39703,-0.39703,-1.0],[-0.39703,-0.39703,1.0],[-0.39703,0.39703,-1.0],[-0.39703,0.39703,1.0],[-0.39703,1.0,-0.39703],[-0.39703,1.0,0.39703],[0.39703,-1.0,-0.39703],[0.39703,-1.0,0.39703],[0.39703,-0.39703,-1.0],[0.39703,-0.39703,1.0],[0.39703,0.39703,-1.0],[0.39703,0.39703,1.0],[0.39703,1.0,-0.39703],[0.39703,1.0,0.39703],[0.69852,-0.69852,-0.69852],[0.69852,-0.69852,0.69852],[0.69852,0.69852,-0.69852],[0.69852,0.69852,0.69852],[1.0,-0.39703,-0.39703],[1.0,-0.39703,0.39703],[1.0,0.39703,-0.39703],[1.0,0.39703,0.39703]],"t":[[2,0,1],[2,1,3],[23,14,15],[23,22,14],[30,29,28],[30,31,29],[12,20,18],[12,18,10],[13,11,19],[13,19,21],[26,23,27],[26,27,31],[26,22,23],[26,31,30],[6,14,22],[6,20,12],[6,22,26],[6,26,20],[7,2,3],[7,15,14],[7,14,6],[7,6,2],[7,27,23],[7,23,15],[7,21,27],[7,13,21],[4,2,6],[4,0,2],[4,12,10],[4,6,12],[25,27,21],[25,31,27],[25,29,31],[25,21,19],[9,16,17],[9,8,16],[24,26,30],[24,30,28],[24,18,20],[24,20,26],[24,10,18],[24,8,4],[24,4,10],[24,16,8],[24,28,29],[24,25,17],[24,29,25],[24,17,16],[5,7,3],[5,3,1],[5,11,13],[5,13,7],[5,1,0],[5,0,4],[5,4,8],[5,8,9],[5,19,11],[5,25,19],[5,17,25],[5,9,17]]}};
+const SOLID=k=>()=>{const d=SOL[k],p=[];d.t.forEach(t=>t.forEach(i=>p.push(...d.v[i])));
+  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g};
 const GEO={
  4:()=>new THREE.TetrahedronGeometry(1.15),
  6:()=>new THREE.BoxGeometry(1.35,1.35,1.35),
@@ -172,9 +173,9 @@ const GEO={
   for(let i=0;i<5;i++){const j=(i+1)%5;p.push(...T,...U[i],...L[i],...T,...L[i],...U[j],...B,...L[i],...U[j],...B,...U[j],...L[j])}
   const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();return g},
  12:()=>new THREE.DodecahedronGeometry(1.05),
- 14:BIPY(7),
- 16:BIPY(8),
- 18:BIPY(9),
+ 14:SOLID("14"),
+ 16:SOLID("16"),
+ 18:SOLID("18"),
  20:()=>new THREE.IcosahedronGeometry(1.1)
 };
 function faces(g){
@@ -192,26 +193,42 @@ function faces(g){
 }
 
 /* ---------- numeração das faces ---------- */
-/* d4..d12 e d20: face i = número i+1. d14, d16 e d18 têm numeração própria (faces opostas somam n+1) */
-/* ímpar (d14, d18): sem face exatamente oposta; a "quase oposta" da de cima i é a de baixo i+(n-1)/2, e as duas somam n*2+1 */
-const BP=(n,t)=>{const k=(n-1)/2,q=[];for(let i=0;i<n;i++)q[(i+k)%n]=2*n+1-t[i];return t.concat(q)};
-const LAB={
- 14:BP(7,[1,13,3,11,5,9,7]),
- 16:[1,15,3,13,5,11,7,9,  12,6,10,8,16,2,14,4],               // do manual: faces opostas somam 17 (os 6 e 9 do desenho estão de cabeça para baixo)
- 18:BP(9,[1,17,3,15,5,13,7,11,9])
-};
-const NUM=(f,i)=>LAB[f]?LAB[f][i]:i+1;                         // índice da face -> número que está escrito nela
-const IDX=(f,n)=>LAB[f]?LAB[f].indexOf(n):n-1;                  // número -> índice da face
+/* d4..d12 e d20: face i = número i+1. d14, d16 e d18: cada face é emparelhada com a mais "oposta" e o par soma n+1 (o resultado é lido assim também) */
+const PAREADOS=[14,16,18];
+function emparelha(Fs,f){
+  const n=Fs.length,c=[];
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)c.push([Math.round(Fs[i].n.dot(Fs[j].n)*1e5),i,j]);
+  c.sort((a,b)=>a[0]-b[0]||a[1]-b[1]||a[2]-b[2]);
+  const pair=new Array(n).fill(-1),ps=[];
+  for(const[,i,j]of c)if(pair[i]<0&&pair[j]<0){pair[i]=j;pair[j]=i;ps.push([i,j])}
+  /* melhora os pares trocando parceiros enquanto a soma dos desvios diminuir */
+  const cost=(i,j)=>Math.acos(Math.max(-1,Math.min(1,-Fs[i].n.dot(Fs[j].n))));
+  for(let ch=true,it=0;ch&&it<50;it++){ch=false;
+    for(let a=0;a<ps.length;a++)for(let b=a+1;b<ps.length;b++){
+      const[p,q]=ps[a],[r,t]=ps[b],cur=cost(p,q)+cost(r,t),o1=cost(p,r)+cost(q,t),o2=cost(p,t)+cost(q,r);
+      if(o1<cur-1e-9&&o1<=o2){ps[a]=[p,r];ps[b]=[q,t];ch=true}
+      else if(o2<cur-1e-9){ps[a]=[p,t];ps[b]=[q,r];ch=true}
+    }}
+  ps.forEach(pr=>{pr.sort((x,y)=>x-y);pair[pr[0]]=pr[1];pair[pr[1]]=pr[0]});
+  ps.sort((a,b)=>a[0]-b[0]);
+  const lab=new Array(n);
+  ps.forEach(([i,j],k)=>{const lo=k+1,hi=f-k;if(k%2===0){lab[i]=lo;lab[j]=hi}else{lab[i]=hi;lab[j]=lo}});
+  let skew=0;for(let i=0;i<n;i++)skew=Math.max(skew,Math.acos(Math.max(-1,Math.min(1,-Fs[i].n.dot(Fs[pair[i]].n)))));
+  return{pair,lab,skew:skew>.02};     // skew: o par não é exatamente paralelo (o dado para um pouco inclinado)
+}
+const NUM=(f,i)=>PAREADOS.includes(f)?ENG.analyze(f).lab[i]:i+1;            // índice da face -> número escrito nela
+const IDX=(f,n)=>PAREADOS.includes(f)?ENG.analyze(f).lab.indexOf(n):n-1;      // número -> índice da face
 const cache={};
 /* analisa o poliedro de um dado: faces, vértices e o "casco" usado pela física */
-const ENG={PH,GEO,faces,mulberry32,NUM,IDX,LAB};
+const ENG={PH,GEO,faces,mulberry32,NUM,IDX,VER:"2.8.0",FORMAS:"d14 = poliedro antigo, d16 = barril octogonal, d18 = cubo chanfrado"};
 ENG.analyze=function(f){
   if(cache[f])return cache[f];
   const g=GEO[f](),Fs=faces(g.index?g.toNonIndexed():g),vm={},V=[];
   Fs.forEach(F=>{F.vi=Object.keys(F.u).map(k=>{if(!(k in vm)){vm[k]=V.length;V.push(F.u[k])}return vm[k]})});
   const mx=Math.max(...V.map(v=>v.length()));
   const hull={verts:V.map(v=>v.toArray()),planes:Fs.map(F=>({n:F.n.toArray(),d:F.n.dot(F.c),vi:F.vi}))};
-  return cache[f]={Fs,V,hull,mx};
+  const par=PAREADOS.includes(f)?emparelha(Fs,f):{};
+  return cache[f]={Fs,V,hull,mx,pair:par.pair,lab:par.lab,skew:!!par.skew};
 };
 
 /* ---------- arena fixa (igual para todo mundo; a tela só muda o zoom) ---------- */
@@ -236,7 +253,7 @@ class Sim{
     this.W=new PH.World(this.ar);this.bodies=[];this.kicks=0;this.finished=false;this.results=null;this.flat=true;
     list.forEach(([n,f],i)=>{
       const a=ENG.analyze(f),b=new PH.Body(a.hull,ENG.RAD/a.mx);
-      b.f=f;b.odd=f===14||f===18;PH.toss(b,this.ar,this.rnd,i,list.length);this.W.bodies.push(b);this.bodies.push(b);
+      b.f=f;b.pair=a.pair;b.skew=a.skew;PH.toss(b,this.ar,this.rnd,i,list.length);this.W.bodies.push(b);this.bodies.push(b);
     });
   }
   stepOnce(){
@@ -284,7 +301,7 @@ ENG.clean=function(p){
   const rows=(Array.isArray(p.rows)?p.rows:[]).slice(0,14).map(r=>({l:str(r&&r.l,60),v:str(r&&r.v,12),c:cls(r&&r.c)}));
   const crit=p.crit&&typeof p.crit==="object"?{t:str(p.crit.t,50),c:cls(p.crit.c)}:null;
   return{id:str(p.id,32),seed:(+p.seed)>>>0,who:str(p.who,40)||"Jogador",color:/^#[0-9a-f]{6}$/i.test(p.color)?p.color:"#ecc962",
-    pid:str(p.pid,64),gm:!!p.gm,foco:!!p.foco,dbl,title:str(p.title,40),list,kinds,res,anim:p.anim!==false,rows,crit,note:p.note?str(p.note,120):"",text:str(p.text,160)};
+    pid:str(p.pid,64),gm:!!p.gm,foco:!!p.foco,ds:window.DICE?DICE.clean(p.ds):null,dbl,title:str(p.title,40),list,kinds,res,anim:p.anim!==false,rows,crit,note:p.note?str(p.note,120):"",text:str(p.text,160)};
 };
 ENG.b64=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 ENG.unb64=s=>JSON.parse(decodeURIComponent(escape(atob(String(s).replace(/-/g,"+").replace(/_/g,"/")))));
