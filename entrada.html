@@ -190,11 +190,11 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js?v=2.10.0"></script>
+<script src="efeitos.js?v=2.10.2"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.10.0";
-import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.10.0";
-import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.10.0";
+import {loadOBR,ready} from "./obr.js?v=2.10.2";
+import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.10.2";
+import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.10.2";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";

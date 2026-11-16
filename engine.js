@@ -220,7 +220,7 @@ const NUM=(f,i)=>PAREADOS.includes(f)?ENG.analyze(f).lab[i]:i+1;            // �
 const IDX=(f,n)=>PAREADOS.includes(f)?ENG.analyze(f).lab.indexOf(n):n-1;      // número -> índice da face
 const cache={};
 /* analisa o poliedro de um dado: faces, vértices e o "casco" usado pela física */
-const ENG={PH,GEO,faces,mulberry32,NUM,IDX,VER:"2.10.0",FORMAS:"d14 = poliedro antigo, d16 = barril octogonal, d18 = cubo chanfrado"};
+const ENG={PH,GEO,faces,mulberry32,NUM,IDX,VER:"2.10.2",FORMAS:"d14 = poliedro antigo, d16 = barril octogonal, d18 = cubo chanfrado"};
 ENG.analyze=function(f){
   if(cache[f])return cache[f];
   const g=GEO[f](),Fs=faces(g.index?g.toNonIndexed():g),vm={},V=[];
