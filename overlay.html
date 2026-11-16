@@ -19,7 +19,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:transparent;font:16px/
 @keyframes hit{0%,30%{filter:drop-shadow(0 0 22px #f2c230) drop-shadow(0 0 8px #f2c230)}100%{filter:drop-shadow(0 8px 18px #000c)}}
 body.arr #tray{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outline-offset:6px}
 #tray.drag{cursor:grabbing}
-.dd.dbl{background:#f2c230;color:#2a1d00}
+.dd.dbl{background:linear-gradient(155deg,#ffe27a,#f2c230);color:#2a1d00}
 .x2m{font:800 .8rem Cinzel,serif;color:#f2c230;margin-left:-3px;text-shadow:0 1px 3px #000}
 .rv.x2 strong{color:#f2c230}
 /* resultado do jogador no cartão dele: na linha do nome, logo depois dele (fica até a próxima rolagem) */
@@ -29,7 +29,7 @@ body.arr #tray{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outl
 .hres.pop{animation:rpop .45s ease-out}
 @keyframes rpop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 .hres .dz{gap:5px;flex-wrap:nowrap}
-.hres .dd{width:28px;height:28px;font-size:.85rem}.hres .dd.s2{font-size:.72rem}
+.hres .dd{width:36px;height:36px;font-size:1.12rem}.hres .dd.s2{font-size:.92rem}
 .hres .tot{font-size:1.3rem}
 .hres .x2m{font-size:.7rem}
 /* histórico: fica em cima da mesa de dados, sem fundo; só 3 linhas, as antigas sobem e somem */
@@ -41,7 +41,7 @@ body.arr #tray{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outl
 .hh.n1{opacity:.55}.hh.n2{opacity:.8}.hh.old{opacity:.18}
 .hh .hw{font:700 1.05rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.07em;max-width:190px;overflow:hidden;text-overflow:ellipsis}
 .hh .dz{gap:4px;flex-wrap:nowrap}
-.hh .dd{width:24px;height:24px;font-size:.74rem}.hh .dd.s2{font-size:.62rem}
+.hh .dd{width:30px;height:30px;font-size:.95rem}.hh .dd.s2{font-size:.8rem}
 .hh .tot{font-size:1.1rem}
 .hh .x2m{font-size:.65rem}
 #chips{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;width:max-content;max-width:calc(100% - 24px);pointer-events:none}
@@ -49,8 +49,8 @@ body.arr #tray{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outl
 .chip .who{margin:0;font:700 1.2rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.08em}
 .chip .ttl{color:#9aa4a3;font:600 .95rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.06em}
 .dz{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-.dd{position:relative;width:36px;height:36px;display:grid;place-items:center;background:#eef0ee;color:#15191a;font:800 1.05rem/1 Cinzel,serif;filter:drop-shadow(0 2px 3px #000b)}
-.dd.s2{font-size:.88rem}
+.dd{position:relative;width:42px;height:42px;display:grid;place-items:center;background:linear-gradient(155deg,#ffffff,#e4e8e4 55%,#b9c0bc);color:#0d1011;font:800 1.3rem/1 "Barlow Condensed",Cinzel,sans-serif;letter-spacing:0;text-shadow:0 1px 0 #fff9;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;filter:drop-shadow(0 0 .6px #000) drop-shadow(0 2px 3px #000c)}
+.dd.s2{font-size:1.05rem}
 .dd[data-f="4"]{clip-path:polygon(50% 4%,98% 92%,2% 92%);padding-top:8px}
 .dd[data-f="6"]{clip-path:inset(4% round 7px)}
 .dd[data-f="8"]{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
@@ -60,11 +60,11 @@ body.arr #tray{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outl
 .dd[data-f="14"]{clip-path:polygon(50.0% 0.0%,89.1% 18.8%,98.7% 61.1%,71.7% 95.0%,28.3% 95.0%,1.3% 61.1%,10.9% 18.8%)}
 .dd[data-f="16"]{clip-path:polygon(50.0% 0.0%,85.4% 14.6%,100.0% 50.0%,85.4% 85.4%,50.0% 100.0%,14.6% 85.4%,0.0% 50.0%,14.6% 14.6%)}
 .dd[data-f="18"]{clip-path:polygon(50.0% 0.0%,82.1% 11.7%,99.2% 41.3%,93.3% 75.0%,67.1% 97.0%,32.9% 97.0%,6.7% 75.0%,0.8% 41.3%,17.9% 11.7%)}
-.dd.dcrit{background:#f2c230;color:#2a1d00}
-.dd.dfail{background:#e0443e;color:#fff}
-.dd.pv{background:#17191d;color:#e9e3d3}
-.dd.rel{background:#3a86d8;color:#fff}
-.dd.x{opacity:.4}
+.dd.dcrit{background:linear-gradient(155deg,#ffe27a,#f2c230);color:#2a1d00}
+.dd.dfail{background:linear-gradient(155deg,#ff7a73,#e0443e);color:#fff;text-shadow:0 1px 2px #0008}
+.dd.pv{background:linear-gradient(155deg,#2b2f36,#17191d);color:#f3ecd9;text-shadow:0 1px 2px #000}
+.dd.rel{background:linear-gradient(155deg,#6aa9ee,#3a86d8 55%,#2a64a8);color:#fff;text-shadow:0 1px 2px #0008}
+.dd.x{opacity:.8;filter:grayscale(.55) brightness(.82) drop-shadow(0 0 .6px #000) drop-shadow(0 2px 3px #000c)}
 .dd.neg::before{content:"−";margin-right:1px}
 .tot{font:800 1.7rem/1 Cinzel,serif}
 .tot small{font:600 .8rem "Barlow Condensed",sans-serif;color:#9aa4a3;text-transform:uppercase;letter-spacing:.05em;margin-right:6px}
@@ -111,17 +111,17 @@ body.arr #hbar{display:flex}
 </style>
 </head>
 <body>
-<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.8.0" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.8.0" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
+<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.9.0" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.9.0" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
 <div id="hist" aria-hidden="true"></div>
 <div id="hud" aria-hidden="true"></div>
 <div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
 <div id="hbar"><span>Arraste os cartões e a mesa</span><button id="t-menos" title="Mesa menor" aria-label="Mesa menor">Mesa −</button><button id="t-mais" title="Mesa maior" aria-label="Mesa maior">Mesa +</button><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js?v=2.8.0"></script>
-<script src="dice-style.js?v=2.8.1"></script>
+<script src="engine.js?v=2.9.0"></script>
+<script src="dice-style.js?v=2.9.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.8.0";
-import {KEY,npcsOf} from "./mesa-lib.js?v=2.8.0";
+import {loadOBR,ready} from "./obr.js?v=2.9.0";
+import {KEY,npcsOf} from "./mesa-lib.js?v=2.9.0";
 const $=s=>document.querySelector(s);
 const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",KEEP=HUD||qs.get("tray")==="1";
 const CH=ENG.CH,HOLD=4500,CHIP_LIFE=9000;
@@ -196,7 +196,7 @@ const mkUV=(pos,uv)=>{const g=mk(pos);g.setAttribute("uv",new THREE.Float32Buffe
 let envTex;const getEnv=()=>envTex===undefined?(envTex=window.DICE?DICE.makeEnv(R):null):envTex;
 /* kind: "" (dourado) | "pv" (pavor) | "rel" (relação). Face i = número i+1. d4: o número fica nos cantos */
 function makeDie(f,kind,ds){
-  const st=!kind&&ds&&window.DICE?DICE.mats(ds,getEnv()):null,NM=(n,k)=>st?st.num(n):numMat(n,k);
+  const st=ds&&ds[kind||""]&&window.DICE?DICE.mats(ds[kind||""],getEnv()):null,NM=(n,k)=>st?st.num(n):numMat(n,k);
   const a=ENG.analyze(f),grp=new THREE.Group(),all=[],auv=[],z=new THREE.Vector3(0,0,1);
   a.Fs.forEach((F,i)=>{
     const pos=[],uv=[],q=new THREE.Quaternion().setFromUnitVectors(z,F.n);
@@ -204,7 +204,7 @@ function makeDie(f,kind,ds){
     const off=st&&!st.fixed?[(i*.618)%1,(i*.382+.17)%1]:[0,0],ins=st?st.inset:.8;
     const UV=(w,o)=>{const d=w.clone().sub(F.c);o.push(d.dot(ux)/(F.R*2)+.5+off[0],d.dot(uy)/(F.R*2)+.5+off[1])};
     F.t.forEach(t=>t.forEach(v=>{all.push(v.x,v.y,v.z);const w=v.clone().sub(F.c).multiplyScalar(ins).add(F.c).addScaledVector(F.n,.012);pos.push(w.x,w.y,w.z);if(st){UV(v,auv);UV(w,uv)}}));
-    if(!kind){if(!st)grp.add(new THREE.Mesh(mk(pos),M.ena));else if(st.face)grp.add(new THREE.Mesh(mkUV(pos,uv),st.face))}
+    if(st){if(st.face)grp.add(new THREE.Mesh(mkUV(pos,uv),st.face))}else if(!kind)grp.add(new THREE.Mesh(mk(pos),M.ena));
     if(f===4){
       const xv=new THREE.Vector3(1,0,0).applyQuaternion(q),yv=new THREE.Vector3(0,1,0).applyQuaternion(q);
       F.vi.forEach(vi=>{
@@ -292,7 +292,10 @@ function diceRow(p){
     if(r&&/(^|\s)x(\s|$)/.test(r.c))cl+=" x";
     if(String(n).charAt(0)==="−")cl+=" neg";
     if(x>9)cl+=" s2";
-    const dd=el("span",cl,String(x));dd.dataset.f=f;dd.title=n+" · d"+f+(dbl?" · caiu no 2x ("+p.res[i]+" → "+x+")":"");dz.append(dd);
+    const dd=el("span",cl,String(x));dd.dataset.f=f;
+    const cc=window.DICE&&p.ds&&p.ds[k||""]&&!dbl&&!/dcrit|dfail/.test(cl)?DICE.chipColors(p.ds[k||""]):null;
+    if(cc){dd.style.background=cc.bg;dd.style.color=cc.fg;dd.style.textShadow="0 1px 2px #000a"}
+dd.title=n+" · d"+f+(dbl?" · caiu no 2x ("+p.res[i]+" → "+x+")":"");dz.append(dd);
     if(dbl)dz.append(el("i","x2m","×2"));
   });
   return dz;
@@ -330,6 +333,7 @@ function enqueue(raw,seq){
   if(seq)received=seq;
   clearTimeout(idleTimer);
   const p=ENG.clean(raw);if(!p)return maybeIdle();
+  p.ds=window.DICE?DICE.clean(raw&&raw.ds):null;   // não depende do engine.js em cache
   queue.push(p);pump();
 }
 function pump(){

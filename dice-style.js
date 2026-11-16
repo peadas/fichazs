@@ -2,8 +2,10 @@
    Usado pela ficha (painel em Settings) e pelo overlay (renderização 3D). Carregar depois do engine.js. */
 (function(){
 "use strict";
-const LS="ordem.ficha/dice",LM="ordem.ficha/mesa";
-const ST=[["opaco","Opaco (plástico polido)"],["transl","Translúcido (resina)"],["metal","Metálico"],["classico","Clássico dourado (atual)"]];
+const VER="2.9.0",LS="ordem.ficha/dice2",LS0="ordem.ficha/dice",LM="ordem.ficha/mesa";
+const KINDS=[["","Normal"],["pv","Pavor"],["rel","Relação"]];
+const ORIG={"":{bg:"#d0a93f",fg:"#ecc962",face:"#08080a"},pv:{bg:"#14171c",fg:"#e9a23b",face:"#14171c"},rel:{bg:"#e9e3d3",fg:"#8c2f3a",face:"#e9e3d3"}};
+const ST=[["opaco","Opaco"],["transl","Translúcido"],["metal","Metálico"],["classico","Original"]];
 const TX=[["liso","Liso"],["redemoinho","Redemoinho perolado"],["fumaca","Fumaça"],["granulado","Granulado"],["pedra","Pedra rachada"],["glitter","Glitter / cristais"],["ornamentos","Ornamentos rúnicos"]];
 const NS=[["tinta","Tinta"],["metal","Folha metálica"],["brilho","Brilho mágico"]];
 const FN=[["classica","Clássica"],["runica","Rúnica"],["simples","Simples"]];
@@ -93,7 +95,7 @@ function gen(cfg){
   }
   cx.putImageData(im,0,0);bx.putImageData(bm,0,0);
   if(tx==="ornamentos"){orn(cx,S,cfg.c2,5,cfg.c2);orn(bx,S,"#fff",5,"#000")}
-  if(Object.keys(genC).length>8)for(const k in genC)delete genC[k];
+  if(Object.keys(genC).length>40)for(const k in genC)delete genC[k];
   return genC[key]={c,b};
 }
 
@@ -150,15 +152,38 @@ function makeEnv(R){
   }catch(e){return null}
 }
 
-/* ---------- configuração salva ---------- */
-function get(){let o={};try{o=JSON.parse(lsGet(LS)||"{}")||{}}catch(e){}return Object.assign({},DEF,o)}
-function set(o){lsSet(LS,JSON.stringify(o))}
-function clean(s){
+/* ---------- configuração salva (uma por tipo de dado: "" normal, pv pavor, rel relação) ---------- */
+const KS=["","pv","rel"];
+function getAll(){
+  let o={};
+  try{o=JSON.parse(lsGet(LS)||"null")}catch(e){o=null}
+  if(!o){o={};try{const old=JSON.parse(lsGet(LS0)||"null");if(old&&old.st)o[""]=old}catch(e){}}
+  const r={};KS.forEach(k=>{r[k]=Object.assign({},DEF,o&&o[k]||{})});return r;
+}
+const get=k=>getAll()[k||""];
+function setAll(A){lsSet(LS,JSON.stringify(A))}
+function cleanOne(s){
   if(!s||typeof s!=="object"||!ST.some(a=>a[0]===s.st)||s.st==="classico")return null;
   const pick=(L,v,d)=>L.some(a=>a[0]===v)?v:d,col=(v,d)=>HEX.test(v)?v:d;
   return{st:s.st,tx:pick(TX,s.tx,DEF.tx),c1:col(s.c1,DEF.c1),c2:col(s.c2,DEF.c2),cn:col(s.cn,DEF.cn),ns:pick(NS,s.ns,DEF.ns),fn:pick(FN,s.fn,DEF.fn)};
 }
-const mine=()=>clean(get());
+/* aceita {"":cfg,pv:cfg,rel:cfg} (ou uma cfg só, formato antigo); devolve null se nenhum tipo está personalizado */
+function clean(s){
+  if(!s||typeof s!=="object")return null;
+  if(s.st)s={"":s};
+  const o={};let any=0;KS.forEach(k=>{o[k]=cleanOne(s[k]);if(o[k])any=1});
+  return any?o:null;
+}
+const mine=()=>clean(getAll());
+/* cores para os dadinhos de resultado (fundo e número com contraste garantido) */
+function lum(h){const[r,g,b]=rgb(h).map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*r+.7152*g+.0722*b}
+function chipColors(cfg){
+  if(!cfg)return null;
+  let bg=cfg.c1,fg=cfg.cn;
+  const cr=(a,b)=>{const x=lum(a),y=lum(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+  if(cr(bg,fg)<4.2)fg=lum(bg)>.4?"#101214":"#ffffff";
+  return{bg:`linear-gradient(155deg,${shade(bg,.28)},${bg} 55%,${shade(bg,-.35)})`,fg};
+}
 
 /* ---------- cor da mesa ---------- */
 function applyMesa(){
@@ -171,51 +196,108 @@ addEventListener("storage",e=>{if(e.key===LM)applyMesa()});
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",applyMesa);else applyMesa();
 
 /* ---------- pré-visualização 2D ---------- */
-function preview(cv,cfg){
-  const x=cv.getContext("2d"),W=cv.width,H=cv.height,cxm=W/2,cym=H/2,R=Math.min(W,H)*.46;
-  x.clearRect(0,0,W,H);
-  const pts=[0,1,2,3,4,5].map(i=>[cxm+R*Math.cos(i*Math.PI/3-Math.PI/2),cym+R*Math.sin(i*Math.PI/3-Math.PI/2)]);
-  const hexp=()=>{x.beginPath();pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath()};
-  x.save();hexp();x.clip();
-  if(cfg.st==="classico"){x.fillStyle="#d0a93f";x.fillRect(0,0,W,H);x.fillStyle="#08080a";x.beginPath();pts.forEach((p,i)=>{const q=[cxm+(p[0]-cxm)*.8,cym+(p[1]-cym)*.8];i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])});x.fill()}
+function poly(x,cx,cy,R,n,rot){x.beginPath();for(let i=0;i<n;i++){const a=rot+i*2*Math.PI/n;i?x.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a)):x.moveTo(cx+R*Math.cos(a),cy+R*Math.sin(a))}x.closePath()}
+function shape(x,cx,cy,R,n,cfg,kind,num){
+  const o=ORIG[kind||""],sides=n===20?6:n===6?4:5,rot=n===6?Math.PI/4:-Math.PI/2,orig=cfg.st==="classico";
+  x.save();poly(x,cx,cy,R,sides,rot);x.clip();
+  if(orig){x.fillStyle=o.bg;x.fillRect(cx-R,cy-R,2*R,2*R);
+    if(!kind){x.fillStyle=o.face;poly(x,cx,cy,R*.8,sides,rot);x.fill()}}
   else{
-    if(cfg.st==="transl"){x.fillStyle="#1a1d22";x.fillRect(0,0,W,H);x.globalAlpha=.8}
-    x.drawImage(gen(cfg).c,cxm-R,cym-R,R*2,R*2);x.globalAlpha=1;
-    if(cfg.st==="metal"){x.fillStyle="rgba(255,255,255,.12)";x.fillRect(0,0,W,H)}
+    if(cfg.st==="transl"){x.fillStyle="#1a1d22";x.fillRect(cx-R,cy-R,2*R,2*R);x.globalAlpha=.82}
+    x.drawImage(gen(cfg).c,cx-R,cy-R,R*2,R*2);x.globalAlpha=1;
+    if(cfg.st==="metal"){x.fillStyle="rgba(255,255,255,.12)";x.fillRect(cx-R,cy-R,2*R,2*R)}
   }
-  const g=x.createRadialGradient(W*.36,H*.28,4,cxm,cym,R*1.25);g.addColorStop(0,"rgba(255,255,255,.5)");g.addColorStop(.3,"rgba(255,255,255,0)");g.addColorStop(1,"rgba(0,0,0,.55)");
-  x.fillStyle=g;x.fillRect(0,0,W,H);x.restore();
-  x.strokeStyle="rgba(0,0,0,.45)";x.lineWidth=1.5;x.beginPath();[0,2,4].forEach((k,i)=>i?x.lineTo(pts[k][0],pts[k][1]):x.moveTo(pts[k][0],pts[k][1]));x.closePath();x.stroke();
-  pts.forEach((p,i)=>{x.beginPath();x.moveTo(p[0],p[1]);x.lineTo(...[[cxm,cym]][0]);x.stroke()});
-  hexp();x.lineWidth=2;x.strokeStyle="rgba(0,0,0,.6)";x.stroke();
-  const nc=numCanvas(20,cfg.st==="classico"?{...cfg,ns:"tinta",cn:"#ecc962",fn:"classica"}:cfg),sz=R*1.0;
-  x.drawImage(nc.c,cxm-sz/2,cym-sz/2,sz,sz);
+  const g=x.createRadialGradient(cx-R*.35,cy-R*.45,2,cx,cy,R*1.3);g.addColorStop(0,"rgba(255,255,255,.5)");g.addColorStop(.3,"rgba(255,255,255,0)");g.addColorStop(1,"rgba(0,0,0,.55)");
+  x.fillStyle=g;x.fillRect(cx-R,cy-R,2*R,2*R);x.restore();
+  x.strokeStyle="rgba(0,0,0,.45)";x.lineWidth=1.2;
+  if(sides===6){x.beginPath();[0,2,4].forEach((k,i)=>{const a=rot+k*Math.PI/3,px=cx+R*Math.cos(a),py=cy+R*Math.sin(a);i?x.lineTo(px,py):x.moveTo(px,py)});x.closePath();x.stroke()}
+  poly(x,cx,cy,R,sides,rot);x.lineWidth=1.8;x.strokeStyle="rgba(0,0,0,.6)";x.stroke();
+  const nc=numCanvas(num,orig?{ns:"tinta",fn:"classica",cn:o.fg}:cfg),sz=R*1.05;
+  x.drawImage(nc.c,cx-sz/2,cy-sz/2,sz,sz);
+}
+function preview(cv,cfg,kind){
+  const x=cv.getContext("2d"),W=cv.width,H=cv.height;x.clearRect(0,0,W,H);
+  shape(x,W*.2,H*.52,H*.34,6,cfg,kind,12);shape(x,W*.5,H*.5,H*.42,20,cfg,kind,20);shape(x,W*.8,H*.52,H*.34,6,cfg,kind,6);
+}
+/* d20 no meio, d12 (pentágono) e d6 nas pontas */
+function previewShapes(cv,cfg,kind){
+  const x=cv.getContext("2d"),W=cv.width,H=cv.height;x.clearRect(0,0,W,H);
+  shape(x,W*.17,H*.55,H*.33,12,cfg,kind,12);shape(x,W*.5,H*.5,H*.42,20,cfg,kind,20);shape(x,W*.83,H*.55,H*.33,6,cfg,kind,6);
 }
 
-/* ---------- painel de opções (ficha → Settings) ---------- */
-function ui(root,onChange){
-  const css=document.createElement("style");css.textContent=
-   ".dp{display:grid;gap:10px;padding:10px 0}.dp label{display:grid;gap:4px;font-size:.85rem;color:var(--muted,#9aa)}.dp select,.dp input[type=color]{width:100%;height:34px;background:#0a0c0d;color:inherit;border:1px solid var(--line,#2d3638);padding:0 6px}"+
-   ".dp .row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.dp .pre,.dp .ms{display:flex;flex-wrap:wrap;gap:6px}.dp .pre button,.dp .ms button{font-size:.8rem;padding:5px 9px;background:#0a0c0d;color:inherit;border:1px solid var(--line,#2d3638);cursor:pointer}"+
-   ".dp .ms button i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px;border:1px solid #fff6}.dp canvas{justify-self:center;max-width:100%}.dp h4{margin:6px 0 0;font:700 .95rem Cinzel,serif}";
-  root.appendChild(css);
-  const S=get(),box=document.createElement("div");box.className="dp";root.appendChild(box);
-  const sel=(id,l,L)=>`<label>${l}<select data-k="${id}">${L.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join("")}</select></label>`;
-  box.innerHTML=`<canvas width="240" height="210"></canvas><div class="pre">${PRE.map((p,i)=>`<button type="button" data-p="${i}">${p.n}</button>`).join("")}</div>`+
-    sel("st","Estilo",ST)+sel("tx","Textura",TX)+
-    `<div class="row"><label>Cor<input type="color" data-k="c1"></label><label>Cor 2<input type="color" data-k="c2"></label><label>Número<input type="color" data-k="cn"></label></div>`+
-    `<div class="row" style="grid-template-columns:1fr 1fr">${sel("ns","Estilo do número",NS)}${sel("fn","Fonte",FN)}</div>`+
-    `<h4>Mesa de dados</h4><div class="ms">${MESAS.map(m=>`<button type="button" data-m="${m[1]}"><i style="background:${m[1]||"#888"}"></i>${m[0]}</button>`).join("")}<input type="color" id="dmesa" value="${lsGet(LM)||"#1f5a3a"}" style="width:46px;height:30px"></div>`;
-  const cv=box.querySelector("canvas"),fields=box.querySelectorAll("[data-k]");
-  let raf=0;const draw=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>preview(cv,S))};
-  const sync=()=>{fields.forEach(f=>{f.value=S[f.dataset.k]});draw()};
-  const save=()=>{set(S);draw();onChange&&onChange(S)};
-  fields.forEach(f=>f.addEventListener("input",()=>{S[f.dataset.k]=f.value;if(f.dataset.k!=="st"&&S.st==="classico"){S.st="opaco";sync()}save()}));
-  box.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{const p=PRE[+b.dataset.p];Object.assign(S,p);delete S.n;sync();save()});
-  box.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{lsSet(LM,b.dataset.m);applyMesa()});
-  box.querySelector("#dmesa").addEventListener("input",e=>{lsSet(LM,e.target.value);applyMesa()});
+/* ---------- painel de opções ---------- */
+const CSS=`.dz-wrap{display:grid;gap:14px;padding:8px 0 4px}.dz-wrap h5{margin:8px 0 -4px;font:700 .78rem Cinzel,serif;letter-spacing:.14em;text-transform:uppercase;color:#ecc962b0}
+.dz-prev{position:relative;border:1px solid var(--line,#2d3638);border-radius:12px;background:radial-gradient(circle at 50% 25%,#2a3234,#090b0c);padding:10px 8px 6px;text-align:center}
+.dz-prev canvas{max-width:100%;height:auto;filter:drop-shadow(0 6px 10px #000a)}
+.dz-ok{position:absolute;right:12px;top:8px;font-size:.72rem;color:#7be39a;opacity:0;transform:translateY(-3px);transition:.3s}.dz-ok.on{opacity:1;transform:none}
+.dz-cap{font-size:.74rem;color:var(--muted,#9aa);margin:2px 0 0}
+.dz-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#0a0c0d;border:1px solid var(--line,#2d3638);border-radius:12px;padding:4px}
+.dz-tabs button{border:0;border-radius:9px;padding:9px 4px;background:none;color:inherit;font:600 .86rem "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.dz-tabs button.on{background:#ecc962;color:#1a1405}
+.dz-pre{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.dz-card,.dz-tx button{display:grid;justify-items:center;gap:5px;padding:9px 4px 7px;background:#0a0c0d;border:1px solid var(--line,#2d3638);border-radius:12px;cursor:pointer;color:inherit;font-size:.72rem;transition:border-color .15s,transform .15s}
+.dz-card:hover,.dz-tx button:hover{border-color:#ecc96288;transform:translateY(-1px)}.dz-card.on,.dz-tx button.on{border-color:#ecc962;box-shadow:0 0 0 1px #ecc962 inset}
+.dz-tx{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}.dz-tx canvas{border-radius:8px;width:100%;height:auto}
+.dz-chips{display:flex;flex-wrap:wrap;gap:6px}.dz-chips button{padding:8px 13px;border-radius:999px;background:#0a0c0d;border:1px solid var(--line,#2d3638);color:inherit;font-size:.82rem;cursor:pointer}
+.dz-chips button.on{background:#ecc962;border-color:#ecc962;color:#1a1405;font-weight:700}
+.dz-col{display:flex;gap:18px}.dz-col label{display:grid;justify-items:center;gap:5px;font-size:.74rem;color:var(--muted,#9aa)}
+.dz-col input{-webkit-appearance:none;appearance:none;width:46px;height:46px;border-radius:50%;border:2px solid #fff4;padding:0;background:none;cursor:pointer}
+.dz-col input::-webkit-color-swatch-wrapper{padding:0}.dz-col input::-webkit-color-swatch{border:0;border-radius:50%}.dz-col input::-moz-color-swatch{border:0;border-radius:50%}
+.dz-act{display:flex;gap:8px;flex-wrap:wrap}.dz-act button{flex:1;min-width:130px;padding:10px 12px;border-radius:10px;border:1px solid #ecc962;background:#ecc96218;color:#ecc962;font-weight:700;cursor:pointer}.dz-act button.g{border-color:var(--line,#2d3638);background:none;color:inherit;font-weight:400}
+.dz-ms{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.dz-ms button{display:grid;justify-items:center;gap:4px;background:none;border:0;color:inherit;font-size:.68rem;cursor:pointer}.dz-ms button i{width:34px;height:34px;border-radius:50%;border:2px solid #fff3}.dz-ms button.on i{border-color:#ecc962;box-shadow:0 0 0 2px #ecc96255}
+.dz-ms input{-webkit-appearance:none;appearance:none;width:34px;height:34px;border-radius:50%;border:2px dashed #fff5;padding:0;background:none;cursor:pointer}.dz-ms input::-webkit-color-swatch-wrapper{padding:0}.dz-ms input::-webkit-color-swatch{border:0;border-radius:50%}`;
+function ui(root,opts){
+  opts=opts||{};
+  if(!document.getElementById("dz-css")){const c=document.createElement("style");c.id="dz-css";c.textContent=CSS;document.head.appendChild(c)}
+  const A=getAll();let kind="";const cur=()=>A[kind];
+  const btn=(g,L)=>L.map(a=>`<button type="button" data-g="${g}" data-v="${a[0]}">${a[1]}</button>`).join("");
+  root.innerHTML=`<div class="dz-wrap">
+   <div class="dz-prev"><canvas width="360" height="132"></canvas><span class="dz-ok">✓ Aplicado</span><p class="dz-cap">Vale já na próxima rolagem, para todos na mesa.</p></div>
+   <div class="dz-tabs">${KINDS.map(k=>`<button type="button" data-kind="${k[0]}">${k[1]}</button>`).join("")}</div>
+   <h5>Temas</h5><div class="dz-pre">${PRE.map((p,i)=>`<button type="button" class="dz-card" data-p="${i}"><canvas width="104" height="104" style="width:52px;height:52px"></canvas><span>${p.n}</span></button>`).join("")}</div>
+   <h5>Estilo</h5><div class="dz-chips">${btn("st",ST)}</div>
+   <h5>Textura</h5><div class="dz-tx">${TX.map(a=>`<button type="button" data-g="tx" data-v="${a[0]}"><canvas width="120" height="56"></canvas><span>${a[1]}</span></button>`).join("")}</div>
+   <h5>Cores</h5><div class="dz-col"><label><input type="color" data-c="c1">Dado</label><label><input type="color" data-c="c2">Detalhe</label><label><input type="color" data-c="cn">Número</label></div>
+   <h5>Número</h5><div class="dz-chips">${btn("ns",NS)}</div><div class="dz-chips">${btn("fn",FN)}</div>
+   <div class="dz-act">${opts.test?'<button type="button" id="dz-test">Testar rolagem</button>':""}<button type="button" class="g" id="dz-reset">Voltar ao original</button></div>
+   <h5>Mesa de dados</h5><div class="dz-ms">${MESAS.map(m=>`<button type="button" data-m="${m[1]}"><i style="background:${m[1]||"#555"}"></i>${m[0]}</button>`).join("")}<input type="color" id="dz-mesa" value="${lsGet(LM)||"#1f5a3a"}" title="Outra cor"></div>
+  </div>`;
+  const $q=s=>root.querySelector(s),$$=s=>[...root.querySelectorAll(s)],cv=$q(".dz-prev canvas"),ok=$q(".dz-ok");
+  let t1=0,t2=0;
+  const thumbs=()=>{ // miniaturas das texturas com as cores atuais
+    $$('.dz-tx button').forEach(b=>{const c=b.querySelector("canvas"),x=c.getContext("2d"),g=gen({tx:b.dataset.v,c1:cur().c1,c2:cur().c2}).c;x.clearRect(0,0,c.width,c.height);x.drawImage(g,40,60,160,76,0,0,c.width,c.height)});
+  };
+  const sync=()=>{
+    const S=cur();
+    $$(".dz-tabs button").forEach(b=>b.classList.toggle("on",b.dataset.kind===kind));
+    $$("[data-g]").forEach(b=>b.classList.toggle("on",S[b.dataset.g]===b.dataset.v));
+    $$("[data-c]").forEach(i=>{i.value=S[i.dataset.c]});
+    $$("[data-m]").forEach(b=>b.classList.toggle("on",(lsGet(LM)||"")===b.dataset.m));
+    cancelAnimationFrame(t1);t1=requestAnimationFrame(()=>previewShapes(cv,S,kind));
+    clearTimeout(t2);t2=setTimeout(thumbs,220);
+  };
+  const save=()=>{setAll(A);ok.classList.add("on");clearTimeout(save.t);save.t=setTimeout(()=>ok.classList.remove("on"),1600);opts.onChange&&opts.onChange(A)};
+  const touch=()=>{if(cur().st==="classico")cur().st="opaco"};
+  root.addEventListener("click",e=>{
+    const b=e.target.closest("button");if(!b||!root.contains(b))return;
+    if(b.dataset.kind!==undefined){kind=b.dataset.kind;sync();return}
+    if(b.dataset.p!==undefined){const p=PRE[+b.dataset.p];A[kind]=Object.assign({},DEF,p);delete A[kind].n;save();sync();return}
+    if(b.dataset.g){if(b.dataset.g!=="st")touch();cur()[b.dataset.g]=b.dataset.v;save();sync();return}
+    if(b.dataset.m!==undefined){lsSet(LM,b.dataset.m);applyMesa();sync();return}
+    if(b.id==="dz-reset"){cur().st="classico";save();sync();return}
+    if(b.id==="dz-test"&&opts.test){save();opts.test()}
+  });
+  root.addEventListener("input",e=>{
+    const i=e.target;
+    if(i.dataset&&i.dataset.c){touch();cur()[i.dataset.c]=i.value;save();sync()}
+    else if(i.id==="dz-mesa"){lsSet(LM,i.value);applyMesa();$$("[data-m]").forEach(b=>b.classList.remove("on"))}
+  });
   sync();
+  // miniaturas dos temas, uma por vez para não travar
+  const cards=$$(".dz-card");let n=0;
+  const next=()=>{if(n>=cards.length)return;const c=cards[n].querySelector("canvas"),x=c.getContext("2d");shape(x,52,52,46,20,Object.assign({},DEF,PRE[n]),"",20);n++;setTimeout(next,16)};
+  setTimeout(next,60);
 }
 
-const DICE=window.DICE={ST,TX,NS,FN,PRE,MESAS,DEF,BUMP:.6,get,set,clean,mine,mats,makeEnv,ui,applyMesa,preview};
+const DICE=window.DICE={VER,ST,TX,NS,FN,PRE,MESAS,DEF,KINDS,BUMP:.6,get,getAll,setAll,clean,cleanOne,mine,chipColors,mats,makeEnv,ui,applyMesa,preview:previewShapes};
 })();

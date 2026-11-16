@@ -373,7 +373,7 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
     <div class="opt"><button class="sw" id="jj" type="button" role="switch" aria-checked="false" aria-label="Jujutsu"><i></i></button><span class="ol">Jujutsu</span></div>
     <div class="opt"><button class="sw" id="trayon" type="button" role="switch" aria-checked="false" aria-label="Mesa de dados sempre visível"><i></i></button><span class="ol">Mesa de dados sempre visível</span></div>
     <p class="hint">Ligado, a mesa de dados fica na tela do Owlbear o tempo todo, com o histórico em cima e um dadinho do lado para rolar sem abrir a ficha (digite 1d4, 2d6+3…). Desligado, ela só aparece quando um dado gira. Vale só para este navegador.</p>
-    <details id="dd"><summary class="ol" style="cursor:pointer;padding:12px 0">Personalizar dados</summary><div id="dpanel"></div></details>
+    <details id="dzd"><summary class="ol" style="cursor:pointer;padding:12px 0">Personalizar dados</summary><div id="dpanel"></div></details>
     <p class="hint" id="verinfo"></p>
   </div>
 </div>
@@ -429,9 +429,9 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
-<script src="engine.js?v=2.8.0"></script>
-<script src="dice-style.js?v=2.8.1"></script>
-<script src="efeitos.js?v=2.8.0"></script>
+<script src="engine.js?v=2.9.0"></script>
+<script src="dice-style.js?v=2.9.0"></script>
+<script src="efeitos.js?v=2.9.0"></script>
 <input type="file" id="file" accept="image/*" hidden>
 
 <script>
@@ -727,7 +727,7 @@ function faces(g){
 }
 /* dado com raio "rad" (px); face i = número i+1. d4: o número fica nos cantos e vale o que aponta pra cima */
 function makeDie(f,pv,rad){
-  const ds=!pv&&window.DICE?DICE.mine():null,st=ds?DICE.mats(ds,getEnv()):null,NM=(n,k)=>st?st.num(n):numMat(n,k);
+  const ds=window.DICE?DICE.mine():null,st=ds&&ds[pv||""]?DICE.mats(ds[pv||""],getEnv()):null,NM=(n,k)=>st?st.num(n):numMat(n,k);
   const g=GEO[f](),Fs=faces(g.index?g.toNonIndexed():g),grp=new THREE.Group(),all=[],auv=[],vm={},V=[],z=new THREE.Vector3(0,0,1);
   Fs.forEach(F=>{F.vi=Object.keys(F.u).map(k=>{if(!(k in vm)){vm[k]=V.length;V.push(F.u[k])}return vm[k]})});
   Fs.forEach((F,i)=>{
@@ -736,7 +736,7 @@ function makeDie(f,pv,rad){
     const off=st&&!st.fixed?[(i*.618)%1,(i*.382+.17)%1]:[0,0],ins=st?st.inset:.8;
     const UV=(w,o)=>{const d=w.clone().sub(F.c);o.push(d.dot(ux)/(F.R*2)+.5+off[0],d.dot(uy)/(F.R*2)+.5+off[1])};
     F.t.forEach(t=>t.forEach(v=>{all.push(v.x,v.y,v.z);const w=v.clone().sub(F.c).multiplyScalar(ins).add(F.c).addScaledVector(F.n,.012);pos.push(w.x,w.y,w.z);if(st){UV(v,auv);UV(w,uv)}}));
-    if(!pv){if(!st)grp.add(new THREE.Mesh(mk(pos),M.ena));else if(st.face)grp.add(new THREE.Mesh(mkUV(pos,uv),st.face))}
+    if(st){if(st.face)grp.add(new THREE.Mesh(mkUV(pos,uv),st.face))}else if(!pv)grp.add(new THREE.Mesh(mk(pos),M.ena));
     if(f===4){
       const xv=new THREE.Vector3(1,0,0).applyQuaternion(q),yv=new THREE.Vector3(0,1,0).applyQuaternion(q);
       F.vi.forEach(vi=>{
@@ -1039,7 +1039,7 @@ $("#trayon").onclick=()=>{
 trayUI();
 $("#verinfo").textContent=typeof ENG!=="undefined"&&ENG.VER?"Versão dos dados: "+ENG.VER+" · "+ENG.FORMAS:"engine.js não carregou (arquivo antigo ou em cache)";
 $("#setbtn").onclick=()=>{$("#sett").hidden=false};
-let dui=0;$("#dd").addEventListener("toggle",()=>{if($("#dd").open&&!dui&&window.DICE){dui=1;DICE.ui($("#dpanel"))}});
+let dui=0;$("#dzd").addEventListener("toggle",()=>{if($("#dzd").open&&!dui&&window.DICE){dui=1;DICE.ui($("#dpanel"),{test:()=>{if(rolling)return;$("#sett").hidden=true;rollTitle="Teste de dados";LR=null;rollBuff=[];throwDice([["Teste",20],["Teste",12],["Teste",6],["Teste",8]],true,{nome:"Relação"},()=>({html:"<p>Teste de dados</p>",rows:[],crit:null,note:""}))}})}});
 $("#sclose").onclick=()=>{$("#sett").hidden=true};
 $("#sett").onclick=e=>{if(e.target.id==="sett")$("#sett").hidden=true};
 applyJJ();
@@ -1271,8 +1271,8 @@ window.fichaRecarregar=()=>{
 };
 </script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.8.0";
-import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.8.0";
+import {loadOBR,ready} from "./obr.js?v=2.9.0";
+import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.9.0";
 (async()=>{
   if(document.documentElement.classList.contains("view"))return;
   const OBR=await loadOBR();
