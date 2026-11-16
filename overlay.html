@@ -125,7 +125,9 @@ import {KEY,npcsOf} from "./mesa-lib.js?v=2.9.0";
 const $=s=>document.querySelector(s);
 const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",KEEP=HUD||qs.get("tray")==="1";
 const CH=ENG.CH,HOLD=4500,CHIP_LIFE=9000;
-let OBR=null,received=0,idleTimer=0;
+let OBR=null,received=0,idleTimer=0,dsOK=false,myId="";
+const dsMeta=new Map();   // estilo dos dados de cada jogador (metadados do Owlbear)
+const dsFor=p=>{if(!window.DICE)return null;return DICE.clean(dsMeta.get(String(p.pid)))||DICE.clean(p.ds)||(OBR&&p.pid&&String(p.pid)===myId?DICE.mine():null)};
 const queue=[];let cur=null,raf=0,raf2=0;
 
 /* ---------- three.js: tenta 3 CDNs, uma de cada vez, e só começa a rolar quando decidiu ---------- */
@@ -340,8 +342,9 @@ function enqueue(raw,seq){
 }
 function pump(){
   if(cur)return;
-  if(threeOK===null)return;                 // ainda decidindo se o three.js carregou
+  if(threeOK===null||!dsOK)return;          // ainda decidindo se o three.js carregou / lendo o estilo dos dados
   const p=queue.shift();if(!p)return maybeIdle();
+  p.ds=dsFor(p);
   if(!p.anim){showResult(p);return pump()}
   if(threeOK&&!glFailed){
     const meshes=[];
@@ -487,7 +490,9 @@ function reportAll(){
         const r=tray.getBoundingClientRect();rects.push({id:"tray",x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)});
         /* ícone de rolar do lado da mesa (esquerda; se não couber, direita) */
         const S=30;let qx=r.left-S-2;if(qx<2)qx=r.right+2;if(qx+S>innerWidth-2)qx=Math.max(2,r.left+6);
-        rects.push({id:"quick",x:Math.round(qx),y:Math.round(Math.max(2,Math.min(innerHeight-S-2,r.top+r.height/2-S/2))),w:S,h:S});
+        const qy=Math.round(Math.max(2,Math.min(innerHeight-S*2-8,r.top+r.height/2-S/2)));
+        rects.push({id:"quick",x:Math.round(qx),y:qy,w:S,h:S});
+        rects.push({id:"dicecfg",x:Math.round(qx),y:qy+S+4,w:S,h:S});   // botão de personalizar os dados
       }
     }
     OBR.broadcast.sendMessage("ordem.hud/layout",{rects},{destination:"LOCAL"}).catch(()=>{});
@@ -564,8 +569,8 @@ async function quickRoll(m){
   if(mod)rows.push({l:"Modificador",v:(mod>0?"+":"−")+Math.abs(mod),c:""});
   if(res.length>1||mod)rows.push({l:"Total",v:String(tot),c:"ok"});
   const title=("Rolagem "+exp).slice(0,40);
-  const payload={id:String(Date.now()),seed,who,color:meCache.color,title,list:list.map(([n,f])=>[n,f]),kinds:list.map(()=>""),ds:window.DICE?DICE.mine():null,res:res.map(r=>r[2]),dbl,foco,pid:String(meCache.id),gm:!!meCache.gm,anim:true,rows,crit:null,note:foco&&dbl.some(Boolean)?"Foco: caiu no 2×":"",text:who+" · "+title+": "+tot};
-  OBR.broadcast.sendMessage(CH.roll,payload,{destination:"ALL"}).catch(()=>{});
+  const payload={id:String(Date.now()),seed,who,color:meCache.color,title,list:list.map(([n,f])=>[n,f]),kinds:list.map((_,i)=>["","pv","rel"].includes((m.kinds||[])[i])?m.kinds[i]:""),ds:window.DICE?DICE.mine():null,res:res.map(r=>r[2]),dbl,foco,pid:String(meCache.id),gm:!!meCache.gm,anim:true,rows,crit:null,note:foco&&dbl.some(Boolean)?"Foco: caiu no 2×":"",text:who+" · "+title+": "+tot};
+  OBR.broadcast.sendMessage(CH.roll,payload,{destination:m.test?"LOCAL":"ALL"}).catch(()=>{});
 }
 function initTray(){
   let base=null;
@@ -724,12 +729,19 @@ function startHud(){
 (async()=>{
   const s0=+qs.get("s")||0;
   if(standalone){
+    dsOK=true;
     try{enqueue(ENG.unb64(qs.get("p")),s0||1)}catch(e){parent.postMessage({ordem:"overlay-done"},"*")}
     return;
   }
   OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))OBR=null;
+  if(!OBR)dsOK=true;
   if(OBR){
+    myId=String(OBR.player.id||"");
+    const setM=(id,m)=>dsMeta.set(String(id),m&&window.DICE?m[DICE.META]:null);
+    try{OBR.party.onChange(ps=>ps.forEach(pl=>setM(pl.id,pl.metadata)));OBR.player.onChange(pl=>setM(pl.id||myId,pl.metadata))}catch(e){}
+    (async()=>{try{setM(myId,await OBR.player.getMetadata());(await OBR.party.getPlayers()).forEach(pl=>setM(pl.id,pl.metadata))}catch(e){console.warn("[dados] não li o estilo dos jogadores",e)}dsOK=true;pump()})();
+    setTimeout(()=>{if(!dsOK){dsOK=true;pump()}},1500);
     OBR.broadcast.onMessage(CH.feed,ev=>{const d=ev.data||{};enqueue(d.p,+d.seq||0)});
     OBR.broadcast.sendMessage(CH.idle,{seen:s0,idle:false,mid},{destination:"LOCAL"}).catch(()=>{});
     initTray();

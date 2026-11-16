@@ -3,6 +3,7 @@
 <head><meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
 <body>
 <script src="engine.js?v=2.9.0"></script>
+<script src="dice-style.js?v=2.9.0"></script>
 <script type="module">
 /* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
@@ -14,6 +15,7 @@ import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "
   const OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))return;
   const abs=p=>new URL(p,location.href).href;
+  if(window.DICE){DICE.useOBR(OBR);DICE.publish(false)}   // republica o estilo dos dados deste jogador ao entrar na sala
 
   /* ===== dados + cartões na tela (a mesma camada transparente faz as duas coisas) ===== */
   const CH=ENG.CH;
@@ -45,7 +47,7 @@ const keepOn=()=>hudOn()||trayOn();
     const pid=gid(r.id),g={...r,alive:Date.now(),tried:Date.now()};grabs.set(r.id,g);
     try{await OBR.popover.close(pid)}catch(e){}
     try{
-      await OBR.popover.open({id:pid,url:abs(r.id==="quick"?"quick.html":"grab.html")+"?v="+VER+"&id="+encodeURIComponent(r.id)+(r.id==="quick"?"&mode=icon":""),width:r.w,height:r.h,
+      await OBR.popover.open({id:pid,url:abs(r.id==="quick"||r.id==="dicecfg"?"quick.html":"grab.html")+"?v="+VER+"&id="+encodeURIComponent(r.id)+(r.id==="quick"?"&mode=icon":r.id==="dicecfg"?"&mode=cfg":""),width:r.w,height:r.h,
         anchorReference:"POSITION",anchorPosition:{left:r.x,top:r.y},
         anchorOrigin:{horizontal:"LEFT",vertical:"TOP"},transformOrigin:{horizontal:"LEFT",vertical:"TOP"},
         hidePaper:true,disableClickAway:true,marginThreshold:0});
@@ -67,6 +69,16 @@ const keepOn=()=>hudOn()||trayOn();
       anchorReference:"POSITION",anchorPosition:{left,top},anchorOrigin:{horizontal:"LEFT",vertical:"TOP"},transformOrigin:{horizontal:"LEFT",vertical:"TOP"},
       hidePaper:true,disableClickAway:false,marginThreshold:0})}catch(e){console.warn("[hud] não consegui abrir a caixa de rolagem",e)}
   });
+  /* clicou no botão de personalizar: abre o painel ao lado dele */
+  OBR.broadcast.onMessage("ordem.hud/dicecfg",async()=>{
+    const g=grabs.get("dicecfg")||grabs.get("quick");if(!g)return;
+    let vw=1280,vh=800;try{vw=await OBR.viewport.getWidth();vh=await OBR.viewport.getHeight()}catch(e){}
+    const W=Math.min(440,vw-16),H=Math.min(700,vh-16),left=g.x-W-8>=4?g.x-W-8:Math.min(vw-W-4,g.x+g.w+8),top=Math.max(8,Math.min(vh-H-8,g.y-Math.round(H/2))),pid="ordem.hud/dadoscfg";
+    try{await OBR.popover.close(pid)}catch(e){}
+    try{await OBR.popover.open({id:pid,url:abs("dados.html")+"?v="+VER+"&pop="+encodeURIComponent(pid),width:W,height:H,
+      anchorReference:"POSITION",anchorPosition:{left,top},anchorOrigin:{horizontal:"LEFT",vertical:"TOP"},transformOrigin:{horizontal:"LEFT",vertical:"TOP"},
+      hidePaper:true,disableClickAway:false,marginThreshold:0})}catch(e){console.warn("[hud] não consegui abrir o painel de dados",e)}
+  });
   OBR.broadcast.onMessage("ordem.hud/layout",ev=>{if(open&&!arrange)syncGrabs((ev.data||{}).rects)});   // fotos dos cartões e a mesa de dados
   OBR.broadcast.onMessage("ordem.hud/alive",ev=>{const g=grabs.get(String((ev.data||{}).id));if(g)g.alive=Date.now()});
   const ensure=()=>{if(!open&&keepOn())openOverlay(null)};
@@ -82,6 +94,7 @@ const keepOn=()=>hudOn()||trayOn();
   }
   OBR.broadcast.onMessage(CH.roll,ev=>{
     const p=ENG.clean(ev.data);if(!p)return;
+    p.ds=window.DICE?DICE.clean(ev.data&&ev.data.ds):null;
     if(open&&Date.now()-lastAct>45000)open=false;
     const e={seq:++seq,p};log.push(e);while(log.length>20)log.shift();
     lastAct=Date.now();

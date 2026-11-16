@@ -161,7 +161,17 @@ function getAll(){
   const r={};KS.forEach(k=>{r[k]=Object.assign({},DEF,o&&o[k]||{})});return r;
 }
 const get=k=>getAll()[k||""];
-function setAll(A){lsSet(LS,JSON.stringify(A))}
+const META="ordem.ficha/dice";let obrRef=null;
+/* publica o estilo nos metadados do jogador no Owlbear: todos os navegadores da sala (inclusive o do mestre) leem de lá */
+function publish(force){
+  const o=obrRef||(window.OBRX&&window.OBRX.OBR);if(!o||!o.player||!o.player.setMetadata)return;
+  const c=clean(getAll());if(!c&&!force)return;
+  try{o.player.setMetadata({[META]:c||{}}).catch(()=>{})}catch(e){}
+}
+function setAll(A){lsSet(LS,JSON.stringify(A));publish(true)}
+function importMeta(m){ // traz o que já está nos metadados para o armazenamento local (outro aparelho / outra aba)
+  const c=clean(m);if(!c)return false;const A={};KS.forEach(k=>{A[k]=Object.assign({},DEF,c[k]||{})});lsSet(LS,JSON.stringify(A));return true;
+}
 function cleanOne(s){
   if(!s||typeof s!=="object"||!ST.some(a=>a[0]===s.st)||s.st==="classico")return null;
   const pick=(L,v,d)=>L.some(a=>a[0]===v)?v:d,col=(v,d)=>HEX.test(v)?v:d;
@@ -303,5 +313,5 @@ function ui(root,opts){
   setTimeout(next,60);
 }
 
-const DICE=window.DICE={VER,ST,TX,NS,FN,PRE,MESAS,DEF,KINDS,BUMP:.6,get,getAll,setAll,clean,cleanOne,mine,chipColors,mats,makeEnv,ui,applyMesa,drawDie,preview:previewShapes};
+const DICE=window.DICE={VER,ST,TX,NS,FN,PRE,MESAS,DEF,KINDS,BUMP:.6,get,getAll,setAll,clean,cleanOne,mine,chipColors,mats,makeEnv,ui,applyMesa,drawDie,preview:previewShapes,META,publish,importMeta,useOBR:o=>{obrRef=o}};
 })();

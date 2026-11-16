@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personalizar dados</title>
+<style>
+:root{--line:#2d3638;--muted:#9aa4a3}
+html,body{margin:0;min-height:100%;background:#0f1416;color:#eef0ee;font:15px/1.35 system-ui,sans-serif}
+.top{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#0f1416f2;border-bottom:1px solid var(--line);font:700 1.05rem Cinzel,Georgia,serif;letter-spacing:.08em;color:#ecc962;text-transform:uppercase}
+.top button{background:none;border:1px solid var(--line);color:inherit;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem}
+#root{padding:2px 14px 22px}
+</style>
+<script src="dice-style.js?v=2.9.0"></script>
+</head>
+<body>
+<div class="top"><span>Personalizar dados</span><button id="x" type="button" aria-label="Fechar">✕</button></div>
+<div id="root"></div>
+<script type="module">
+import {loadOBR,ready} from "./obr.js?v=2.9.0";
+const qs=new URLSearchParams(location.search),pop=qs.get("pop")||"";
+let OBR=null;
+try{OBR=await loadOBR();if(!OBR||!(await ready(OBR)))OBR=null}catch(e){OBR=null}
+if(OBR){
+  DICE.useOBR(OBR);
+  try{const m=await OBR.player.getMetadata();DICE.importMeta(m[DICE.META])}catch(e){}
+}
+const test=OBR?()=>OBR.broadcast.sendMessage("ordem.hud/quickroll",{dice:[[1,20],[1,12],[1,6],[1,8]],mod:0,exp:"teste",test:true,kinds:["","","pv","rel"]},{destination:"LOCAL"}).catch(()=>{}):null;
+DICE.ui(document.getElementById("root"),{test});
+const close=()=>{if(OBR&&pop)OBR.popover.close(pop).catch(()=>{})};
+document.getElementById("x").onclick=close;
+addEventListener("keydown",e=>{if(e.key==="Escape")close()});
+</script>
+</body>
+</html>
