@@ -186,6 +186,16 @@ const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote;
       },6000);
     }
   }
+  /* alguém me deu um dado de esconderijo (Distrair / Chamar atenção) */
+  OBR.broadcast.onMessage("ordem.esc/give",async ev=>{
+    try{
+      const d=ev.data||{};if(String(d.to)!==myId||isGM)return;
+      const m=await OBR.player.getMetadata(),pp=normP(m&&m[K_P]),f=+d.f,v=+d.v;
+      if(!(f>=4&&f<=20&&v>=1&&v<=f))return;
+      if(pp.dice.length>=8)return;
+      await OBR.player.setMetadata({[K_P]:{...pp,h:1,dice:[...pp.dice,{f,v,n:String(d.n||"Presente").slice(0,24),id:Math.random().toString(36).slice(2,8)}]}});
+    }catch(e){console.warn("[esconder] dado recebido falhou",e)}
+  });
   try{OBR.party.onChange(()=>readEsc());OBR.player.onChange(()=>readEsc())}catch(e){}
   readEsc();setInterval(readEsc,5000);
 })();

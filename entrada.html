@@ -193,7 +193,7 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
 <script src="efeitos.js?v=2.10.0"></script>
 <script type="module">
 import {loadOBR,ready} from "./obr.js?v=2.10.0";
-import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.10.0";
+import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.10.0";
 import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.10.0";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
@@ -348,7 +348,7 @@ document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{tab=b.datase
 addEventListener("storage",()=>{if(role==="GM"&&tab==="npc")renderNpcs();else if(tab==="mesa")renderMesa();else if(tab==="esc")renderEsc()});
 
 /* ================= aba Esconder ================= */
-const E={act:"",way:0,skill:"Furtividade",custom:false,face:8,qty:1,addFace:6,discard:false,msg:"",evOpen:false};
+const E={act:"",way:0,skill:"Furtividade",custom:false,face:8,qty:1,addFace:6,discard:false,msg:"",evOpen:false,dex:-1,dsk:"Enganação",dcustom:false,pick:-1,a1:-1,a2:-1};
 let kE="",msgT=0,nums="",stTxt=null;
 const gmSt=()=>{
   if(role==="GM")return normG(self&&self.metadata&&self.metadata[K_G]);
@@ -367,7 +367,7 @@ const setG=async patch=>{if(!OBR)return;const cur=gmSt();await OBR.player.setMet
 /* manda rolar na camada do Owlbear; se o painel ainda não está ligado, liga e espera a camada abrir */
 function rollEsc(dice,names,title,esc){
   if(!OBR){say("Abra esta página dentro do Owlbear Rodeo.");return}
-  const go=()=>OBR.broadcast.sendMessage("ordem.hud/quickroll",{dice:dice.map(f=>[1,f]),names,title,exp:title,esc},{destination:"LOCAL"}).catch(()=>{});
+  const go=()=>OBR.broadcast.sendMessage("ordem.hud/quickroll",{dice:dice.map(f=>[1,f]),names,title,exp:title,esc,qid:Date.now().toString(36)+Math.random().toString(36).slice(2,6)},{destination:"LOCAL"}).catch(()=>{});
   if(escLoc()||gmSt().on)go();
   else{store.set("esc-on","1");cfgPing();say("Abrindo o painel…",2200);setTimeout(go,2200)}
 }
@@ -381,12 +381,31 @@ function addDie(){
   rollEsc([E.addFace],["d"+E.addFace],"Novo esconderijo",{k:"add"});
 }
 async function rmDie(i){const p=mineSt();E.discard=false;await setP({dice:p.dice.filter((_,j)=>j!==i)})}
-async function loud(){
-  const p=mineSt();
-  await setP({note:{k:"loud",t:Date.now()}});
-  if(p.dice.length){E.discard=true;say("Ação chamativa: toque no dado que você vai descartar.",6000)}else say("Chamou atenção.");
+const allies=()=>party.filter(x=>x.role!=="GM"&&x.metadata&&x.metadata[KEY]).map(x=>({id:String(x.id),nome:String((x.metadata[KEY]||{}).nome||x.name||"Jogador").slice(0,24)}));
+const sceneCount=g=>[self,...party].filter(Boolean).reduce((n,x)=>{const q=normP(x.metadata&&x.metadata[K_P]);return n+(q.ds===g.sc?q.dn:0)},0);
+const curDT=g=>DT0+DTSTEP*sceneCount(g);
+const give=(to,d)=>OBR&&OBR.broadcast.sendMessage("ordem.esc/give",{to,f:d.f,v:d.v,n:d.n||"Presente"},{destination:"ALL"}).catch(()=>{});
+function doDist(g){
+  const sk=E.dsk,dd=skillDice(sk),dt=curDT(g),p=mineSt();
+  setP({dn:(p.ds===g.sc?p.dn:0)+1,ds:g.sc,pend:null,note:{k:"distract",t:Date.now()}});
+  rollEsc(dd.map(x=>x.f),dd.map(x=>x.n),"Distrair (DT "+dt+")",{k:"dist",sk,dt});
+  E.act="";E.pick=-1;say("Distraindo com "+sk+" (DT "+dt+")…");
 }
-async function distract(){await setP({note:{k:"distract",t:Date.now()}});say("Você distraiu a criatura. O painel avisa a mesa.")}
+async function giveDist(to,name){
+  const p=mineSt(),d=p.pend&&p.pend.dice[E.pick];if(!d)return;
+  if(to==="me"){
+    if(p.dice.length>=MAXD){say("Você já tem "+MAXD+" dados.");return}
+    await setP({pend:null,h:1,dice:[...p.dice,{...d,n:d.n||"Distração",id:Math.random().toString(36).slice(2,8)}]});
+  }else{give(to,{...d,n:"Distração"});await setP({pend:null})}
+  E.pick=-1;say(to==="me"?"Dado de esconderijo ganho.":"Dado dado para "+name+".");
+}
+async function doAtt(to,name){
+  const p=mineSt();if(E.a1<0||E.a2<0||E.a1===E.a2)return;
+  const d1=p.dice[E.a1];if(!d1)return;
+  if(to!=="npc")give(to,{...d1,n:"Chamou atenção"});
+  await setP({dice:p.dice.filter((_,i)=>i!==E.a1&&i!==E.a2),note:{k:"loud",t:Date.now()}});
+  E.act="";E.a1=E.a2=-1;say(to==="npc"?"Você sacrificou 2 dados para salvar um NPC.":"Você sacrificou 2 dados; "+name+" ganhou 1.");
+}
 function diceRow(st,g,onPick,viewGM){
   const row=el("div","mdice");
   st.dice.forEach((d,i)=>{
@@ -418,10 +437,12 @@ function renderEsc(){
   if(gm)renderGm(box,g);else renderPlayer(box,g,st);
   if(E.msg)box.append(el("p","emsg",E.msg));
 }
+function note(cls,title,txt){const c=el("div","pnl");c.append(el("h4",null,title),el("p","hint",txt));return c}
 function renderPlayer(box,g,st){
   const a=el("div","acts");
-  [["hide","Esconder-se",()=>{E.act=E.act==="hide"?"":"hide";E.discard=false;renderEsc()}],["distract","Distrair",distract],["loud","Chamar atenção",loud]].forEach(([k,t,fn])=>{
-    const b=mk("button","ab"+(E.act===k?" on":""),null,fn,t);b.innerHTML=ICON[k];b.append(el("span",null,t));a.append(b);
+  [["hide","Esconder-se",()=>{E.act=E.act==="hide"?"":"hide";E.discard=false;renderEsc()}],["distract","Distrair",()=>{E.act=E.act==="distract"?"":"distract";E.discard=false;renderEsc()}],["loud","Chamar atenção",()=>{E.act=E.act==="att"?"":"att";E.a1=E.a2=-1;E.discard=false;renderEsc()}]].forEach(([k,t,fn])=>{
+    const on=E.act===(k==="loud"?"att":k);
+    const b=mk("button","ab"+(on?" on":""),null,fn,t);b.innerHTML=ICON[k];b.append(el("span",null,t));a.append(b);
   });
   box.append(a);
   if(E.act==="hide"){
@@ -434,12 +455,61 @@ function renderPlayer(box,g,st){
     p.append(mk("button","go","Rolar esconderijo",doHide));
     box.append(p);
   }
+  if(E.act==="distract"){
+    const dt=curDT(g),p=el("div","pnl");p.append(el("h4",null,"Distrair"));
+    p.append(el("p","hint","Você distrai as criaturas. Faça um teste (principal: Enganação, DT "+dt+"). Se vencer, transforma um dos dados rolados em dado de esconderijo para você ou para um aliado. Cada vez que alguém usa esta ação na cena, a DT de todos sobe +3."));
+    p.append(el("p","hint","Ideias:"));
+    DEX.forEach((t,i)=>{const o=mk("button","opt"+(E.dex===i?" on":""),null,()=>{E.dex=E.dex===i?-1:i;renderEsc()});o.append(el("span","rd"),el("span",null,t));p.append(o)});
+    const r=el("div","skrow");r.append(el("span","t","Perícia:"),el("b",null,E.dsk),mk("button","small"+(E.dcustom?" on":""),"Outra perícia",()=>{E.dcustom=!E.dcustom;renderEsc()}));p.append(r);
+    if(E.dcustom){const c=el("div","chips");DSKILLS.forEach(([n])=>c.append(mk("button",E.dsk===n?"on":"",n,()=>{E.dsk=n;renderEsc()})));p.append(c)}
+    const dd=skillDice(E.dsk);
+    p.append(el("p","hint","Rola "+dd.map(x=>"d"+x.f+" ("+x.n+")").join(" + ")+"."));
+    p.append(mk("button","go","Rolar distração (DT "+dt+")",()=>doDist(g)));
+    box.append(p);
+  }
+  if(st.pend){
+    const pd=st.pend,tot=pd.dice.reduce((n,x)=>n+x.v,0),win=tot>=pd.dt,p=el("div","pnl");
+    p.append(el("h4",null,"Resultado da distração"));
+    p.append(el("p","hint","Total "+tot+" contra DT "+pd.dt+": "+(win?"você venceu!":"você falhou.")));
+    if(!win)p.append(mk("button","small","Ok",()=>setP({pend:null})));
+    else{
+      p.append(el("p","hint","Escolha um dado rolado e depois para quem ele vai:"));
+      const row=el("div","mdice");
+      pd.dice.forEach((d,i)=>{const b=mk("button","md"+(E.pick===i?" pick":""),null,()=>{E.pick=i;renderEsc()},d.n);b.append(el("b",null,String(d.v)),el("small",null,"d"+d.f));row.append(b)});
+      p.append(row);
+      if(E.pick>=0){
+        const c=el("div","chips");c.append(mk("button","","Para mim",()=>giveDist("me","")));
+        allies().filter(x=>x.id!==String(self&&self.id)).forEach(x=>c.append(mk("button","","+1 para "+x.nome,()=>giveDist(x.id,x.nome))));
+        p.append(c);
+      }
+    }
+    box.append(p);
+  }
+  if(E.act==="att"){
+    const p=el("div","pnl");p.append(el("h4",null,"Chamar atenção"));
+    p.append(el("p","hint","Você chama atenção para si de propósito, para evitar que um aliado seja encontrado. Você perde 2 dados de esconderijo: um é dado a um aliado e o outro é descartado."));
+    if(st.dice.length<2)p.append(el("p","hint","Você precisa de pelo menos 2 dados de esconderijo."));
+    else{
+      p.append(el("p","hint",E.a1<0?"1º: toque no dado que será dado ao aliado.":E.a2<0?"2º: toque no dado que será descartado.":"Agora escolha quem recebe:"));
+      const row=el("div","mdice");
+      st.dice.forEach((d,i)=>{const b=mk("button","md"+(i===E.a1||i===E.a2?" pick":""),null,()=>{if(E.a1<0)E.a1=i;else if(E.a2<0&&i!==E.a1)E.a2=i;else{E.a1=i;E.a2=-1}renderEsc()},d.n);b.append(el("b",null,String(d.v)),el("small",null,i===E.a1?"dar":i===E.a2?"jogar":"d"+d.f));row.append(b)});
+      p.append(row);
+      if(E.a1>=0&&E.a2>=0){
+        const c=el("div","chips");
+        allies().filter(x=>x.id!==String(self&&self.id)).forEach(x=>c.append(mk("button","","Dar para "+x.nome,()=>doAtt(x.id,x.nome))));
+        c.append(mk("button","","NPC (narrativo)",()=>doAtt("npc","um NPC")));p.append(c);
+        p.append(el("p","hint","NPC: você joga o dado fora e salva a vida de um NPC na história."));
+      }
+    }
+    box.append(p);
+  }
   const d=el("div","pnl");d.append(el("h4",null,"Seus dados de esconderijo"));
   if(st.dice.length)d.append(diceRow(st,g,rmDie,false));
   else d.append(el("p","hint",st.h?"Você foi descoberto! Esconda-se de novo para voltar.":"Você ainda não tem dados. Use Esconder-se."));
   const r=el("div","row2");r.append(el("span","t","Adicionar"),stp("d"+E.addFace,()=>{E.addFace=stepF(E.addFace,-1);renderEsc()},()=>{E.addFace=stepF(E.addFace,1);renderEsc()}),mk("button","small","+ dado",addDie));
   d.append(r,el("p","hint","Toque num dado para removê-lo."));
   box.append(d);
+  box.append(note("","Ação chamativa","Se você fizer uma ação barulhenta ou espalhafatosa, como correr, você precisa descartar um de seus dados de esconderijo (toque num dos seus dados acima para descartá-lo)."));
 }
 function renderGm(box,g){
   const c=el("div","pnl");c.append(el("h4",null,"Criatura"));
@@ -447,6 +517,7 @@ function renderGm(box,g){
   const r=el("div","row2");
   r.append(el("span","t","Dado"),stp("d"+E.face,()=>{E.face=stepF(E.face,-1);renderEsc()},()=>{E.face=stepF(E.face,1);renderEsc()}),el("span","t","Qtd"),stp(String(E.qty),()=>{E.qty=Math.max(1,E.qty-1);renderEsc()},()=>{E.qty=Math.min(8,E.qty+1);renderEsc()}));
   c.append(r);
+  const sc=el("div","row2");sc.append(el("span","t","DT de Distrair: "+curDT(g)),mk("button","small","Nova cena",()=>{setG({sc:Date.now()})}));c.append(sc);
   c.append(mk("button","go","Rolar "+E.qty+"d"+E.face+" (criatura procura)",()=>rollEsc(Array(E.qty).fill(E.face),[],"Criatura procura "+E.qty+"d"+E.face,{k:"call",msg:"A criatura procurou: "+E.qty+"d"+E.face})));
   const n=el("div","row2");n.append(el("span","t","Números"));
   const i=el("input","t");i.placeholder="ex.: 3 5";i.value=nums;i.style.width="110px";i.oninput=()=>{nums=i.value};

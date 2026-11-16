@@ -588,6 +588,7 @@ addEventListener("storage",ev=>{
 let meCache=null;
 async function quickRoll(m){
   if(!OBR||!m)return;
+  if(m.qid){const k="qr:"+m.qid;if(lsg(k))return;lss(k,"1");setTimeout(()=>lss(k,null),30000)}   // com duas camadas abertas, só uma rola (evita girar 2 vezes e gravar 2 dados)
   const ok=Array.isArray(m.dice)?m.dice.filter(x=>Array.isArray(x)&&(x[0]===1||x[0]===-1)&&ENG.FACES.includes(+x[1])).slice(0,8):[];
   if(!ok.length)return;
   const mod=Math.max(-999,Math.min(999,Math.trunc(+m.mod)||0)),exp=String(m.exp||"").slice(0,30);
@@ -606,7 +607,7 @@ async function quickRoll(m){
   if(mod)rows.push({l:"Modificador",v:(mod>0?"+":"−")+Math.abs(mod),c:""});
   if(!m.esc&&(res.length>1||mod))rows.push({l:"Total",v:String(tot),c:"ok"});
   const title=(m.title?String(m.title):"Rolagem "+exp).slice(0,40);
-  const payload={id:String(Date.now()),seed,who,color:meCache.color,title,list:list.map(([n,f])=>[n,f]),kinds:list.map((_,i)=>["","pv","rel"].includes((m.kinds||[])[i])?m.kinds[i]:""),ds:window.DICE?DICE.mine():null,res:res.map(r=>r[2]),dbl,foco,pid:String(meCache.id),gm:!!meCache.gm,hid:!!(m.esc&&m.esc.k!=="call"),anim:true,rows,crit:null,note:foco&&dbl.some(Boolean)?"Foco: caiu no 2×":"",text:who+" · "+title+(m.esc?"":": "+tot)};
+  const payload={id:String(Date.now()),seed,who,color:meCache.color,title,list:list.map(([n,f])=>[n,f]),kinds:list.map((_,i)=>["","pv","rel"].includes((m.kinds||[])[i])?m.kinds[i]:""),ds:window.DICE?DICE.mine():null,res:res.map(r=>r[2]),dbl,foco,pid:String(meCache.id),gm:!!meCache.gm,hid:!!(m.esc&&(m.esc.k==="hide"||m.esc.k==="add")),anim:true,rows,crit:null,note:foco&&dbl.some(Boolean)?"Foco: caiu no 2×":"",text:who+" · "+title+(m.esc?"":": "+tot)};
   OBR.broadcast.sendMessage(CH.roll,payload,{destination:m.test?"LOCAL":"ALL"}).catch(()=>{});
   if(m.esc)setTimeout(()=>escStore(m.esc,res.map(r=>[r[1],r[2]]),list.map(l=>l[0])),ms);   // grava o resultado quando o dado para de girar
 }
@@ -617,6 +618,9 @@ async function escStore(e,r,names){
     if(e.k==="call"){
       const g=normG(md&&md[K_G]);
       await OBR.player.setMetadata({[K_G]:{...g,calls:[...new Set(r.map(x=>x[1]))].slice(0,12),ct:Date.now(),msg:String(e.msg||"").slice(0,120)}});
+    }else if(e.k==="dist"){
+      const p=normP(md&&md[K_P]);
+      await OBR.player.setMetadata({[K_P]:{...p,pend:{dt:+e.dt||7,t:Date.now(),dice:r.map((x,i)=>({f:x[0],v:x[1],n:names[i]||""}))}}});
     }else{
       const p=normP(md&&md[K_P]);
       const nd=r.map((x,i)=>({f:x[0],v:x[1],n:names[i]||"",id:Math.random().toString(36).slice(2,8)}));

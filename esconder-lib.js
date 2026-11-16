@@ -12,19 +12,24 @@ export const escLocal=()=>lsg("esc-on")==="1";
 export function normP(m){
   const o=m&&typeof m==="object"?m:{};
   const dice=(Array.isArray(o.dice)?o.dice:[]).map(x=>x&&{f:FACES.includes(num(x.f,0))?num(x.f,0):6,v:Math.max(1,num(x.v,1)),n:String(x.n||"").slice(0,24),id:String(x.id||"").slice(0,12)}).filter(Boolean).slice(0,MAXD);
-  return{dice,h:o.h?1:0,sk:String(o.sk||"").slice(0,24),note:o.note&&typeof o.note==="object"?{k:String(o.note.k||"").slice(0,12),t:num(o.note.t,0)}:null};
+  const pd=o.pend&&typeof o.pend==="object"?o.pend:null;
+  const pend=pd?{dt:num(pd.dt,7),t:num(pd.t,0),dice:(Array.isArray(pd.dice)?pd.dice:[]).map(x=>x&&{f:FACES.includes(num(x.f,0))?num(x.f,0):6,v:Math.max(1,num(x.v,1)),n:String(x.n||"").slice(0,24)}).filter(Boolean).slice(0,4)}:null;
+  return{dice,h:o.h?1:0,sk:String(o.sk||"").slice(0,24),dn:Math.max(0,num(o.dn,0)),ds:num(o.ds,0),pend,note:o.note&&typeof o.note==="object"?{k:String(o.note.k||"").slice(0,12),t:num(o.note.t,0)}:null};
 }
 export function normG(m){
   const o=m&&typeof m==="object"?m:{};
   const calls=(Array.isArray(o.calls)?o.calls:[]).map(n=>num(n,0)).filter(n=>n>0&&n<=99).slice(0,12);
-  return{on:!!o.on,st:String(o.st||"Caçando").slice(0,40),calls,ct:num(o.ct,0),ap:o.ap!==false,msg:String(o.msg||"").slice(0,120)};
+  return{on:!!o.on,st:String(o.st||"Caçando").slice(0,40),calls,ct:num(o.ct,0),ap:o.ap!==false,sc:num(o.sc,0),msg:String(o.msg||"").slice(0,120)};
 }
 /* tamanho do dado de esconderijo e o atributo-base, lidos da ficha deste navegador */
-export const SKILLS=[["Furtividade","fis"],["Acrobacia","fis"],["Crime","fis"],["Atletismo","fis"],["Disciplina","emo"],["Enganação","emo"],["Sobrevivência","men"],["Inspecionar","men"]];
+export const SKILLS=[["Furtividade","fis"],["Acrobacia","fis"],["Atletismo","fis"],["Crime","fis"],["Vigor","fis"],["Sobrevivência","men"],["Disciplina","emo"],["Enganação","emo"],["Inspecionar","men"]];
+export const DSKILLS=[["Enganação","emo"],["Persuasão","emo"],["Crime","fis"],["Atletismo","fis"],["Acrobacia","fis"],["Intimidar","emo"]];
+export const DEX=["Jogar uma pedra para longe","Ligar para o celular de outra pessoa","Derrubar um objeto em outro cômodo","Imitar um barulho ou uma voz","Acender uma luz ou lanterna distante"];
+export const DT0=7,DTSTEP=3;
 export const ATTR={fis:"Físico",men:"Mente",emo:"Emoção"};
 export function sheet(){try{return JSON.parse(lsg("ficha-ordem")||"{}")||{}}catch(e){return{}}}
 export function skillDice(sk){
-  const d=sheet(),a=SKILLS.find(x=>x[0]===sk),at=d["at-"+sk]||(a?a[1]:"fis");
+  const d=sheet(),a=SKILLS.concat(DSKILLS).find(x=>x[0]===sk),at=d["at-"+sk]||(a?a[1]:"fis");
   const fa=num(d["a-"+at],6),fs=num(d["s-"+sk],4);
   return[{f:fs,n:sk},{f:fa,n:ATTR[at]||"Atributo"}].map(x=>({...x,f:FACES.includes(x.f)?x.f:(x.f>=20?20:x.f>=12?12:x.f>=10?10:x.f>=8?8:x.f>=6?6:4)}));
 }
