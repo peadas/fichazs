@@ -203,12 +203,12 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js?v=2.11.0"></script>
+<script src="efeitos.js?v=2.11.1"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.11.0";
-import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.11.0";
-import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI} from "./alcancar-lib.js?v=2.11.0";
-import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.11.0";
+import {loadOBR,ready} from "./obr.js?v=2.11.1";
+import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.11.1";
+import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI} from "./alcancar-lib.js?v=2.11.1";
+import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.11.1";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";
@@ -613,7 +613,7 @@ function renderAlcGm(box,g){
   c.append(rv);
   c.append(el("p","hint","Oculta, os jogadores veem 0/??. Revelada, veem 0/altura. Seguro: dado baixo, DT normal. Arriscado: dado alto, DT +"+RISK_DT+". Sucesso sobe o valor do dado; falha dá esse valor de dano."));
   const row=el("div","row2");
-  if(!g.on)row.append(mk("button","go","Ativar escalada",()=>setC({...vals(),on:true,id:Date.now()})));
+  if(!g.on)row.append(mk("button","go","Ativar escalada",async()=>{await setC({...vals(),on:true,id:Date.now()});setTimeout(clShow,1200)}));
   else row.append(mk("button","small","Encerrar escalada",()=>setC({on:false})),mk("button","small","Abrir janela",clShow));
   c.append(row);box.append(c);
   const l=el("div","pnl");l.id="eq-list";box.append(l);

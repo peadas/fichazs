@@ -14,7 +14,8 @@ button{font:600 .85rem Barlow,sans-serif;color:var(--ink);background:transparent
 button:hover:not(:disabled){border-color:var(--gold2);color:var(--gold)}
 button:disabled{opacity:.45;cursor:default}
 #win{position:absolute;inset:0;display:flex;flex-direction:column;background:linear-gradient(180deg,#12181af2,#0a0d0ef5);border:1px solid #7b8688;box-shadow:0 8px 30px #000a,inset 0 0 0 3px #0a0d0e,inset 0 0 0 4px #3a4344}
-header{display:flex;align-items:center;gap:6px;padding:8px 10px 6px;border-bottom:1px solid var(--line)}
+header{cursor:grab;touch-action:none;display:flex;align-items:center;gap:6px;padding:8px 10px 6px;border-bottom:1px solid var(--line)}
+header.drag{cursor:grabbing}
 header .ttl{flex:1;min-width:0;display:flex;align-items:baseline;gap:8px}
 header b{font:800 1.05rem Cinzel,serif;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dt{font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.12em;color:var(--gold2);border:1px solid var(--line);padding:0 6px;white-space:nowrap}
@@ -90,9 +91,9 @@ header .tools svg{width:14px;height:14px}
   <div id="ctl"></div>
 </div>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.11.0";
-import {KEY,store,mineLive,setMine} from "./mesa-lib.js?v=2.11.0";
-import {K_C,K_CP,RISK_DT,SK,MAIN,normC,normCP,testDice,ICON} from "./alcancar-lib.js?v=2.11.0";
+import {loadOBR,ready} from "./obr.js?v=2.11.1";
+import {KEY,store,mineLive,setMine} from "./mesa-lib.js?v=2.11.1";
+import {K_C,K_CP,RISK_DT,SK,MAIN,normC,normCP,testDice,ICON} from "./alcancar-lib.js?v=2.11.1";
 const $=s=>document.querySelector(s);
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",myId="";
@@ -115,7 +116,24 @@ let wt=0;
 const setScale=v=>{store.set("cl-scale",String(Math.round(Math.min(1.7,Math.max(.7,v))*100)/100));clearTimeout(wt);wt=setTimeout(place,220)};
 $("#b-min").onclick=()=>setScale(sc()-.15);
 $("#b-max").onclick=()=>setScale(sc()+.15);
-$("#b-pos").onclick=()=>{store.set("cl-pos",String(((+store.get("cl-pos")||0)+1)%4));place()};
+$("#b-pos").onclick=()=>{store.set("cl-pos",String(((+store.get("cl-pos")||0)+1)%4));store.set("cl-xy",null);place()};
+/* arrastar pelo cabeçalho: a janela do Owlbear é reposicionada enquanto o mouse anda (usa a tela, não a janela, como referência) */
+{
+  const h=$("header");let d=null,t=0;
+  h.addEventListener("pointerdown",e=>{
+    if(e.button>0||e.target.closest("button"))return;
+    let xy=null;try{xy=JSON.parse(store.get("cl-xy")||"null")}catch(_){}
+    if(!xy)return;d={sx:e.screenX,sy:e.screenY,x:xy.x,y:xy.y};h.classList.add("drag");
+    try{h.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();
+  });
+  h.addEventListener("pointermove",e=>{
+    if(!d||Date.now()-t<45)return;t=Date.now();
+    store.set("cl-xy",JSON.stringify({x:d.x+e.screenX-d.sx,y:d.y+e.screenY-d.sy}));
+    OBR&&OBR.broadcast.sendMessage("ordem.cl/move",{},{destination:"LOCAL"}).catch(()=>{});
+  });
+  const end=e=>{if(!d)return;store.set("cl-xy",JSON.stringify({x:d.x+e.screenX-d.sx,y:d.y+e.screenY-d.sy}));d=null;h.classList.remove("drag");OBR&&OBR.broadcast.sendMessage("ordem.cl/move",{},{destination:"LOCAL"}).catch(()=>{})};
+  h.addEventListener("pointerup",end);h.addEventListener("pointercancel",end);
+}
 $("#b-x").onclick=()=>OBR&&OBR.broadcast.sendMessage("ordem.cl/close",{},{destination:"LOCAL"}).catch(()=>{});
 addEventListener("wheel",e=>{e.preventDefault();setScale(sc()+(e.deltaY<0?.1:-.1))},{passive:false});
 
@@ -251,6 +269,8 @@ function onResult(d){
   OBR.player.onChange(p=>{self={id:p.id||self.id,name:p.name,color:p.color,metadata:p.metadata};role=p.role||role;render()});
   OBR.party.onChange(ps=>{party=ps;render()});
   OBR.broadcast.onMessage("ordem.cl/result",ev=>onResult(ev.data||{}));
+  const alive=()=>OBR.broadcast.sendMessage("ordem.cl/alive",{},{destination:"LOCAL"}).catch(()=>{});
+  alive();setInterval(alive,4000);
   setInterval(refresh,4000);
   addEventListener("resize",()=>render());
 })();
