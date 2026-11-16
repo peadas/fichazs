@@ -145,21 +145,21 @@ body.arr #esc{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outli
 </style>
 </head>
 <body>
-<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.10.2" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.10.2" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
+<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.11.0" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.11.0" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
 <div id="hist" aria-hidden="true"></div>
 <div id="hud" aria-hidden="true"></div>
 <div id="esc" aria-hidden="true"></div>
 <div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
 <div id="hbar"><span>Arraste os cartões e a mesa</span><button id="t-menos" title="Mesa menor" aria-label="Mesa menor">Mesa −</button><button id="t-mais" title="Mesa maior" aria-label="Mesa maior">Mesa +</button><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js?v=2.10.2"></script>
-<script src="dice-style.js?v=2.10.2"></script>
+<script src="engine.js?v=2.11.0"></script>
+<script src="dice-style.js?v=2.11.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.10.2";
-import {KEY,npcsOf} from "./mesa-lib.js?v=2.10.2";
-import {K_P,K_G,normP,normG,MAXD,ICON} from "./esconder-lib.js?v=2.10.2";
+import {loadOBR,ready} from "./obr.js?v=2.11.0";
+import {KEY,npcsOf} from "./mesa-lib.js?v=2.11.0";
+import {K_P,K_G,normP,normG,MAXD,ICON} from "./esconder-lib.js?v=2.11.0";
 const $=s=>document.querySelector(s);
-const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",ESC=qs.get("esc")==="1"&&!standalone,KEEP=HUD||ESC||qs.get("tray")==="1";
+const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",ESC=qs.get("esc")==="1"&&!standalone,CL=qs.get("cl")==="1"&&!standalone,KEEP=HUD||ESC||CL||qs.get("tray")==="1";
 const CH=ENG.CH,HOLD=4500,CHIP_LIFE=9000;
 let OBR=null,received=0,idleTimer=0,dsOK=false,myId="";
 const dsMeta=new Map();   // estilo dos dados de cada jogador (metadados do Owlbear)
@@ -605,15 +605,20 @@ async function quickRoll(m){
   let tot=mod;
   const rows=res.map(([n,f,x],i)=>{const v=x*(dbl[i]?2:1);tot+=ok[i][0]*v;return{l:n,v:(ok[i][0]<0?"−":"")+v,c:dbl[i]?"x2":""}});
   if(mod)rows.push({l:"Modificador",v:(mod>0?"+":"−")+Math.abs(mod),c:""});
-  if(!m.esc&&(res.length>1||mod))rows.push({l:"Total",v:String(tot),c:"ok"});
+  const showTot=!m.esc||m.esc.k==="climb";
+  if(showTot&&(res.length>1||mod))rows.push({l:"Total",v:String(tot),c:"ok"});
   const title=(m.title?String(m.title):"Rolagem "+exp).slice(0,40);
-  const payload={id:String(Date.now()),seed,who,color:meCache.color,title,list:list.map(([n,f])=>[n,f]),kinds:list.map((_,i)=>["","pv","rel"].includes((m.kinds||[])[i])?m.kinds[i]:""),ds:window.DICE?DICE.mine():null,res:res.map(r=>r[2]),dbl,foco,pid:String(meCache.id),gm:!!meCache.gm,hid:!!(m.esc&&(m.esc.k==="hide"||m.esc.k==="add")),anim:true,rows,crit:null,note:foco&&dbl.some(Boolean)?"Foco: caiu no 2×":"",text:who+" · "+title+(m.esc?"":": "+tot)};
+  const payload={id:String(Date.now()),seed,who,color:meCache.color,title,list:list.map(([n,f])=>[n,f]),kinds:list.map((_,i)=>["","pv","rel"].includes((m.kinds||[])[i])?m.kinds[i]:""),ds:window.DICE?DICE.mine():null,res:res.map(r=>r[2]),dbl,foco,pid:String(meCache.id),gm:!!meCache.gm,hid:!!(m.esc&&(m.esc.k==="hide"||m.esc.k==="add")),anim:true,rows,crit:null,note:foco&&dbl.some(Boolean)?"Foco: caiu no 2×":"",text:who+" · "+title+(showTot?": "+tot:"")};
   OBR.broadcast.sendMessage(CH.roll,payload,{destination:m.test?"LOCAL":"ALL"}).catch(()=>{});
   if(m.esc)setTimeout(()=>escStore(m.esc,res.map(r=>[r[1],r[2]]),list.map(l=>l[0])),ms);   // grava o resultado quando o dado para de girar
 }
 /* Esconder: guarda o que saiu (dados do jogador, ou números chamados pelo mestre) */
 async function escStore(e,r,names){
   try{
+    if(e.k==="climb"){            // Equilíbrio > Alcançar: devolve os dados à janela da escalada (mesmo navegador)
+      OBR.broadcast.sendMessage("ordem.cl/result",{rid:String(e.rid||""),cid:+e.cid||0,mode:e.mode==="r"?"r":"s",sk:String(e.sk||"").slice(0,24),dice:r.map(x=>[+x[0],+x[1]])},{destination:"LOCAL"}).catch(()=>{});
+      return;
+    }
     const md=await OBR.player.getMetadata();
     if(e.k==="call"){
       const g=normG(md&&md[K_G]);

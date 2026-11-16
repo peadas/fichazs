@@ -154,6 +154,17 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
 .ev1 span{flex:1;color:var(--muted)}
 .emsg{margin:8px 0 0;color:var(--gold);font-weight:600;font-size:.9rem}
 #v-esc input.t{background:#0e1213;border:1px solid var(--line);color:#eef0ee;padding:6px 8px;font:inherit;min-width:0}
+/* aba Equilíbrio (ícone de balança) */
+.tabs button.ic{padding:7px 12px;display:grid;place-items:center}
+.tabs button.ic svg{width:23px;height:23px;display:block}
+.acts.two{grid-template-columns:repeat(2,1fr)}
+.ab:disabled{opacity:.5;cursor:default}
+.ab small{display:block;font:600 .66rem Barlow,sans-serif;letter-spacing:.04em;text-transform:none;color:var(--muted)}
+#v-eq input.t{background:#0e1213;border:1px solid var(--line);color:#eef0ee;padding:6px 8px;font:inherit;min-width:0}
+#v-eq .lbl{font:700 .72rem "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+#v-eq .cl{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
+#v-eq .cl b{flex:1;font:700 1.02rem "Barlow Condensed",sans-serif;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-eq .cl em{font-style:normal;font:700 1rem "Barlow Condensed",sans-serif;color:var(--gold)}
 </style>
 </head>
 <body>
@@ -169,6 +180,7 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
     <button data-t="mesa" class="on">Mesa</button>
     <button data-t="npc" id="t-npc">NPCs<b id="nc" hidden></b></button>
     <button data-t="esc">Esconder</button>
+    <button data-t="eq" class="ic" id="t-eq" title="Equilíbrio" aria-label="Equilíbrio"></button>
   </nav>
   <section id="v-mesa">
     <div id="top"></div>
@@ -179,6 +191,7 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
     <div class="leave" id="leave"></div>
   </section>
   <section id="v-esc" hidden></section>
+  <section id="v-eq" hidden></section>
   <section id="v-npc" hidden>
     <div class="form">
       <div><label for="n-nome">Nome do NPC</label><input id="n-nome" placeholder="Ex.: Cultista" autocomplete="off"></div>
@@ -190,11 +203,12 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js?v=2.10.2"></script>
+<script src="efeitos.js?v=2.11.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.10.2";
-import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.10.2";
-import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.10.2";
+import {loadOBR,ready} from "./obr.js?v=2.11.0";
+import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.11.0";
+import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI} from "./alcancar-lib.js?v=2.11.0";
+import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.11.0";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";
@@ -247,7 +261,8 @@ function card(p,mine,i){
   return c;
 }
 
-let kM="",kN="",anim=true,refresh=async()=>{};
+let kM="",kN="",kQ="",anim=true,refresh=async()=>{};
+$("#t-eq").innerHTML=CI.scale;
 const ent=p=>[p.id,p.isNpc?1:0,p.color,p.name,p.metadata&&p.metadata[KEY]];
 function renderMesa(){
   const base=[self,...party].filter(Boolean),key=JSON.stringify([role,joined(),hasName(),stOK,pubErr,base.map(ent),npcsOf(base).map(ent),npcs(),mineLive(),npcs().map(n=>npcInfo(n.id))]);
@@ -328,11 +343,11 @@ function render(){
   $("#role").textContent=gm?"Mestre":"Jogador";$("#role").classList.toggle("gm",gm);
   $("#tabs").hidden=false;$("#t-npc").hidden=!gm;
   if(!gm&&tab==="npc")tab="mesa";
-  $("#v-mesa").hidden=tab!=="mesa";$("#v-npc").hidden=tab!=="npc";$("#v-esc").hidden=tab!=="esc";
+  $("#v-mesa").hidden=tab!=="mesa";$("#v-npc").hidden=tab!=="npc";$("#v-esc").hidden=tab!=="esc";$("#v-eq").hidden=tab!=="eq";
   document.body.classList.toggle("anim",anim);
   document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===tab));
   if(gm)$("#nc").textContent=npcs().length,$("#nc").hidden=!npcs().length;
-  renderMesa();if(gm&&tab==="npc")renderNpcs();if(tab==="esc")renderEsc();
+  renderMesa();if(gm&&tab==="npc")renderNpcs();if(tab==="esc")renderEsc();if(tab==="eq")renderEq();
   if(anim)setTimeout(()=>{anim=false;document.body.classList.remove("anim")},700);
 }
 /* cartões na tela: liga/desliga (cada jogador decide para a própria tela) */
@@ -344,8 +359,8 @@ function drawTray(){$("#tray-sw").setAttribute("aria-checked",String(trayOn()))}
 $("#tray-sw").onclick=()=>{store.set("tray-always",trayOn()?"0":"1");drawTray();if(OBR)OBR.broadcast.sendMessage("ordem.hud/cfg",{},{destination:"LOCAL"}).catch(()=>{})};
 drawTray();
 drawHud();
-document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;kM=kN=kE="";anim=true;render()});
-addEventListener("storage",()=>{if(role==="GM"&&tab==="npc")renderNpcs();else if(tab==="mesa")renderMesa();else if(tab==="esc")renderEsc()});
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;kM=kN=kE=kQ="";anim=true;render()});
+addEventListener("storage",()=>{if(role==="GM"&&tab==="npc")renderNpcs();else if(tab==="mesa")renderMesa();else if(tab==="esc")renderEsc();else if(tab==="eq")renderEq()});
 
 /* ================= aba Esconder ================= */
 const E={act:"",way:0,skill:"Furtividade",custom:false,face:8,qty:1,addFace:6,discard:false,msg:"",evOpen:false,dex:-1,dsk:"Enganação",dcustom:false,pick:-1,a1:-1,a2:-1};
@@ -540,6 +555,81 @@ function renderGm(box,g){
   if(!ps.length)pl.append(el("p","hint","Ninguém se escondeu ainda."));
   ps.forEach(p=>{const s=normP(p.metadata[K_P]),e=p.metadata[KEY]||{},r=el("div","row2");r.append(el("b",null,String(e.nome||p.name||"Jogador").slice(0,24)));r.append(s.dice.length?diceRow(s,g,null,true):el("span","hint",s.h?"descoberto":"—"));pl.append(r)});
   box.append(pl);
+}
+
+/* ================= aba Equilíbrio (balança): Equilibrar (em breve) e Alcançar ================= */
+const Q={sub:""};
+const gmP=()=>role==="GM"?self:party.find(x=>x.role==="GM");
+const cgSt=()=>{const p=gmP();return normC(p&&p.metadata&&p.metadata[K_C])};
+const cpSt=x=>normCP(x&&x.metadata&&x.metadata[K_CP]);
+const setC=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_C]:{...cgSt(),...patch}});await refresh()};
+const setCP=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_CP]:{...cpSt(self),...patch}});await refresh()};
+const clShow=()=>OBR&&OBR.broadcast.sendMessage("ordem.cl/show",{},{destination:"LOCAL"}).catch(()=>{});
+const nick=p=>{const e=p.metadata&&p.metadata[KEY];return String((e&&e.nome)||p.name||"Jogador").trim().slice(0,24)||"Jogador"};
+let kQl="";
+function renderEq(){
+  const g=cgSt(),gm=role==="GM",mine=cpSt(self);
+  const ps=[...(gm?[]:[self]),...party.filter(x=>x.role!=="GM")].filter(Boolean).map(p=>({p,c:cpSt(p)})).filter(x=>g.id&&x.c.in&&x.c.id===g.id);
+  /* o formulário do mestre só é refeito quando a escalada liga/desliga (senão apagaria o que ele digita e engoliria cliques) */
+  const key=JSON.stringify(gm?[role,Q.sub,g.on,g.id]:[role,Q.sub,g,mine]);
+  if(key!==kQ){
+    kQ=key;kQl="";
+    const box=$("#v-eq");box.replaceChildren();
+    if(!OBR)box.append(el("div","tip","Abra esta página dentro do Owlbear Rodeo."));
+    const tiles=el("div","acts two");
+    const b1=mk("button","ab",null,null,"Em breve");b1.disabled=true;b1.innerHTML=CI.scale;b1.append(el("span",null,"Equilibrar"),el("small",null,"em breve"));
+    const b2=mk("button","ab"+(Q.sub==="alc"?" on":""),null,()=>{Q.sub=Q.sub==="alc"?"":"alc";kQ="";renderEq()},"Alcançar");b2.innerHTML=CI.reach;b2.append(el("span",null,"Alcançar"));
+    tiles.append(b1,b2);box.append(tiles);
+    if(Q.sub!=="alc")box.append(el("p","hint","Escolha uma mecânica. Equilibrar (testes de equilíbrio com 2d10 e dados de equilíbrio) chega em breve."));
+    else if(gm)renderAlcGm(box,g);
+    else renderAlcPlayer(box,g,mine,ps);
+  }
+  if(gm&&Q.sub==="alc"){                         // lista "Na parede" do mestre: refeita à parte
+    const lk=JSON.stringify([g.on,g.total,ps.map(x=>[x.p.id,x.p.name,x.c.p,x.c.top])]);
+    if(lk!==kQl){kQl=lk;fillAlcList($("#eq-list"),g,ps)}
+  }
+}
+function fillAlcList(l,g,ps){
+  if(!l)return;l.replaceChildren();l.append(el("h4",null,"Na parede"));
+  if(!g.on)l.append(el("p","hint","Ative a escalada para os jogadores entrarem."));
+  else if(!ps.length)l.append(el("p","hint","Ninguém entrou ainda."));
+  ps.forEach(({p,c:cp})=>{
+    const r=el("div","cl");r.append(el("b",null,nick(p)),el("em",null,cp.top?"TOPO":cp.p+"/"+g.total));
+    r.append(mk("button","small","Derrubar",()=>OBR.broadcast.sendMessage("ordem.cl/drop",{to:String(p.id)},{destination:"ALL"}).catch(()=>{}),"Faz o jogador cair e sair da parede"));
+    l.append(r);
+  });
+}
+function renderAlcGm(box,g){
+  const c=el("div","pnl");c.append(el("h4",null,g.on?"Escalada ativa":"Criar escalada"));
+  const f=(lbl,input)=>{const r=el("div","row2");r.append(el("span","lbl",lbl),input);return r};
+  const nm=el("input","t");nm.value=g.name;nm.maxLength=30;nm.placeholder="Parede";nm.setAttribute("aria-label","Nome");
+  const dt=el("input","t");dt.type="number";dt.min=1;dt.max=60;dt.value=g.dt;dt.style.width="70px";dt.setAttribute("aria-label","DT");
+  const ht=el("input","t");ht.type="number";ht.min=1;ht.max=500;ht.value=g.total;ht.style.width="70px";ht.setAttribute("aria-label","Quanto precisa subir");
+  const clampI=(i,lo,hi,d)=>Math.max(lo,Math.min(hi,parseInt(i.value,10)||d));
+  const vals=()=>({name:nm.value.trim().slice(0,30),dt:clampI(dt,1,60,10),total:clampI(ht,1,500,20)});
+  [nm,dt,ht].forEach(i=>i.onchange=()=>setC(vals()));
+  c.append(f("Nome",nm),f("DT",dt),f("Altura",ht));
+  const rv=sw("Revelar a altura aos jogadores",g.rev,()=>{const nr=!cgSt().rev;rv.querySelector(".sw").setAttribute("aria-checked",String(nr));setC({...vals(),rev:nr})});
+  c.append(rv);
+  c.append(el("p","hint","Oculta, os jogadores veem 0/??. Revelada, veem 0/altura. Seguro: dado baixo, DT normal. Arriscado: dado alto, DT +"+RISK_DT+". Sucesso sobe o valor do dado; falha dá esse valor de dano."));
+  const row=el("div","row2");
+  if(!g.on)row.append(mk("button","go","Ativar escalada",()=>setC({...vals(),on:true,id:Date.now()})));
+  else row.append(mk("button","small","Encerrar escalada",()=>setC({on:false})),mk("button","small","Abrir janela",clShow));
+  c.append(row);box.append(c);
+  const l=el("div","pnl");l.id="eq-list";box.append(l);
+}
+function renderAlcPlayer(box,g,mine,ps){
+  const c=el("div","pnl");c.append(el("h4",null,"Alcançar"));
+  if(!g.on){c.append(el("p","hint","O mestre ainda não ativou uma escalada."));box.append(c);return}
+  const inn=mine.in&&mine.id===g.id;
+  c.append(el("p","hint",(g.name?g.name+" · ":"")+"DT "+g.dt+" · altura "+(g.rev?g.total:"??")+(inn?" · você está em "+(g.rev?mine.p+"/"+g.total:mine.p+"/??"):"")));
+  if(mine.fell&&mine.id===g.id&&!inn)c.append(el("p","emsg","Você caiu!"));
+  const row=el("div","row2");
+  if(!inn)row.append(mk("button","go",mine.fell&&mine.id===g.id?"Escalar de novo":"Entrar na escalada",()=>setCP({id:g.id,in:1,p:0,top:0,fell:0,last:null})));
+  else row.append(mk("button","small","Sair da escalada",()=>setCP({in:0,p:0,top:0,fell:0})));
+  row.append(mk("button","small","Abrir janela",clShow));
+  c.append(row,el("p","hint","Os testes (Seguro ou Arriscado, Atletismo, Acrobacia…) ficam na janela da escalada, no canto da tela."));
+  box.append(c);
 }
 
 (async()=>{

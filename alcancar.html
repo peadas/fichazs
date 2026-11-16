@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Escalada</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;600&family=Cinzel:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#eef0ee;--muted:#8f9a99;--line:#3a4344;--gold:#e9ece7;--gold2:#a9b3b1;--ok:#5fd38a;--bad:#e0524f;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;overflow:hidden;background:transparent;color:var(--ink);font:14px/1.35 Barlow,system-ui,sans-serif;user-select:none;-webkit-user-select:none}
+button{font:600 .85rem Barlow,sans-serif;color:var(--ink);background:transparent;border:1px solid var(--line);padding:6px 10px;cursor:pointer;transition:.15s}
+button:hover:not(:disabled){border-color:var(--gold2);color:var(--gold)}
+button:disabled{opacity:.45;cursor:default}
+#win{position:absolute;inset:0;display:flex;flex-direction:column;background:linear-gradient(180deg,#12181af2,#0a0d0ef5);border:1px solid #7b8688;box-shadow:0 8px 30px #000a,inset 0 0 0 3px #0a0d0e,inset 0 0 0 4px #3a4344}
+header{display:flex;align-items:center;gap:6px;padding:8px 10px 6px;border-bottom:1px solid var(--line)}
+header .ttl{flex:1;min-width:0;display:flex;align-items:baseline;gap:8px}
+header b{font:800 1.05rem Cinzel,serif;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dt{font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.12em;color:var(--gold2);border:1px solid var(--line);padding:0 6px;white-space:nowrap}
+header .tools{display:flex;gap:3px}
+header .tools button{padding:0;width:24px;height:22px;line-height:1;font-size:.9rem;display:grid;place-items:center}
+header .tools svg{width:14px;height:14px}
+#rows{padding:6px 10px 4px;border-bottom:1px solid var(--line);max-height:30%;overflow:auto;scrollbar-width:thin}
+.pr{display:flex;align-items:center;gap:8px;font:700 1rem/1.25 "Barlow Condensed",sans-serif;letter-spacing:.05em;text-transform:uppercase;animation:in .3s both}
+.pr i{width:8px;height:8px;border-radius:50%;background:var(--c,#e9ece7);flex:none}
+.pr span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr em{font-style:normal;color:var(--gold);letter-spacing:.08em}
+.pr.top em{color:var(--ok)}
+.pr button{padding:0 6px;font-size:.7rem;height:18px;letter-spacing:.06em;text-transform:uppercase}
+.none{color:var(--muted);font-size:.85rem;padding:2px 0}
+@keyframes in{from{opacity:0;transform:translateY(4px)}}
+/* parede */
+#wall{position:relative;flex:1;min-height:90px;margin:8px 10px;border:1px solid #1a2022;overflow:hidden;
+  background:
+   repeating-linear-gradient(0deg,#0000 0 27px,#05070799 27px 29px),
+   repeating-linear-gradient(90deg,#0000 0 41px,#0507074d 41px 43px),
+   linear-gradient(90deg,#161c1d,#202829 50%,#161c1d)}
+#wall::before{content:"";position:absolute;left:0;right:0;top:0;height:22px;background:linear-gradient(180deg,#e9ece733,#0000);pointer-events:none}
+#wall .tp{position:absolute;left:0;right:0;top:0;height:0;border-top:2px dashed #e9ece7aa}
+#wall .tp small{position:absolute;right:6px;top:3px;font:700 .65rem "Barlow Condensed",sans-serif;letter-spacing:.16em;color:#e9ece7bb}
+#lanes{position:absolute;inset:0;display:flex}
+.lane{position:relative;flex:1 1 0;min-width:0;border-left:1px solid #0006}
+.lane:first-child{border-left:0}
+.lane::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:linear-gradient(180deg,#0000,#c9b27a55 20%,#c9b27a55);opacity:.7}
+.ph{position:absolute;left:50%;bottom:calc(6px + var(--f,0)*(100% - var(--s,48px) - 18px));width:var(--s,48px);height:var(--s,48px);margin-left:calc(var(--s,48px)/-2);border-radius:50%;border:3px solid var(--c,#e9ece7);background:#0e1213 center/cover no-repeat;display:grid;place-items:center;font:800 1.1rem Cinzel,serif;color:var(--c,#e9ece7);transition:bottom .9s cubic-bezier(.3,1.3,.5,1),transform .9s,opacity .9s;box-shadow:0 3px 10px #000a}
+.ph b{position:absolute;bottom:-8px;right:-8px;min-width:20px;height:20px;padding:0 4px;display:grid;place-items:center;border-radius:10px;background:#0b0e0f;border:1px solid var(--c,#e9ece7);font:700 .72rem "Barlow Condensed",sans-serif;letter-spacing:.04em;color:#fff}
+.lane.fall .ph{bottom:6px;transform:rotate(300deg) scale(.7);opacity:0;transition:bottom .75s cubic-bezier(.6,0,1,.6),transform .95s,opacity .95s}
+.lane.fall{opacity:.0;transition:opacity 1.1s}
+.lane.win .ph{box-shadow:0 0 0 3px #5fd38a55,0 0 18px #5fd38a88}
+/* log e controles */
+#log{padding:0 10px 4px;min-height:18px;font:600 .8rem "Barlow Condensed",sans-serif;letter-spacing:.06em;color:var(--gold2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+#log.bad{color:#ff8f8c}#log.good{color:#9be3b4}
+#ctl{padding:6px 10px 10px;border-top:1px solid var(--line)}
+.mode{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+.mode button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 4px;font:700 .9rem "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;background:#0e1213}
+.mode button small{font:600 .68rem Barlow,sans-serif;letter-spacing:0;text-transform:none;color:var(--muted)}
+.mode button svg{width:16px;height:16px}
+.mode button.on{border-color:var(--gold);color:var(--gold);background:#202829}
+.mode button.on small{color:#c8d0ce}
+.tests{display:flex;flex-wrap:wrap;gap:6px}
+.tests button.t{flex:1 1 90px;display:flex;flex-direction:column;align-items:center;padding:7px 6px;font:700 .95rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;border-color:var(--gold2);color:var(--gold);background:#141a1b}
+.tests button.t small{font:600 .68rem Barlow,sans-serif;letter-spacing:0;text-transform:none;color:var(--muted)}
+.tests button.t:hover:not(:disabled){background:var(--gold2);color:#15191a}
+.tests button.t:hover:not(:disabled) small{color:#2d3638}
+.tests select{flex:1 1 100%;background:#0e1213;color:var(--ink);border:1px solid var(--line);padding:5px 6px;font:600 .82rem Barlow,sans-serif}
+.res{margin:6px 0 0;padding:6px 8px;border-left:3px solid var(--gold2);background:#141a1b;font-size:.85rem}
+.res.ok{border-color:var(--ok)}.res.no{border-color:var(--bad)}
+.res button{margin-left:6px;padding:1px 8px;font-size:.78rem;border-color:var(--bad);color:#ff8f8c}
+.big{width:100%;padding:11px;font:800 1rem "Barlow Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#15191a;border:0;background:linear-gradient(180deg,#f3f5f1,#a9b3b1)}
+.big:hover:not(:disabled){filter:brightness(1.08);color:#15191a}
+.say{margin:0 0 6px;color:var(--gold2);font-size:.88rem}
+.say.bad{color:#ff8f8c}.say.good{color:#9be3b4}
+</style>
+</head>
+<body>
+<div id="win">
+  <header>
+    <div class="ttl"><b id="nm">Escalada</b><span class="dt" id="dt"></span></div>
+    <div class="tools">
+      <button id="b-pos" title="Mudar de canto" aria-label="Mudar de canto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M12 3 9 6m3-3 3 3M12 21l-3-3m3 3 3-3M3 12l3-3m-3 3 3 3M21 12l-3-3m3 3-3 3"/></svg></button>
+      <button id="b-min" title="Diminuir" aria-label="Diminuir">−</button>
+      <button id="b-max" title="Aumentar" aria-label="Aumentar">+</button>
+      <button id="b-x" title="Fechar a janela" aria-label="Fechar a janela">✕</button>
+    </div>
+  </header>
+  <div id="rows"></div>
+  <div id="wall"><div class="tp"><small>TOPO</small></div><div id="lanes"></div></div>
+  <div id="log"></div>
+  <div id="ctl"></div>
+</div>
+<script type="module">
+import {loadOBR,ready} from "./obr.js?v=2.11.0";
+import {KEY,store,mineLive,setMine} from "./mesa-lib.js?v=2.11.0";
+import {K_C,K_CP,RISK_DT,SK,MAIN,normC,normCP,testDice,ICON} from "./alcancar-lib.js?v=2.11.0";
+const $=s=>document.querySelector(s);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+let OBR=null,self=null,party=[],role="PLAYER",myId="";
+const gm=()=>role==="GM";
+let mode=store.get("cl-mode")==="r"?"r":"s",other=store.get("cl-other")||"",rolling=null,msg="",msgCls="",dmgDone=0,kCtl="";
+
+const curG=()=>{const p=gm()?self:party.find(x=>x.role==="GM");return normC(p&&p.metadata&&p.metadata[K_C])};
+const mineCP=()=>normCP(self&&self.metadata&&self.metadata[K_CP]);
+const nick=p=>{const e=p.metadata&&p.metadata[KEY];return String((e&&e.nome)||p.name||"Jogador").trim().slice(0,22)||"Jogador"};
+const climbers=g=>{
+  const all=[...(gm()?[]:[self]),...party.filter(x=>x.role!=="GM")].filter(Boolean);
+  return all.map(p=>({p,c:normCP(p.metadata&&p.metadata[K_CP])})).filter(x=>x.c.in&&x.c.id===g.id&&g.id);
+};
+const place=()=>OBR&&OBR.broadcast.sendMessage("ordem.cl/place",{},{destination:"LOCAL"}).catch(()=>{});
+const setCP=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_CP]:{...mineCP(),...patch}})};
+
+/* ---------- janela: tamanho e canto ---------- */
+const sc=()=>Math.min(1.7,Math.max(.7,parseFloat(store.get("cl-scale"))||1));
+let wt=0;
+const setScale=v=>{store.set("cl-scale",String(Math.round(Math.min(1.7,Math.max(.7,v))*100)/100));clearTimeout(wt);wt=setTimeout(place,220)};
+$("#b-min").onclick=()=>setScale(sc()-.15);
+$("#b-max").onclick=()=>setScale(sc()+.15);
+$("#b-pos").onclick=()=>{store.set("cl-pos",String(((+store.get("cl-pos")||0)+1)%4));place()};
+$("#b-x").onclick=()=>OBR&&OBR.broadcast.sendMessage("ordem.cl/close",{},{destination:"LOCAL"}).catch(()=>{});
+addEventListener("wheel",e=>{e.preventDefault();setScale(sc()+(e.deltaY<0?.1:-.1))},{passive:false});
+
+/* ---------- desenho ---------- */
+const lanes=new Map();      // id do jogador -> {el, ph, badge}
+function frac(g,c,full){
+  if(c.top||c.p>=g.total)return 1;
+  return full?Math.min(.98,c.p/g.total):Math.min(.86,1-Math.exp(-c.p/9));
+}
+function render(){
+  const g=curG(),list=climbers(g),isGm=gm();
+  $("#nm").textContent=g.name||"Escalada";
+  $("#dt").textContent="DT "+g.dt;
+  $("#dt").title="Arriscado: DT "+(g.dt+RISK_DT);
+  /* linhas do topo: NOME  0/?? */
+  const rows=$("#rows");rows.replaceChildren();
+  if(!g.on)rows.append(el("div","none","Nenhuma escalada ativa."));
+  else if(!list.length)rows.append(el("div","none","Ninguém entrou ainda."));
+  list.forEach(({p,c})=>{
+    const full=isGm||g.rev||c.top,r=el("div","pr"+(c.top?" top":""));
+    r.style.setProperty("--c",p.color||"#e9ece7");
+    r.append(el("i"),el("span",null,nick(p)),el("em",null,c.top?"TOPO":Math.min(c.p,full?g.total:c.p)+"/"+(full?g.total:"??")));
+    if(isGm){const b=el("button",null,"Derrubar");b.title="Faz "+nick(p)+" cair e sair da parede";b.onclick=()=>OBR.broadcast.sendMessage("ordem.cl/drop",{to:String(p.id)},{destination:"ALL"}).catch(()=>{});r.append(b)}
+    rows.append(r);
+  });
+  /* parede: uma faixa por jogador, a foto sobe conforme o progresso */
+  const ln=$("#lanes"),want=new Set(list.map(x=>String(x.p.id))),W=$("#wall").clientWidth||300;
+  const s=Math.max(28,Math.min(58,Math.floor(W/Math.max(1,list.length))-10));
+  for(const [id,l] of lanes)if(!want.has(id)){
+    l.el.classList.add("fall");lanes.delete(id);setTimeout(()=>l.el.remove(),1200);
+  }
+  list.forEach(({p,c})=>{
+    const id=String(p.id),full=isGm||g.rev||c.top;let l=lanes.get(id);
+    if(!l){
+      const e=el("div","lane"),ph=el("div","ph"),ini=el("span"),b=el("b");ph.append(ini,b);e.append(ph);ln.append(e);l={el:e,ph,b,ini};lanes.set(id,l);
+      ph.style.setProperty("--f","0");
+    }
+    const m=p.metadata&&p.metadata[KEY],th=m&&m.th;
+    l.ph.style.setProperty("--c",p.color||"#e9ece7");l.ph.style.setProperty("--s",s+"px");
+    l.ph.style.backgroundImage=th?"url("+th+")":"none";
+    l.ini.textContent=th?"":nick(p).charAt(0).toUpperCase();
+    l.b.textContent=c.p;
+    l.el.classList.toggle("win",!!c.top);
+    requestAnimationFrame(()=>l.ph.style.setProperty("--f",String(frac(g,c,full))));
+  });
+  /* último acontecimento */
+  const lg=$("#log");lg.className="";lg.textContent="";
+  const ev=list.filter(x=>x.c.last).sort((a,b)=>b.c.last.t-a.c.last.t)[0];
+  if(ev){
+    const L=ev.c.last;
+    lg.textContent=nick(ev.p)+" · "+L.sk+" "+L.s+" (DT "+L.dt+") · "+(L.ok?"subiu "+L.amt:"falhou: "+L.amt+" de dano");
+    lg.classList.add(L.ok?"good":"bad");
+  }
+  controls(g);
+}
+
+function controls(g){
+  const c=mineCP(),isGm=gm(),inClimb=!isGm&&g.on&&c.in&&c.id===g.id;
+  const key=JSON.stringify([isGm,g.on,g.id,g.dt,inClimb,c.top,c.fell&&c.id===g.id,c.last&&c.last.t,mode,other,!!rolling,msg,dmgDone]);
+  if(key===kCtl)return;kCtl=key;
+  const box=$("#ctl");box.replaceChildren();
+  if(isGm){box.append(el("p","say","Você é o mestre: use Derrubar ao lado do nome para fazer alguém cair."));return}
+  if(!g.on){box.append(el("p","say","O mestre ainda não ativou uma escalada."));return}
+  if(!inClimb){
+    if(c.fell&&c.id===g.id)box.append(el("p","say bad","Você caiu! Quer tentar de novo?"));
+    const b=el("button","big",c.fell&&c.id===g.id?"Escalar de novo":"Entrar na escalada");
+    b.onclick=()=>setCP({id:g.id,in:1,p:0,top:0,fell:0,last:null}).then(()=>{msg="";render()});box.append(b);return;
+  }
+  if(c.top){box.append(el("p","say good","Você chegou ao topo!"));return}
+  const m=el("div","mode");
+  [["s","safe","Seguro","dado baixo · DT "+g.dt],["r","risk","Arriscado","dado alto · DT "+(g.dt+RISK_DT)]].forEach(([k,ic,t,sub])=>{
+    const b=el("button",mode===k?"on":"");b.type="button";b.innerHTML=ICON[ic];b.append(el("span",null,t),el("small",null,sub));
+    b.onclick=()=>{mode=k;store.set("cl-mode",k);render()};m.append(b);
+  });
+  box.append(m);
+  const t=el("div","tests");
+  const sks=MAIN.concat(other&&!MAIN.includes(other)?[other]:[]);
+  sks.forEach(sk=>{
+    const dd=testDice(sk),b=el("button","t");b.disabled=!!rolling;
+    b.append(el("span",null,sk),el("small",null,"d"+dd[0].f+" + d"+dd[1].f));
+    b.onclick=()=>roll(sk,g);t.append(b);
+  });
+  const sel=el("select");sel.setAttribute("aria-label","Outra perícia");
+  sel.append(new Option("Outra perícia…",""));
+  SK.filter(x=>!MAIN.includes(x[0])).forEach(([n])=>{const o=new Option(n,n);if(n===other)o.selected=true;sel.append(o)});
+  sel.onchange=()=>{other=sel.value;store.set("cl-other",other);kCtl="";render()};
+  t.append(sel);box.append(t);
+  const L=c.last;
+  if(rolling)box.append(el("p","res","Rolando…"));
+  else if(msg)box.append(el("p","say bad",msg));
+  else if(L){
+    const r=el("p","res "+(L.ok?"ok":"no"));
+    r.append(document.createTextNode(L.sk+": "+L.a+" + "+L.b+" = "+L.s+" contra DT "+L.dt+" ("+(L.m==="r"?"arriscado":"seguro")+") · "+(L.ok?"sobe "+L.amt:"falhou, dano "+L.amt)));
+    if(!L.ok&&dmgDone!==L.t){
+      const b=el("button",null,"Aplicar −"+L.amt+" PV");b.type="button";
+      b.onclick=()=>{setMine("pv",mineLive().pv-L.amt);dmgDone=L.t;OBR&&OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"}).catch(()=>{});kCtl="";render()};
+      r.append(b);
+    }
+    box.append(r);
+  }
+}
+
+/* ---------- rolar: os dados caem na mesa de todos; o resultado volta pela camada dos dados ---------- */
+function roll(sk,g){
+  if(!OBR||rolling)return;
+  const dd=testDice(sk),rid=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  rolling={rid,sk,mode,cid:g.id};msg="";
+  OBR.broadcast.sendMessage("ordem.hud/quickroll",{dice:dd.map(x=>[1,x.f]),names:dd.map(x=>x.n),title:"Escalar · "+sk+" ("+(mode==="r"?"arriscado":"seguro")+")",exp:sk,
+    esc:{k:"climb",rid,cid:g.id,mode,sk},qid:"cl"+rid},{destination:"LOCAL"}).catch(()=>{});
+  const mine=rolling;
+  setTimeout(()=>{if(rolling===mine){rolling=null;msg="Os dados não responderam. Tente de novo.";kCtl="";render()}},15000);
+  kCtl="";render();
+}
+function onResult(d){
+  if(!rolling||d.rid!==rolling.rid)return;
+  const R=rolling;rolling=null;
+  const g=curG(),c=mineCP();
+  if(!g.on||g.id!==R.cid||!c.in||c.id!==g.id||c.top||!Array.isArray(d.dice)||d.dice.length<2){kCtl="";render();return}
+  const a=+d.dice[0][1]||0,b=+d.dice[1][1]||0,s=a+b,md=R.mode==="r"?"r":"s",dt=g.dt+(md==="r"?RISK_DT:0);
+  const ok=s>=dt,amt=md==="r"?Math.max(a,b):Math.min(a,b);
+  const p=ok?Math.min(g.total,c.p+amt):c.p,top=p>=g.total?1:0;
+  setCP({p,top,fell:0,last:{sk:R.sk,a,b,s,dt,ok:ok?1:0,amt,m:md,t:Date.now()}}).then(()=>{kCtl="";render()}).catch(()=>{kCtl="";render()});
+}
+
+(async()=>{
+  OBR=await loadOBR();
+  if(!OBR||!(await ready(OBR))){OBR=null;$("#rows").textContent="Abra esta página dentro do Owlbear Rodeo.";return}
+  myId=String(OBR.player.id||"");
+  role=await OBR.player.getRole();
+  const me=async()=>({id:OBR.player.id,name:await OBR.player.getName(),color:await OBR.player.getColor(),metadata:await OBR.player.getMetadata()});
+  const refresh=async()=>{try{role=await OBR.player.getRole();self=await me();party=await OBR.party.getPlayers();render()}catch(e){}};
+  await refresh();
+  OBR.player.onChange(p=>{self={id:p.id||self.id,name:p.name,color:p.color,metadata:p.metadata};role=p.role||role;render()});
+  OBR.party.onChange(ps=>{party=ps;render()});
+  OBR.broadcast.onMessage("ordem.cl/result",ev=>onResult(ev.data||{}));
+  setInterval(refresh,4000);
+  addEventListener("resize",()=>render());
+})();
+</script>
+</body>
+</html>

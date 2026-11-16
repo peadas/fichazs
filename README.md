@@ -72,7 +72,7 @@ Embaixo dos atributos há um cartão com a habilidade do **Perfil** escolhido no
 - O que a Mesa mostra é publicado nos metadados do jogador no Owlbear (some quando o jogador sai da sala).
 
 ## Arquivos
-`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `mesa.webp` + `mesa2x.webp` (mesa de dados) · `gm.html` (ficha do jogador aberta pelo mestre) · `efeitos.js` · `nevoa.png` · `moldura-menu.jpg` · `quick.html` (ícone e caixa de rolagem rápida) · `mesa-lib.js` · `obr.js` · `icon.svg`
+`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `mesa.webp` + `mesa2x.webp` (mesa de dados) · `gm.html` (ficha do jogador aberta pelo mestre) · `efeitos.js` · `nevoa.png` · `moldura-menu.jpg` · `quick.html` (ícone e caixa de rolagem rápida) · `alcancar.html` + `alcancar-lib.js` (Equilíbrio > Alcançar) · `mesa-lib.js` · `obr.js` · `icon.svg`
 
 ## v2.10.0: Esconder
 - Nova aba **Esconder** no menu (jogador e mestre). Ela controla o painel **Esconda-se** que aparece na tela do Owlbear (título, subtítulo editável como "Caçando", e um quadro por jogador com foto e dados de esconderijo). Arraste o título para mover; a roda do mouse sobre o título (ou − / + na aba) muda o tamanho.
@@ -80,3 +80,14 @@ Embaixo dos atributos há um cartão com a habilidade do **Perfil** escolhido no
 - **Mestre**: vê os dados como **?**. O número só aparece quando ele rola dados da criatura (escolhe d4 a d20 e a quantidade) ou digita números em *Números > Revelar*. Dados revelados são descartados sozinhos (dá para desligar). Quem fica sem dados aparece como **Descoberto**. A lista de eventos 1 a 10 fica em *Eventos*; os dados de cada evento foram lidos de um texto bagunçado do livro, confira.
 - **Atualização:** *Vigor* e *Sobrevivência* entram na lista de perícias para se esconder. **Distrair**: texto da regra, ideias (pedra, ligar para o celular de alguém…), perícia principal Enganação (com "Outra perícia"), DT 7 que sobe +3 a cada uso na cena (o mestre zera com *Nova cena*); se vencer, o jogador escolhe um dado do teste e dá +1 para si ou para um aliado. **Chamar atenção**: sacrifica 2 dados, um vai para um aliado ou para um NPC (narrativo) e o outro é descartado. **Ação chamativa** aparece como texto de regra.
 - **Correção:** o botão *+ dado* girava duas vezes (duas camadas abertas respondiam à mesma rolagem). Cada rolagem agora tem um código e só a primeira camada executa.
+
+## v2.11.0: Equilíbrio (balança) e Alcançar
+- Nova aba com **ícone de balança** no menu, ao lado de Mesa, NPCs e Esconder. Dentro: **Equilibrar** (em breve, botão desligado) e **Alcançar**.
+- **Mestre** (Equilíbrio > Alcançar): nome da parede (opcional), **DT**, **Altura** (quanto o jogador precisa subir, ex.: 10, 25, 30) e o interruptor **Revelar a altura**. Oculta, os jogadores veem `0/??`; revelada, veem `0/20`. **Ativar escalada** abre sozinha a janela da escalada na tela de todos (e mantém a camada dos dados aberta). **Encerrar** fecha tudo. A lista **Na parede** tem o botão **Derrubar** por jogador: ele cai (animação) e sai da parede, podendo entrar de novo.
+- **Janela da escalada** (`alcancar.html`, canto da tela do Owlbear): no topo `NOME 4/??` de cada jogador que entrou; abaixo a **parede** com a foto de cada um (uma faixa por jogador) que **sobe conforme o progresso** até o TOPO; embaixo os testes. Botões do cabeçalho: mudar de canto, **− / +** (tamanho; a roda do mouse também), ✕ (fecha; reabre pelo botão *Abrir janela* na aba). Tamanho e canto ficam salvos por navegador (`cl-scale`, `cl-pos`).
+- **Jogador**: *Entrar na escalada* (na janela ou na aba). Escolhe o modo e toca num teste (**Atletismo**, **Acrobacia** ou **Outra perícia…**), que rola os dados reais da ficha (perícia + atributo) caindo na mesa de todos.
+  - **Seguro**: vale o **dado baixo** do teste (RB); DT normal.
+  - **Arriscado**: vale o **dado alto** (RA); DT **+3**.
+  - Teste = soma dos 2 dados ≥ DT. **Sucesso**: sobe o valor do dado escolhido. **Falha**: não sobe e leva esse valor de dano (botão *Aplicar −X PV* desconta da ficha).
+  - Chegou à altura total: TOPO. Se a altura está oculta, a foto sobe sem nunca chegar ao topo até o jogador realmente chegar.
+- Estado: mestre em `ordem.cl/g`, jogadores em `ordem.cl/p` (metadados do Owlbear); a queda é uma mensagem `ordem.cl/drop` que o segundo plano do jogador só aceita se vier do mestre.
