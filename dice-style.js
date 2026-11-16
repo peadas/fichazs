@@ -197,8 +197,11 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 
 /* ---------- pré-visualização 2D ---------- */
 function poly(x,cx,cy,R,n,rot){x.beginPath();for(let i=0;i<n;i++){const a=rot+i*2*Math.PI/n;i?x.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a)):x.moveTo(cx+R*Math.cos(a),cy+R*Math.sin(a))}x.closePath()}
-function shape(x,cx,cy,R,n,cfg,kind,num){
-  const o=ORIG[kind||""],sides=n===20?6:n===6?4:5,rot=n===6?Math.PI/4:-Math.PI/2,orig=cfg.st==="classico";
+const n2c={};
+function num2(n,cfg){const k=n+"|"+cfg.ns+cfg.fn+cfg.cn;if(!n2c[k]){if(Object.keys(n2c).length>80)for(const q in n2c)delete n2c[q];n2c[k]=numCanvas(n,cfg)}return n2c[k]}
+/* desenha um dado 2D (usado na prévia do menu e na reserva 2D do overlay, quando não há WebGL) */
+function drawDie(x,cx,cy,R,sides,rot,cfg,kind,num){
+  const o=ORIG[kind||""],orig=cfg.st==="classico";
   x.save();poly(x,cx,cy,R,sides,rot);x.clip();
   if(orig){x.fillStyle=o.bg;x.fillRect(cx-R,cy-R,2*R,2*R);
     if(!kind){x.fillStyle=o.face;poly(x,cx,cy,R*.8,sides,rot);x.fill()}}
@@ -209,12 +212,13 @@ function shape(x,cx,cy,R,n,cfg,kind,num){
   }
   const g=x.createRadialGradient(cx-R*.35,cy-R*.45,2,cx,cy,R*1.3);g.addColorStop(0,"rgba(255,255,255,.5)");g.addColorStop(.3,"rgba(255,255,255,0)");g.addColorStop(1,"rgba(0,0,0,.55)");
   x.fillStyle=g;x.fillRect(cx-R,cy-R,2*R,2*R);x.restore();
-  x.strokeStyle="rgba(0,0,0,.45)";x.lineWidth=1.2;
+  x.strokeStyle="rgba(0,0,0,.45)";x.lineWidth=Math.max(.8,R*.03);
   if(sides===6){x.beginPath();[0,2,4].forEach((k,i)=>{const a=rot+k*Math.PI/3,px=cx+R*Math.cos(a),py=cy+R*Math.sin(a);i?x.lineTo(px,py):x.moveTo(px,py)});x.closePath();x.stroke()}
-  poly(x,cx,cy,R,sides,rot);x.lineWidth=1.8;x.strokeStyle="rgba(0,0,0,.6)";x.stroke();
-  const nc=numCanvas(num,orig?{ns:"tinta",fn:"classica",cn:o.fg}:cfg),sz=R*1.05;
+  poly(x,cx,cy,R,sides,rot);x.lineWidth=Math.max(1,R*.05);x.strokeStyle="rgba(0,0,0,.65)";x.stroke();
+  const nc=num2(num,orig?{ns:"tinta",fn:"classica",cn:o.fg}:cfg),sz=R*1.05;
   x.drawImage(nc.c,cx-sz/2,cy-sz/2,sz,sz);
 }
+function shape(x,cx,cy,R,n,cfg,kind,num){drawDie(x,cx,cy,R,n===20?6:n===6?4:5,n===6?Math.PI/4:-Math.PI/2,cfg,kind,num)}
 function preview(cv,cfg,kind){
   const x=cv.getContext("2d"),W=cv.width,H=cv.height;x.clearRect(0,0,W,H);
   shape(x,W*.2,H*.52,H*.34,6,cfg,kind,12);shape(x,W*.5,H*.5,H*.42,20,cfg,kind,20);shape(x,W*.8,H*.52,H*.34,6,cfg,kind,6);
@@ -299,5 +303,5 @@ function ui(root,opts){
   setTimeout(next,60);
 }
 
-const DICE=window.DICE={VER,ST,TX,NS,FN,PRE,MESAS,DEF,KINDS,BUMP:.6,get,getAll,setAll,clean,cleanOne,mine,chipColors,mats,makeEnv,ui,applyMesa,preview:previewShapes};
+const DICE=window.DICE={VER,ST,TX,NS,FN,PRE,MESAS,DEF,KINDS,BUMP:.6,get,getAll,setAll,clean,cleanOne,mine,chipColors,mats,makeEnv,ui,applyMesa,drawDie,preview:previewShapes};
 })();

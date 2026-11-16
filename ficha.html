@@ -726,8 +726,8 @@ function faces(g){
   return F;
 }
 /* dado com raio "rad" (px); face i = número i+1. d4: o número fica nos cantos e vale o que aponta pra cima */
-function makeDie(f,pv,rad){
-  const ds=window.DICE?DICE.mine():null,st=ds&&ds[pv||""]?DICE.mats(ds[pv||""],getEnv()):null,NM=(n,k)=>st?st.num(n):numMat(n,k);
+function makeDie(f,pv,rad,nostyle){
+  const ds=window.DICE&&!nostyle?DICE.mine():null,st=ds&&ds[pv||""]?DICE.mats(ds[pv||""],getEnv()):null,NM=(n,k)=>st?st.num(n):numMat(n,k);
   const g=GEO[f](),Fs=faces(g.index?g.toNonIndexed():g),grp=new THREE.Group(),all=[],auv=[],vm={},V=[],z=new THREE.Vector3(0,0,1);
   Fs.forEach(F=>{F.vi=Object.keys(F.u).map(k=>{if(!(k in vm)){vm[k]=V.length;V.push(F.u[k])}return vm[k]})});
   Fs.forEach((F,i)=>{
@@ -1193,7 +1193,7 @@ function throwDice(list,pv,rb,render){
     const rad=Math.min(42,Math.max(24,Math.min(ar.maxX-ar.minX,ar.maxZ-ar.minZ)/9));
     W=new PH.World(ar);bodies=[];
     list.forEach(([n,f],i)=>{
-      const m=makeDie(f,pv&&i===2?"pv":rb&&i===list.length-1?"rel":"",rad);
+      let m;const kk=pv&&i===2?"pv":rb&&i===list.length-1?"rel":"";try{m=makeDie(f,kk,rad)}catch(err){console.error("[dados] estilo falhou, usando o padrão:",err);m=makeDie(f,kk,rad,true)}
       const b=new PH.Body(m.userData.hull,m.userData.s);b.f=f;PH.toss(b,ar,rnd,i,list.length);W.bodies.push(b);bodies.push(b);
       const sh=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:shTex,transparent:true,depthWrite:false}));
       sh.rotation.x=-Math.PI/2;m.userData.sh=sh;scene.add(m,sh);meshes.push(m);

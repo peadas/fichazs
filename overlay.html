@@ -245,9 +245,9 @@ function play2d(p){
   cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
   const x=cv.getContext("2d");
   if(!x){cur=null;showResult(p);pump();return}
-  const n=p.list.length,rad=Math.max(10,Math.min(20,w/(n*3+2),h/10)),floor=h*.5+rad*.7;
+  const n=p.list.length,rad=Math.max(12,Math.min(26,w/(n*3+2),h/9)),floor=h*.5+rad*.7;
   const rnd=ENG.mulberry32(p.seed||1);
-  const ds=p.list.map(([nm,f],i)=>({f,k:KS[p.kinds[i]]||KS[""],res:p.res[i],x:w/2+(i-(n-1)/2)*rad*2.5+(rnd()-.5)*rad,y:-rad*(1+i*.8),
+  const ds=p.list.map(([nm,f],i)=>({f,k:KS[p.kinds[i]]||KS[""],st:window.DICE&&p.ds&&p.ds[p.kinds[i]||""]||null,kd:p.kinds[i]||"",res:p.res[i],x:w/2+(i-(n-1)/2)*rad*2.5+(rnd()-.5)*rad,y:-rad*(1+i*.8),
     vx:(rnd()-.5)*110,vy:0,a:rnd()*6.283,w:(rnd()<.5?-1:1)*(9+rnd()*9),stop:1300+i*160+rnd()*350,n:1+Math.floor(rnd()*f),tn:0,done:false}));
   const lastStop=Math.max(...ds.map(d=>d.stop));
   cur={p,mode:"2d"};
@@ -266,7 +266,9 @@ function play2d(p){
         if(t>=d.stop){d.done=true;d.n=d.res;d.vy=0;d.y=floor}
       }else{d.a+=(Math.round(d.a/6.2832)*6.2832-d.a)*Math.min(1,dt*9)}
       x.fillStyle="rgba(0,0,0,.35)";x.beginPath();x.ellipse(d.x,floor+rad*.85,rad*.9,rad*.2,0,0,7);x.fill();
-      x.save();x.translate(d.x,d.y);x.rotate(d.a);poly(d);x.fillStyle=d.k.f;x.fill();x.lineWidth=3;x.strokeStyle=d.k.s;x.lineJoin="round";x.stroke();
+      x.save();x.translate(d.x,d.y);x.rotate(d.a);
+      if(d.st){DICE.drawDie(x,0,0,rad,SIDES[d.f],d.f===6?Math.PI/4:-Math.PI/2,d.st,d.kd,d.n);x.restore();continue}
+      poly(d);x.fillStyle=d.k.f;x.fill();x.lineWidth=3;x.strokeStyle=d.k.s;x.lineJoin="round";x.stroke();
       x.fillStyle=d.k.t;x.textAlign="center";x.textBaseline="middle";x.font=`italic 700 ${Math.round(rad*(d.n>9?.85:1.1))}px Georgia,serif`;x.fillText(d.n,0,rad*.05);x.restore();
     }
     x.globalAlpha=1;
@@ -349,7 +351,7 @@ function pump(){
       setView();
       const sim=new ENG.Sim(p.list,p.seed);
       p.list.forEach(([n,f],i)=>{
-        const m=makeDie(f,p.kinds[i],p.ds);
+        let m;try{m=makeDie(f,p.kinds[i],p.ds)}catch(err){console.error("[dados] estilo falhou, usando o padrão:",err);m=makeDie(f,p.kinds[i],null)}
         const sh=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:shTex,transparent:true,depthWrite:false}));
         sh.frustumCulled=false;sh.rotation.x=-Math.PI/2;m.userData.sh=sh;scene.add(m,sh);meshes.push(m);
       });
