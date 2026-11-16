@@ -2,15 +2,16 @@
 <html lang="pt-BR">
 <head><meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
 <body>
-<script src="engine.js?v=2.9.0"></script>
-<script src="dice-style.js?v=2.9.0"></script>
+<script src="engine.js?v=2.10.0"></script>
+<script src="dice-style.js?v=2.10.0"></script>
 <script type="module">
 /* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
    2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
    3) recebe as edições que o mestre faz na ficha do jogador. */
-import {loadOBR,ready} from "./obr.js?v=2.9.0";
-import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.9.0";
+import {loadOBR,ready} from "./obr.js?v=2.10.0";
+import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.10.0";
+import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.10.0";
 (async()=>{
   const OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))return;
@@ -23,12 +24,13 @@ import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "
   const log=[];
   const hudOn=()=>store.get("hud-on")!=="0";
 const trayOn=()=>store.get("tray-always")==="1";      // setting "mesa de dados sempre visível"
-const keepOn=()=>hudOn()||trayOn();
+let escRemote=false,amGM=false,myId="";               // Esconder: o mestre mostrou o painel para todos / eu sou o mestre
+const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote;
   const feed=e=>OBR.broadcast.sendMessage(CH.feed,e,{destination:"LOCAL"}).catch(()=>{});
   async function openOverlay(e){
     const id="ordem.ficha/overlay/"+Date.now();
     open=true;hello=false;mid=id;lastAct=Date.now();lastTry=Date.now();
-    const q="?v=2.9.0&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
+    const q="?v=2.10.0&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
     try{
       await OBR.modal.open({id,url:abs("overlay.html")+q,
         fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:!arrange});
@@ -55,7 +57,7 @@ const keepOn=()=>hudOn()||trayOn();
   }
   function syncGrabs(list){
     const ok=r=>r&&typeof r.id==="string"&&[r.x,r.y,r.w,r.h].every(Number.isFinite)&&r.w>=20&&r.w<=900&&r.h>=20&&r.h<=900;
-    const rects=(Array.isArray(list)?list:[]).filter(ok).slice(0,12),want=new Set(rects.map(r=>r.id));
+    const rects=(Array.isArray(list)?list:[]).filter(ok).slice(0,16),want=new Set(rects.map(r=>r.id));
     for(const [id] of grabs)if(!want.has(id)){OBR.popover.close(gid(id)).catch(()=>{});grabs.delete(id)}
     for(const r of rects){const g=grabs.get(r.id);if(g&&g.x===r.x&&g.y===r.y&&g.w===r.w&&g.h===r.h)continue;openGrab(r)}
   }
@@ -94,6 +96,7 @@ const keepOn=()=>hudOn()||trayOn();
   }
   OBR.broadcast.onMessage(CH.roll,ev=>{
     const p=ENG.clean(ev.data);if(!p)return;
+    if(p.hid&&amGM&&String(p.pid)!==myId)return;      // dados de esconderijo: o mestre não os vê
     p.ds=window.DICE?DICE.clean(ev.data&&ev.data.ds):null;
     if(open&&Date.now()-lastAct>45000)open=false;
     const e={seq:++seq,p};log.push(e);while(log.length>20)log.shift();
@@ -110,7 +113,7 @@ const keepOn=()=>hudOn()||trayOn();
   });
   OBR.broadcast.onMessage("ordem.hud/cfg",()=>cfg());
   OBR.broadcast.onMessage("ordem.hud/arrange",ev=>setArrange(!!(ev.data&&ev.data.on)));
-  addEventListener("storage",ev=>{if(ev.key==="hud-on"||ev.key==="tray-always")cfg()});
+  addEventListener("storage",ev=>{if(ev.key==="hud-on"||ev.key==="tray-always"||ev.key==="esc-on")cfg()});
   /* garantia: se a camada parou de responder, reabre (no máximo uma vez a cada 20 s) */
   setInterval(()=>{
     if(!keepOn())return;
@@ -161,6 +164,30 @@ const keepOn=()=>hudOn()||trayOn();
   });
   publish(true);
   ensure();
+
+  /* ===== Esconder: painel remoto (ligado pelo mestre) e descarte automático dos dados chamados ===== */
+  amGM=isGM;myId=String(OBR.player.id||"");
+  const LSCT="esc-ct";let timerD=0;
+  async function readEsc(){
+    let ps=[];try{ps=await OBR.party.getPlayers()}catch(e){}
+    const me={id:OBR.player.id,role:isGM?"GM":"PLAYER",metadata:await OBR.player.getMetadata()};
+    const gm=[me,...ps].find(p=>p.role==="GM"),g=normG(gm&&gm.metadata&&gm.metadata[K_G]);
+    if(g.on!==escRemote){escRemote=g.on;cfg()}
+    if(isGM)return;
+    if(store.get(LSCT)==null)store.set(LSCT,String(g.ct));        // primeira leitura: não reaplica chamadas antigas
+    if(g.ct>(+store.get(LSCT)||0)){
+      store.set(LSCT,String(g.ct));
+      if(g.ap&&g.calls.length)setTimeout(async()=>{                   // dá tempo de todo mundo ver o número revelado
+        try{
+          const m=await OBR.player.getMetadata(),pp=normP(m&&m[K_P]);
+          const keep=pp.dice.filter(x=>!g.calls.includes(x.v));
+          if(keep.length!==pp.dice.length)await OBR.player.setMetadata({[K_P]:{...pp,dice:keep,note:{k:"found",t:Date.now()}}});
+        }catch(e){console.warn("[esconder] descarte falhou",e)}
+      },6000);
+    }
+  }
+  try{OBR.party.onChange(()=>readEsc());OBR.player.onChange(()=>readEsc())}catch(e){}
+  readEsc();setInterval(readEsc,5000);
 })();
 </script>
 </body>

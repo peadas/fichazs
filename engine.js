@@ -220,7 +220,7 @@ const NUM=(f,i)=>PAREADOS.includes(f)?ENG.analyze(f).lab[i]:i+1;            // �
 const IDX=(f,n)=>PAREADOS.includes(f)?ENG.analyze(f).lab.indexOf(n):n-1;      // número -> índice da face
 const cache={};
 /* analisa o poliedro de um dado: faces, vértices e o "casco" usado pela física */
-const ENG={PH,GEO,faces,mulberry32,NUM,IDX,VER:"2.9.0",FORMAS:"d14 = poliedro antigo, d16 = barril octogonal, d18 = cubo chanfrado"};
+const ENG={PH,GEO,faces,mulberry32,NUM,IDX,VER:"2.10.0",FORMAS:"d14 = poliedro antigo, d16 = barril octogonal, d18 = cubo chanfrado"};
 ENG.analyze=function(f){
   if(cache[f])return cache[f];
   const g=GEO[f](),Fs=faces(g.index?g.toNonIndexed():g),vm={},V=[];
@@ -301,7 +301,7 @@ ENG.clean=function(p){
   const rows=(Array.isArray(p.rows)?p.rows:[]).slice(0,14).map(r=>({l:str(r&&r.l,60),v:str(r&&r.v,12),c:cls(r&&r.c)}));
   const crit=p.crit&&typeof p.crit==="object"?{t:str(p.crit.t,50),c:cls(p.crit.c)}:null;
   return{id:str(p.id,32),seed:(+p.seed)>>>0,who:str(p.who,40)||"Jogador",color:/^#[0-9a-f]{6}$/i.test(p.color)?p.color:"#ecc962",
-    pid:str(p.pid,64),gm:!!p.gm,foco:!!p.foco,ds:window.DICE?DICE.clean(p.ds):null,dbl,title:str(p.title,40),list,kinds,res,anim:p.anim!==false,rows,crit,note:p.note?str(p.note,120):"",text:str(p.text,160)};
+    pid:str(p.pid,64),gm:!!p.gm,hid:!!p.hid,foco:!!p.foco,ds:window.DICE?DICE.clean(p.ds):null,dbl,title:str(p.title,40),list,kinds,res,anim:p.anim!==false,rows,crit,note:p.note?str(p.note,120):"",text:str(p.text,160)};
 };
 ENG.b64=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 ENG.unb64=s=>JSON.parse(decodeURIComponent(escape(atob(String(s).replace(/-/g,"+").replace(/_/g,"/")))));

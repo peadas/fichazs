@@ -108,22 +108,58 @@ body.arr #hbar{display:flex}
 #hbar button.ok{background:#f0d28a;color:#15191a;border-color:#f0d28a}
 #hbar button.ok:hover{background:#fff;color:#15191a}
 #hvazio{position:fixed;left:50%;top:40%;transform:translateX(-50%);display:none;color:#fff;font:600 1.1rem Barlow,sans-serif;text-shadow:0 1px 6px #000;pointer-events:none}
+
+/* painel Esconder (a camada não recebe cliques; uma zona transparente sobre o título faz o arrastar) */
+#esc{position:fixed;left:0;top:0;width:460px;display:none;pointer-events:none;user-select:none;-webkit-user-select:none;transform:scale(var(--s,1));transform-origin:0 0;z-index:3;color:#eef0ee}
+#esc.on{display:block}
+body.arr #esc{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outline-offset:6px}
+#esc.drag{filter:brightness(1.12)}
+.eb{border:2px solid #b8c1bf;background:linear-gradient(180deg,#1b2325f2,#0c1011f6);box-shadow:0 10px 30px #000c}
+.eh{padding:12px 16px 10px;border-bottom:2px solid #b8c1bf;background:linear-gradient(180deg,#232c2ef2,#141a1bf2)}
+.et{text-align:center;font:800 1.7rem/1 Cinzel,serif;letter-spacing:.14em;text-transform:uppercase;text-shadow:0 0 14px #ffffff33}
+.es{display:flex;align-items:center;gap:8px;margin-top:8px;font:700 .95rem "Barlow Condensed",sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#e3b3af}
+.es i{width:9px;height:9px;flex:none;border-radius:50%;background:#e0524f;box-shadow:0 0 9px #e0524f;animation:espulse 1.6s ease-in-out infinite}
+@keyframes espulse{50%{opacity:.35}}
+.eg{display:grid;grid-template-columns:1fr 1fr}
+.ec{position:relative;display:flex;align-items:center;gap:12px;padding:14px;min-height:92px;min-width:0;border-top:1px solid #4a5456}
+.ec:nth-child(-n+2){border-top:0}
+.ec:nth-child(odd){border-right:2px solid #b8c1bf}
+.ep{width:62px;height:62px;flex:none;border-radius:50%;border:3px solid var(--c,#ecc962);background:#0e1213 center/cover no-repeat;display:grid;place-items:center;font:800 1.6rem Cinzel,serif;color:var(--c,#ecc962);box-shadow:0 3px 12px #000a}
+.ei{min-width:0;flex:1}
+.en{font:700 .95rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px}
+.ed-row{display:flex;flex-wrap:wrap;gap:6px}
+.ed{width:34px;height:38px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid #cfd6d3;background:#10161a;border-radius:4px;line-height:1}
+.ed b{font:800 1.15rem Cinzel,serif}
+.ed small{font:600 .6rem "Barlow Condensed",sans-serif;letter-spacing:.08em;color:#9aa4a3;margin-top:2px}
+.ed.q b{color:#cfd6d3}
+.ed.found{border-color:#e0524f;background:#3a1514;animation:efound .6s ease-out}
+.ed.found b{color:#ff9d9a}
+@keyframes efound{0%{transform:scale(.6) rotate(-8deg)}60%{transform:scale(1.15)}100%{transform:none}}
+.ec.lost .ep{filter:grayscale(1) brightness(.6);border-color:#e0524f}
+.lostt{font:800 .85rem "Barlow Condensed",sans-serif;letter-spacing:.18em;color:#ff9d9a;text-transform:uppercase}
+.none{font:600 .85rem "Barlow Condensed",sans-serif;letter-spacing:.1em;color:#7d8785;text-transform:uppercase}
+.bub{position:absolute;right:8px;top:6px;display:flex;align-items:center;gap:4px;padding:2px 7px;background:#f2c230;color:#2a1d00;font:800 .72rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;border-radius:10px;animation:rpop .4s ease-out}
+.bub svg{width:13px;height:13px}
+.em{padding:8px 14px;border-top:2px solid #b8c1bf;font:600 .9rem "Barlow Condensed",sans-serif;letter-spacing:.06em;color:#e8dfc0;text-align:center}
+.ev{padding:18px;text-align:center;color:#9aa4a3;font:600 .95rem "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;grid-column:1/-1}
 </style>
 </head>
 <body>
-<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.9.0" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.9.0" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
+<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.10.0" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.10.0" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
 <div id="hist" aria-hidden="true"></div>
 <div id="hud" aria-hidden="true"></div>
+<div id="esc" aria-hidden="true"></div>
 <div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
 <div id="hbar"><span>Arraste os cartões e a mesa</span><button id="t-menos" title="Mesa menor" aria-label="Mesa menor">Mesa −</button><button id="t-mais" title="Mesa maior" aria-label="Mesa maior">Mesa +</button><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js?v=2.9.0"></script>
-<script src="dice-style.js?v=2.9.0"></script>
+<script src="engine.js?v=2.10.0"></script>
+<script src="dice-style.js?v=2.10.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.9.0";
-import {KEY,npcsOf} from "./mesa-lib.js?v=2.9.0";
+import {loadOBR,ready} from "./obr.js?v=2.10.0";
+import {KEY,npcsOf} from "./mesa-lib.js?v=2.10.0";
+import {K_P,K_G,normP,normG,MAXD,ICON} from "./esconder-lib.js?v=2.10.0";
 const $=s=>document.querySelector(s);
-const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",KEEP=HUD||qs.get("tray")==="1";
+const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",ESC=qs.get("esc")==="1"&&!standalone,KEEP=HUD||ESC||qs.get("tray")==="1";
 const CH=ENG.CH,HOLD=4500,CHIP_LIFE=9000;
 let OBR=null,received=0,idleTimer=0,dsOK=false,myId="";
 const dsMeta=new Map();   // estilo dos dados de cada jogador (metadados do Owlbear)
@@ -478,7 +514,7 @@ function hideTray(){
 }
 function flashHit(){tray.classList.remove("hit");void tray.offsetWidth;tray.classList.add("hit")}
 /* o segundo plano põe uma zona de arrastar transparente por cima da mesa (e de cada foto): aqui só informamos onde elas estão */
-let rt=0;
+let rt=0,escRect=null;
 function reportAll(){
   clearTimeout(rt);
   rt=setTimeout(()=>{
@@ -495,6 +531,7 @@ function reportAll(){
         rects.push({id:"dicecfg",x:Math.round(qx),y:qy+S+4,w:S,h:S});   // botão de personalizar os dados
       }
     }
+    if(!ARR&&escRect)rects.push(escRect);
     OBR.broadcast.sendMessage("ordem.hud/layout",{rects},{destination:"LOCAL"}).catch(()=>{});
   },200);
 }
@@ -557,20 +594,35 @@ async function quickRoll(m){
   let sheet={};try{sheet=JSON.parse(lsg("ficha-ordem")||"{}")||{}}catch(e){}
   if(!meCache){try{meCache={id:OBR.player.id,name:await OBR.player.getName(),color:await OBR.player.getColor(),gm:(await OBR.player.getRole())==="GM"}}catch(e){meCache={id:String(OBR.player.id||""),name:"Jogador",color:"#ecc962",gm:false}}}
   const who=((sheet.nome||"")+" "+(sheet.sob||"")).trim()||meCache.name||"Jogador";
-  const seed=crypto.getRandomValues(new Uint32Array(1))[0],foco=!!sheet.foco;
-  const list=ok.map(([sg,f])=>[(sg<0?"−":"")+"d"+f,f]);
-  let res,dbl=list.map(()=>false);
+  const seed=crypto.getRandomValues(new Uint32Array(1))[0],foco=!!sheet.foco&&!m.esc,nm=Array.isArray(m.names)?m.names:[];
+  const list=ok.map(([sg,f],i)=>[nm[i]?String(nm[i]).slice(0,24):(sg<0?"−":"")+"d"+f,f]);
+  let res,dbl=list.map(()=>false),ms=3500;
   try{
     if(!window.THREE)throw new Error("sem three");
-    const sim=new ENG.Sim(list.map(([n,f])=>[n,f]),seed);res=sim.runAll();if(foco)dbl=sim.hits();
+    const sim=new ENG.Sim(list.map(([n,f])=>[n,f]),seed);res=sim.runAll();ms=Math.min(9000,Math.round(sim.W.t*1000)+700);if(foco)dbl=sim.hits();
   }catch(e){res=list.map(([n,f])=>[n,f,1+Math.floor(Math.random()*f)]);dbl=list.map(()=>false)}   // os outros jogadores giram o dado até o número certo
   let tot=mod;
   const rows=res.map(([n,f,x],i)=>{const v=x*(dbl[i]?2:1);tot+=ok[i][0]*v;return{l:n,v:(ok[i][0]<0?"−":"")+v,c:dbl[i]?"x2":""}});
   if(mod)rows.push({l:"Modificador",v:(mod>0?"+":"−")+Math.abs(mod),c:""});
-  if(res.length>1||mod)rows.push({l:"Total",v:String(tot),c:"ok"});
-  const title=("Rolagem "+exp).slice(0,40);
-  const payload={id:String(Date.now()),seed,who,color:meCache.color,title,list:list.map(([n,f])=>[n,f]),kinds:list.map((_,i)=>["","pv","rel"].includes((m.kinds||[])[i])?m.kinds[i]:""),ds:window.DICE?DICE.mine():null,res:res.map(r=>r[2]),dbl,foco,pid:String(meCache.id),gm:!!meCache.gm,anim:true,rows,crit:null,note:foco&&dbl.some(Boolean)?"Foco: caiu no 2×":"",text:who+" · "+title+": "+tot};
+  if(!m.esc&&(res.length>1||mod))rows.push({l:"Total",v:String(tot),c:"ok"});
+  const title=(m.title?String(m.title):"Rolagem "+exp).slice(0,40);
+  const payload={id:String(Date.now()),seed,who,color:meCache.color,title,list:list.map(([n,f])=>[n,f]),kinds:list.map((_,i)=>["","pv","rel"].includes((m.kinds||[])[i])?m.kinds[i]:""),ds:window.DICE?DICE.mine():null,res:res.map(r=>r[2]),dbl,foco,pid:String(meCache.id),gm:!!meCache.gm,hid:!!(m.esc&&m.esc.k!=="call"),anim:true,rows,crit:null,note:foco&&dbl.some(Boolean)?"Foco: caiu no 2×":"",text:who+" · "+title+(m.esc?"":": "+tot)};
   OBR.broadcast.sendMessage(CH.roll,payload,{destination:m.test?"LOCAL":"ALL"}).catch(()=>{});
+  if(m.esc)setTimeout(()=>escStore(m.esc,res.map(r=>[r[1],r[2]]),list.map(l=>l[0])),ms);   // grava o resultado quando o dado para de girar
+}
+/* Esconder: guarda o que saiu (dados do jogador, ou números chamados pelo mestre) */
+async function escStore(e,r,names){
+  try{
+    const md=await OBR.player.getMetadata();
+    if(e.k==="call"){
+      const g=normG(md&&md[K_G]);
+      await OBR.player.setMetadata({[K_G]:{...g,calls:[...new Set(r.map(x=>x[1]))].slice(0,12),ct:Date.now(),msg:String(e.msg||"").slice(0,120)}});
+    }else{
+      const p=normP(md&&md[K_P]);
+      const nd=r.map((x,i)=>({f:x[0],v:x[1],n:names[i]||"",id:Math.random().toString(36).slice(2,8)}));
+      await OBR.player.setMetadata({[K_P]:{...p,dice:[...p.dice,...nd].slice(0,MAXD),h:1,sk:String(e.sk||p.sk||"")}});
+    }
+  }catch(err){console.warn("[esconder] não consegui gravar o resultado",err)}
 }
 function initTray(){
   let base=null;
@@ -725,6 +777,102 @@ function startHud(){
   addEventListener("keydown",e=>{if(e.key==="Escape")done()});
 }
 
+
+/* ---------- painel Esconder ---------- */
+function startEsc(){
+  const box=$("#esc");let myRole="PLAYER",scale=Math.min(2,Math.max(.5,parseFloat(lsg("esc-scale"))||1)),pos=null,base=null,sg="",tm=0;
+  try{pos=JSON.parse(lsg("esc-pos")||"null")}catch(e){pos=null}
+  if(!(pos&&Number.isFinite(pos.x)&&Number.isFinite(pos.y)))pos=null;
+  const E=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+  const okImg=u=>typeof u==="string"&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(u)&&u.length<20000;
+  function place(){
+    box.style.setProperty("--s",scale);
+    const w=box.offsetWidth*scale,h=box.offsetHeight*scale;
+    let x=pos?pos.x*innerWidth:(innerWidth-w)/2,y=pos?pos.y*innerHeight:70;
+    x=Math.max(0,Math.min(innerWidth-w,x));y=Math.max(0,Math.min(innerHeight-h,y));
+    box.style.left=x+"px";box.style.top=y+"px";
+  }
+  const save=()=>{pos={x:(parseFloat(box.style.left)||0)/innerWidth,y:(parseFloat(box.style.top)||0)/innerHeight};lss("esc-pos",JSON.stringify(pos))};
+  const setScale=v=>{scale=Math.min(2,Math.max(.5,Math.round(v*100)/100));lss("esc-scale",String(scale));place();report()};
+  let rt=0;
+  function report(){
+    clearTimeout(rt);rt=setTimeout(()=>{
+      if(ARR||!box.classList.contains("on")){escRect=null}
+      else{const r=box.querySelector(".eh").getBoundingClientRect();escRect={id:"esc",x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)}}
+      reportAll();
+    },120);
+  }
+  async function pull(){
+    try{
+      const me={id:OBR.player.id,role:(await OBR.player.getRole()),name:await OBR.player.getName(),color:await OBR.player.getColor(),metadata:await OBR.player.getMetadata()};
+      myRole=me.role;const all=[me,...await OBR.party.getPlayers()];
+      const gmP=all.find(p=>p.role==="GM"),g=normG(gmP&&gmP.metadata&&gmP.metadata[K_G]);
+      if(!g.on&&lsg("esc-on")!=="1"){box.classList.remove("on");sg="";report();return}
+      const viewGM=myRole==="GM",now=Date.now();
+      const list=all.filter(p=>p.role!=="GM"&&p.metadata&&(p.metadata[KEY]||p.metadata[K_P])).map(p=>{
+        const e=p.metadata[KEY]||{},st=normP(p.metadata[K_P]);
+        return{id:String(p.id),nome:String(e.nome||p.name||"Jogador").slice(0,40),color:p.color,th:e.th,st,note:st.note&&now-st.note.t<7000&&st.note.k!=="found"?st.note.k:""};
+      }).sort((a,b)=>a.id<b.id?-1:1);
+      const nsg=JSON.stringify([viewGM,g,list]);
+      if(nsg===sg&&box.classList.contains("on"))return;
+      sg=nsg;draw(list,g,viewGM);box.classList.add("on");place();report();
+      clearTimeout(tm);if(list.some(x=>x.note))tm=setTimeout(pull,7100);
+    }catch(e){console.warn("[esconder] não consegui ler o painel",e)}
+  }
+  function draw(list,g,viewGM){
+    box.replaceChildren();
+    const b=E("div","eb"),h=E("div","eh"),t=E("div","et","Esconda-se"),s=E("div","es");
+    s.append(E("i"),E("span",null,g.st));h.append(t,s);
+    const grid=E("div","eg");
+    if(!list.length)grid.append(E("div","ev","Ninguém entrou na mesa ainda"));
+    list.forEach(x=>{
+      const c=E("div","ec"+(x.st.h&&!x.st.dice.length?" lost":""));c.style.setProperty("--c",/^#[0-9a-f]{6}$/i.test(x.color||"")?x.color:"#ecc962");
+      const p=E("div","ep");if(okImg(x.th))p.style.backgroundImage="url("+x.th+")";else p.textContent=x.nome.trim().charAt(0).toUpperCase()||"?";
+      const i=E("div","ei");i.append(E("div","en",x.nome));
+      if(x.st.h&&!x.st.dice.length)i.append(E("div","lostt","Descoberto"));
+      else if(!x.st.dice.length)i.append(E("div","none","Sem esconderijo"));
+      else{
+        const r=E("div","ed-row");
+        x.st.dice.forEach(d=>{
+          const found=g.calls.includes(d.v),show=!viewGM||found;
+          const e=E("div","ed"+(found?" found":"")+(show?"":" q"));e.title=d.n||("d"+d.f);
+          e.append(E("b",null,show?String(d.v):"?"),E("small",null,"d"+d.f));r.append(e);
+        });
+        i.append(r);
+      }
+      c.append(p,i);
+      if(x.note){const bb=E("div","bub");bb.innerHTML=x.note==="distract"?ICON.distract:ICON.loud;bb.append(E("span",null,x.note==="distract"?"Distraiu":"Chamou atenção"));c.append(bb)}
+      grid.append(c);
+    });
+    b.append(h,grid);
+    if(g.msg)b.append(E("div","em",g.msg));
+    box.append(b);
+  }
+  OBR.broadcast.onMessage("ordem.hud/drag",ev=>{
+    const m=ev.data||{};if(m.id!=="esc")return;
+    if(m.ph==="s"){base={x:parseFloat(box.style.left)||0,y:parseFloat(box.style.top)||0};box.classList.add("drag")}
+    else if(m.ph==="w")setScale(scale*((+m.dy||0)<0?1.08:1/1.08));
+    else if(!base)return;
+    else if(m.ph==="m"){
+      const w=box.offsetWidth*scale,h=box.offsetHeight*scale;
+      box.style.left=Math.max(0,Math.min(innerWidth-w,base.x+(+m.dx||0)))+"px";box.style.top=Math.max(0,Math.min(innerHeight-h,base.y+(+m.dy||0)))+"px";
+    }else if(m.ph==="e"){box.classList.remove("drag");save();base=null;report()}
+  });
+  OBR.broadcast.onMessage("ordem.esc/size",ev=>{const d=+((ev.data||{}).d)||0;if(d)setScale(scale+d)});
+  OBR.broadcast.onMessage("ordem.esc/reset",()=>{pos=null;lss("esc-pos",null);setScale(1);place();report()});
+  if(ARR){
+    let dr=null;
+    box.addEventListener("pointerdown",e=>{if(e.button>0)return;const r=box.getBoundingClientRect();dr={dx:e.clientX-r.left,dy:e.clientY-r.top};box.classList.add("drag");try{box.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
+    box.addEventListener("pointermove",e=>{if(!dr)return;const w=box.offsetWidth*scale,h=box.offsetHeight*scale;box.style.left=Math.max(0,Math.min(innerWidth-w,e.clientX-dr.dx))+"px";box.style.top=Math.max(0,Math.min(innerHeight-h,e.clientY-dr.dy))+"px"});
+    const up=()=>{if(!dr)return;dr=null;box.classList.remove("drag");save()};
+    box.addEventListener("pointerup",up);box.addEventListener("pointercancel",up);
+    box.addEventListener("wheel",e=>{e.preventDefault();setScale(scale*(e.deltaY<0?1.08:1/1.08))},{passive:false});
+  }
+  try{OBR.party.onChange(pull);OBR.player.onChange(pull)}catch(e){}
+  addEventListener("resize",()=>{place();report()});
+  pull();setInterval(pull,3000);
+}
+
 /* ---------- início ---------- */
 (async()=>{
   const s0=+qs.get("s")||0;
@@ -747,6 +895,7 @@ function startHud(){
     initTray();
     if(alwaysOn()&&!ARR)showTray(false);                       // setting "mesa sempre visível"
     if(HUD)startHud();
+    if(ESC)startEsc();
   }
   if(qs.get("p")){try{enqueue(ENG.unb64(qs.get("p")),s0)}catch(e){maybeIdle()}}
 })();

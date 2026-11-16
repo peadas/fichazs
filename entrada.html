@@ -119,6 +119,41 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
 .st .adj button{padding:0;width:22px;height:20px;line-height:1;font-size:.95rem}
 .ncard{display:block}
 .ncard .row{display:flex;gap:14px;align-items:center}
+/* aba Esconder */
+.tabs button{padding:9px 13px}
+.acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.ab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:12px 6px 10px;border:1px solid #4a5456;background:linear-gradient(180deg,#1e2527cc,#121718dd);font:700 .82rem/1.1 "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;text-align:center}
+.ab svg{width:30px;height:30px;display:block}
+.ab.on{border-color:var(--gold);color:var(--gold);background:#232c2e}
+.pnl{padding:12px;margin:0 0 14px;border:1px solid var(--line);background:var(--card)}
+.pnl h4{display:flex;align-items:center;gap:8px;margin:0 0 9px;font:700 .95rem "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--gold2)}
+.pnl h4 .sp{flex:1}
+.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 10px;margin:0 0 6px;border:1px solid var(--line);background:#0e1213}
+.opt.on{border-color:var(--gold2);background:#1a2123}
+.opt .rd{width:13px;height:13px;flex:none;border-radius:50%;border:2px solid #8b9594}
+.opt.on .rd{border-color:var(--gold);background:var(--gold)}
+.skrow{display:flex;align-items:center;gap:8px;margin:10px 0;flex-wrap:wrap}
+.skrow b{font:700 1rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.chips button,button.small{padding:4px 10px;font-size:.82rem}
+.chips button.on,button.small.on{border-color:var(--gold2);color:var(--gold)}
+.mdice{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.md{position:relative;width:44px;height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid #cfd6d3;background:#10161a;padding:0;line-height:1}
+.md b{font:800 1.3rem Cinzel,serif}.md small{font:600 .65rem "Barlow Condensed",sans-serif;color:#9aa4a3;margin-top:2px}
+.md.q{border-style:dashed}.md.q b{color:#8b9594}
+.md.found{border-color:#e0524f;background:#3a1514}
+.md.pick{border-color:var(--pv);animation:espulse2 .9s infinite}
+@keyframes espulse2{50%{opacity:.55}}
+.md .x{position:absolute;right:-6px;top:-7px;width:17px;height:17px;display:grid;place-items:center;border-radius:50%;background:#2a3234;border:1px solid #8b9594;font-size:.7rem;color:#e9ece7}
+.stp{display:inline-flex;align-items:center;gap:4px}
+.stp .sv{min-width:46px;text-align:center;font:700 1.05rem "Barlow Condensed",sans-serif;letter-spacing:.06em}
+.stp button{padding:3px 10px}
+.row2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0}
+.ev1{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--line);font-size:.86rem}
+.ev1 b{font:800 1rem Cinzel,serif;color:var(--gold2);min-width:22px}
+.ev1 span{flex:1;color:var(--muted)}
+.emsg{margin:8px 0 0;color:var(--gold);font-weight:600;font-size:.9rem}
+#v-esc input.t{background:#0e1213;border:1px solid var(--line);color:#eef0ee;padding:6px 8px;font:inherit;min-width:0}
 </style>
 </head>
 <body>
@@ -132,7 +167,8 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
   </header>
   <nav class="tabs" id="tabs" hidden>
     <button data-t="mesa" class="on">Mesa</button>
-    <button data-t="npc">NPCs<b id="nc" hidden></b></button>
+    <button data-t="npc" id="t-npc">NPCs<b id="nc" hidden></b></button>
+    <button data-t="esc">Esconder</button>
   </nav>
   <section id="v-mesa">
     <div id="top"></div>
@@ -142,6 +178,7 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
     <div id="list"></div>
     <div class="leave" id="leave"></div>
   </section>
+  <section id="v-esc" hidden></section>
   <section id="v-npc" hidden>
     <div class="form">
       <div><label for="n-nome">Nome do NPC</label><input id="n-nome" placeholder="Ex.: Cultista" autocomplete="off"></div>
@@ -153,10 +190,11 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js?v=2.9.0"></script>
+<script src="efeitos.js?v=2.10.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.9.0";
-import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.9.0";
+import {loadOBR,ready} from "./obr.js?v=2.10.0";
+import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.10.0";
+import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.10.0";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";
@@ -288,13 +326,13 @@ $("#n-add").onclick=()=>{
 function render(){
   const gm=role==="GM";
   $("#role").textContent=gm?"Mestre":"Jogador";$("#role").classList.toggle("gm",gm);
-  $("#tabs").hidden=!gm;
-  if(!gm)tab="mesa";
-  $("#v-mesa").hidden=tab!=="mesa";$("#v-npc").hidden=tab!=="npc";
+  $("#tabs").hidden=false;$("#t-npc").hidden=!gm;
+  if(!gm&&tab==="npc")tab="mesa";
+  $("#v-mesa").hidden=tab!=="mesa";$("#v-npc").hidden=tab!=="npc";$("#v-esc").hidden=tab!=="esc";
   document.body.classList.toggle("anim",anim);
   document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===tab));
   if(gm)$("#nc").textContent=npcs().length,$("#nc").hidden=!npcs().length;
-  renderMesa();if(gm&&tab==="npc")renderNpcs();
+  renderMesa();if(gm&&tab==="npc")renderNpcs();if(tab==="esc")renderEsc();
   if(anim)setTimeout(()=>{anim=false;document.body.classList.remove("anim")},700);
 }
 /* cartões na tela: liga/desliga (cada jogador decide para a própria tela) */
@@ -306,8 +344,132 @@ function drawTray(){$("#tray-sw").setAttribute("aria-checked",String(trayOn()))}
 $("#tray-sw").onclick=()=>{store.set("tray-always",trayOn()?"0":"1");drawTray();if(OBR)OBR.broadcast.sendMessage("ordem.hud/cfg",{},{destination:"LOCAL"}).catch(()=>{})};
 drawTray();
 drawHud();
-document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;kM=kN="";anim=true;render()});
-addEventListener("storage",()=>{if(role==="GM"&&tab==="npc")renderNpcs();else if(tab==="mesa")renderMesa()});
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;kM=kN=kE="";anim=true;render()});
+addEventListener("storage",()=>{if(role==="GM"&&tab==="npc")renderNpcs();else if(tab==="mesa")renderMesa();else if(tab==="esc")renderEsc()});
+
+/* ================= aba Esconder ================= */
+const E={act:"",way:0,skill:"Furtividade",custom:false,face:8,qty:1,addFace:6,discard:false,msg:"",evOpen:false};
+let kE="",msgT=0,nums="",stTxt=null;
+const gmSt=()=>{
+  if(role==="GM")return normG(self&&self.metadata&&self.metadata[K_G]);
+  const p=party.find(x=>x.role==="GM");return normG(p&&p.metadata&&p.metadata[K_G]);
+};
+const mineSt=()=>normP(self&&self.metadata&&self.metadata[K_P]);
+const escLoc=()=>store.get("esc-on")==="1";
+const stepF=(f,dir)=>{const a=FACES;let i=a.indexOf(f);return a[Math.max(0,Math.min(a.length-1,i+dir))]};
+const mk=(t,cls,txt,fn,title)=>{const b=el(t,cls,txt);if(t==="button")b.type="button";if(title)b.title=title;if(fn)b.onclick=fn;return b};
+function say(t,ms){E.msg=t||"";clearTimeout(msgT);if(t)msgT=setTimeout(()=>{E.msg="";renderEsc()},ms||3500);renderEsc()}
+function sw(label,on,fn){const r=el("div","hudset"),b=el("button","sw");b.type="button";b.setAttribute("role","switch");b.setAttribute("aria-checked",String(on));b.setAttribute("aria-label",label);b.append(el("i"));b.onclick=fn;r.append(b,el("span","t",label));return r}
+function stp(text,minus,plus){const w=el("div","stp");w.append(mk("button","small","−",minus),el("span","sv",text),mk("button","small","+",plus));return w}
+const cfgPing=()=>OBR&&OBR.broadcast.sendMessage("ordem.hud/cfg",{},{destination:"LOCAL"}).catch(()=>{});
+const setP=async patch=>{if(!OBR)return;const cur=mineSt();await OBR.player.setMetadata({[K_P]:{...cur,...patch}});await refresh()};
+const setG=async patch=>{if(!OBR)return;const cur=gmSt();await OBR.player.setMetadata({[K_G]:{...cur,...patch}});await refresh()};
+/* manda rolar na camada do Owlbear; se o painel ainda não está ligado, liga e espera a camada abrir */
+function rollEsc(dice,names,title,esc){
+  if(!OBR){say("Abra esta página dentro do Owlbear Rodeo.");return}
+  const go=()=>OBR.broadcast.sendMessage("ordem.hud/quickroll",{dice:dice.map(f=>[1,f]),names,title,exp:title,esc},{destination:"LOCAL"}).catch(()=>{});
+  if(escLoc()||gmSt().on)go();
+  else{store.set("esc-on","1");cfgPing();say("Abrindo o painel…",2200);setTimeout(go,2200)}
+}
+function doHide(){
+  const sk=E.skill,dd=skillDice(sk);
+  rollEsc(dd.map(x=>x.f),dd.map(x=>x.n),"Esconder-se",{k:"hide",sk});
+  E.act="";say("Escondendo-se com "+sk+"…");
+}
+function addDie(){
+  if(mineSt().dice.length>=MAXD){say("Máximo de "+MAXD+" dados.");return}
+  rollEsc([E.addFace],["d"+E.addFace],"Novo esconderijo",{k:"add"});
+}
+async function rmDie(i){const p=mineSt();E.discard=false;await setP({dice:p.dice.filter((_,j)=>j!==i)})}
+async function loud(){
+  const p=mineSt();
+  await setP({note:{k:"loud",t:Date.now()}});
+  if(p.dice.length){E.discard=true;say("Ação chamativa: toque no dado que você vai descartar.",6000)}else say("Chamou atenção.");
+}
+async function distract(){await setP({note:{k:"distract",t:Date.now()}});say("Você distraiu a criatura. O painel avisa a mesa.")}
+function diceRow(st,g,onPick,viewGM){
+  const row=el("div","mdice");
+  st.dice.forEach((d,i)=>{
+    const found=g.calls.includes(d.v),show=!viewGM||found;
+    const b=mk("button","md"+(found?" found":"")+(show?"":" q")+(E.discard?" pick":""),null,onPick?()=>onPick(i):null,d.n||("d"+d.f));
+    b.append(el("b",null,show?String(d.v):"?"),el("small",null,"d"+d.f));
+    if(onPick&&!E.discard)b.append(el("span","x","×"));
+    row.append(b);
+  });
+  return row;
+}
+function renderEsc(){
+  const g=gmSt(),st=mineSt(),gm=role==="GM";
+  const key=JSON.stringify([role,g,gm?0:st,escLoc(),E,gm?0:skillDice(E.skill)]);
+  if(key===kE)return;kE=key;
+  const box=$("#v-esc");box.replaceChildren();
+  if(!OBR)box.append(el("div","tip","Abra esta página dentro do Owlbear Rodeo."));
+  /* painel na tela */
+  const top=el("div","pnl");top.append(el("h4",null,"Painel na tela"));
+  if(gm){
+    top.append(sw("Mostrar o painel para todos",g.on,()=>setG({on:!g.on})));
+    const r=el("div","row2");r.append(el("span","t","Subtítulo"));
+    const i=el("input","t");i.value=stTxt!=null?stTxt:g.st;i.maxLength=40;i.setAttribute("aria-label","Subtítulo do painel");
+    i.oninput=()=>{stTxt=i.value};i.onchange=()=>{const v=i.value.trim()||"Caçando";stTxt=null;setG({st:v})};r.append(i);top.append(r);
+  }else top.append(sw("Mostrar o painel na minha tela",escLoc()||g.on,()=>{store.set("esc-on",escLoc()?"0":"1");cfgPing();kE="";renderEsc()}));
+  const sz=el("div","row2");sz.append(el("span","t","Tamanho"),mk("button","small","−",()=>OBR&&OBR.broadcast.sendMessage("ordem.esc/size",{d:-.1},{destination:"LOCAL"})),mk("button","small","+",()=>OBR&&OBR.broadcast.sendMessage("ordem.esc/size",{d:.1},{destination:"LOCAL"})),mk("button","small","Restaurar",()=>OBR&&OBR.broadcast.sendMessage("ordem.esc/reset",{},{destination:"LOCAL"})));
+  top.append(sz,el("p","hint","Arraste o título do painel na tela para mover; a roda do mouse sobre o título muda o tamanho."));
+  box.append(top);
+  if(gm)renderGm(box,g);else renderPlayer(box,g,st);
+  if(E.msg)box.append(el("p","emsg",E.msg));
+}
+function renderPlayer(box,g,st){
+  const a=el("div","acts");
+  [["hide","Esconder-se",()=>{E.act=E.act==="hide"?"":"hide";E.discard=false;renderEsc()}],["distract","Distrair",distract],["loud","Chamar atenção",loud]].forEach(([k,t,fn])=>{
+    const b=mk("button","ab"+(E.act===k?" on":""),null,fn,t);b.innerHTML=ICON[k];b.append(el("span",null,t));a.append(b);
+  });
+  box.append(a);
+  if(E.act==="hide"){
+    const p=el("div","pnl");p.append(el("h4",null,"Como você vai se esconder?"));
+    WAYS.forEach((w,i)=>{const o=mk("button","opt"+(E.way===i?" on":""),null,()=>{E.way=i;renderEsc()});o.append(el("span","rd"),el("span",null,w[0]));p.append(o)});
+    const r=el("div","skrow");r.append(el("span","t","Perícia:"),el("b",null,E.skill),mk("button","small"+(E.custom?" on":""),"Personalizar",()=>{E.custom=!E.custom;renderEsc()}));p.append(r);
+    if(E.custom){const c=el("div","chips");SKILLS.forEach(([n])=>c.append(mk("button",E.skill===n?"on":"",n,()=>{E.skill=n;renderEsc()})));p.append(c)}
+    const dd=skillDice(E.skill);
+    p.append(el("p","hint","Rola "+dd.map(x=>"d"+x.f+" ("+x.n+")").join(" + ")+" e cada resultado vira um dado de esconderijo."));
+    p.append(mk("button","go","Rolar esconderijo",doHide));
+    box.append(p);
+  }
+  const d=el("div","pnl");d.append(el("h4",null,"Seus dados de esconderijo"));
+  if(st.dice.length)d.append(diceRow(st,g,rmDie,false));
+  else d.append(el("p","hint",st.h?"Você foi descoberto! Esconda-se de novo para voltar.":"Você ainda não tem dados. Use Esconder-se."));
+  const r=el("div","row2");r.append(el("span","t","Adicionar"),stp("d"+E.addFace,()=>{E.addFace=stepF(E.addFace,-1);renderEsc()},()=>{E.addFace=stepF(E.addFace,1);renderEsc()}),mk("button","small","+ dado",addDie));
+  d.append(r,el("p","hint","Toque num dado para removê-lo."));
+  box.append(d);
+}
+function renderGm(box,g){
+  const c=el("div","pnl");c.append(el("h4",null,"Criatura"));
+  c.append(sw("Descartar dados revelados sozinho",g.ap,()=>setG({ap:!g.ap})));
+  const r=el("div","row2");
+  r.append(el("span","t","Dado"),stp("d"+E.face,()=>{E.face=stepF(E.face,-1);renderEsc()},()=>{E.face=stepF(E.face,1);renderEsc()}),el("span","t","Qtd"),stp(String(E.qty),()=>{E.qty=Math.max(1,E.qty-1);renderEsc()},()=>{E.qty=Math.min(8,E.qty+1);renderEsc()}));
+  c.append(r);
+  c.append(mk("button","go","Rolar "+E.qty+"d"+E.face+" (criatura procura)",()=>rollEsc(Array(E.qty).fill(E.face),[],"Criatura procura "+E.qty+"d"+E.face,{k:"call",msg:"A criatura procurou: "+E.qty+"d"+E.face})));
+  const n=el("div","row2");n.append(el("span","t","Números"));
+  const i=el("input","t");i.placeholder="ex.: 3 5";i.value=nums;i.style.width="110px";i.oninput=()=>{nums=i.value};
+  const go=()=>{const a=[...new Set((nums.match(/\d+/g)||[]).map(Number).filter(x=>x>0&&x<=99))].slice(0,12);if(!a.length){say("Digite um ou mais números.");return}setG({calls:a,ct:Date.now(),msg:"O mestre chamou: "+a.join(", ")});nums="";say("Números chamados: "+a.join(", "))};
+  i.onkeydown=e=>{if(e.key==="Enter")go()};
+  n.append(i,mk("button","small","Revelar",go),mk("button","small","Limpar",()=>{setG({calls:[],ct:Date.now(),msg:""})}));
+  c.append(n);
+  if(g.calls.length)c.append(el("p","hint","Chamados agora: "+g.calls.join(", ")));
+  box.append(c);
+  const ev=el("div","pnl"),h=el("h4",null,"Eventos (1d10 de um jogador)");
+  h.append(el("span","sp"),mk("button","small",E.evOpen?"Fechar":"Ver",()=>{E.evOpen=!E.evOpen;renderEsc()}));ev.append(h);
+  if(E.evOpen)EVENTS.forEach(([k,t,dp])=>{
+    const r=el("div","ev1");r.append(el("b",null,String(k)),el("span",null,t+(dp&&k>2&&k<8?" ("+dp[0]+"d"+dp[1]+")":"")));
+    if(dp)r.append(mk("button","small","Usar",()=>{E.qty=dp[0];E.face=dp[1];renderEsc()}));ev.append(r);
+  });
+  else ev.append(el("p","hint","Resultados altos são melhores para os jogadores. Abra a lista para ver o que cada número faz."));
+  box.append(ev);
+  const pl=el("div","pnl");pl.append(el("h4",null,"Dados dos jogadores"));
+  const ps=party.filter(x=>x.role!=="GM"&&x.metadata&&x.metadata[K_P]);
+  if(!ps.length)pl.append(el("p","hint","Ninguém se escondeu ainda."));
+  ps.forEach(p=>{const s=normP(p.metadata[K_P]),e=p.metadata[KEY]||{},r=el("div","row2");r.append(el("b",null,String(e.nome||p.name||"Jogador").slice(0,24)));r.append(s.dice.length?diceRow(s,g,null,true):el("span","hint",s.h?"descoberto":"—"));pl.append(r)});
+  box.append(pl);
+}
 
 (async()=>{
   render();
