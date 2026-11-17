@@ -125,12 +125,12 @@ header .tools button{padding:0;width:24px;height:22px;line-height:1;font-size:.9
   <div id="ctl"></div>
 </div>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.14.3";
-import {KEY,entryOf,store} from "./mesa-lib.js?v=2.14.3";
-import {SK,testDice} from "./alcancar-lib.js?v=2.14.3";
-import {K_B,K_BP,normB,normBP,occupant,diceCount,balOK,afterTest,afterSpend,afterAdd,RESET} from "./equilibrio-lib.js?v=2.14.3";
-import {makeState,pickGm} from "./estado.js?v=2.14.3";
-import {localChannel} from "./canal.js?v=2.14.3";
+import {loadOBR,ready} from "./obr.js?v=2.14.4";
+import {KEY,entryOf,store} from "./mesa-lib.js?v=2.14.4";
+import {SK,testDice} from "./alcancar-lib.js?v=2.14.4";
+import {K_B,K_BP,normB,normBP,occupant,diceCount,balOK,afterTest,afterSpend,afterAdd,RESET} from "./equilibrio-lib.js?v=2.14.4";
+import {makeState,pickGm} from "./estado.js?v=2.14.4";
+import {localChannel} from "./canal.js?v=2.14.4";
 const $=s=>document.querySelector(s);
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 const NS="http://www.w3.org/2000/svg";
@@ -153,8 +153,8 @@ const setBP=async patch=>{
   if(!OBR)return;
   const next={...mineBP(),...patch};
   if(self)self.metadata={...(self.metadata||{}),[K_BP]:next};      // já mostra antes do Owlbear devolver
-  store.set("bal-bp",JSON.stringify(next));                         // v2.14.3: cópia na hora (restaura se a reconexão apagar a sala)
-  for(let i=0;;i++){                                                // v2.14.3: tenta de novo se o Owlbear não aceitar (antes falhava calado)
+  store.set("bal-bp",JSON.stringify(next));                         // v2.14.4: cópia na hora (restaura se a reconexão apagar a sala)
+  for(let i=0;;i++){                                                // v2.14.4: tenta de novo se o Owlbear não aceitar (antes falhava calado)
     try{await OBR.player.setMetadata({[K_BP]:next});return}
     catch(e){if(i>=2)throw e;console.warn("[balança] não consegui salvar, tentando de novo",e);await new Promise(r=>setTimeout(r,700*(i+1)))}
   }
@@ -166,7 +166,7 @@ let wt=0;
 const setScale=v=>{store.set("bal-scale",String(Math.round(Math.min(1.7,Math.max(.7,v))*100)/100));clearTimeout(wt);wt=setTimeout(()=>bcast("ordem.bal/place"),220)};
 $("#b-min").onclick=()=>setScale(sc()-.15);
 $("#b-max").onclick=()=>setScale(sc()+.15);
-/* arrastar (v2.14.3): contorno fantasma enquanto o mouse anda; a janela só muda de lugar ao soltar */
+/* arrastar (v2.14.4): contorno fantasma enquanto o mouse anda; a janela só muda de lugar ao soltar */
 {
   const h=$("header");let d=null,t=0;
   const xyOf=e=>({x:d.x+e.screenX-d.sx,y:d.y+e.screenY-d.sy});
@@ -387,15 +387,23 @@ function controls(g,o,mine){
 }
 const leave=()=>setBP({in:0,...RESET}).then(()=>{kCtl="";render()});
 
+/* v2.14.4: se em 9 s a janela não conseguiu falar com o Owlbear, mostra aviso e pede para o segundo plano reabri-la (antes ficava "paradona") */
+setTimeout(function chk(){
+  if(window.__ready)return;
+  const e=document.querySelector("#ctl");if(e&&!e.textContent.trim())e.textContent="Conectando ao Owlbear… se não responder, a janela se reabre sozinha.";
+  LC.send("ordem.bal/stuck");setTimeout(chk,9000);
+},9000);
 (async()=>{
   OBR=await loadOBR();
-  if(!OBR||!(await ready(OBR))){OBR=null;$("#say").textContent="Abra esta página dentro do Owlbear Rodeo.";return}
+  if(!OBR){$("#say").textContent="Sem conexão com o Owlbear (internet?). A janela se reabre sozinha.";return}
+  if(!(await ready(OBR))){OBR=null;$("#say").textContent="Abra esta página dentro do Owlbear Rodeo.";return}
   myId=String(OBR.player.id||"");
-  ST=makeState(OBR);await ST.load();
-  role=await OBR.player.getRole();
+  const tmo=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(r,ms))]);    // v2.14.4: nenhuma espera do começo pode travar a janela para sempre
+  ST=makeState(OBR);await tmo(ST.load(),5000);
+  try{role=await tmo(OBR.player.getRole(),5000)||role}catch(e){}
   const me=async()=>({id:OBR.player.id,name:await OBR.player.getName(),color:await OBR.player.getColor(),metadata:await OBR.player.getMetadata()});
-  const refresh=async()=>{try{role=await OBR.player.getRole();self=await me();party=await OBR.party.getPlayers();render()}catch(e){}};
-  await refresh();
+  const refresh=async()=>{try{role=await tmo(OBR.player.getRole(),6000)||role;self=await tmo(me(),6000);party=await tmo(OBR.party.getPlayers(),6000);render();window.__ready=1}catch(e){console.warn("[janela] não consegui ler a sala, tentando de novo",e);setTimeout(refresh,1500)}};
+  await tmo(refresh(),8000);
   ST.subs.add(()=>render());
   OBR.player.onChange(p=>{self={id:p.id||self.id,name:p.name,color:p.color,metadata:p.metadata};role=p.role||role;render()});
   OBR.party.onChange(ps=>{party=ps;render()});
@@ -403,7 +411,7 @@ const leave=()=>setBP({in:0,...RESET}).then(()=>{kCtl="";render()});
   const alive=()=>bcast("ordem.bal/alive");
   alive();setInterval(alive,4000);
   setInterval(refresh,4000);
-  /* v2.14.3: voltou para a aba / ganhou foco / a internet voltou: relê a sala e mostra que está viva na hora */
+  /* v2.14.4: voltou para a aba / ganhou foco / a internet voltou: relê a sala e mostra que está viva na hora */
   const wake=()=>{if(document.hidden)return;try{ST.load()}catch(e){}refresh();alive()};
   document.addEventListener("visibilitychange",wake);addEventListener("focus",wake);addEventListener("online",wake);
 })();

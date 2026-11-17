@@ -261,15 +261,15 @@ h3.sec{margin:16px 0 10px;font-size:.92rem;color:var(--muted)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js?v=2.14.3"></script>
+<script src="efeitos.js?v=2.14.4"></script>
 <script type="module">
-import {localChannel} from "./canal.js?v=2.14.3";
-import {loadOBR,ready} from "./obr.js?v=2.14.3";
-import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.14.3";
-import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI} from "./alcancar-lib.js?v=2.14.3";
-import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET} from "./equilibrio-lib.js?v=2.14.3";
-import {makeState,pickGm} from "./estado.js?v=2.14.3";
-import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.14.3";
+import {localChannel} from "./canal.js?v=2.14.4";
+import {loadOBR,ready} from "./obr.js?v=2.14.4";
+import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.14.4";
+import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI} from "./alcancar-lib.js?v=2.14.4";
+import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET} from "./equilibrio-lib.js?v=2.14.4";
+import {makeState,pickGm} from "./estado.js?v=2.14.4";
+import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.14.4";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";
@@ -792,7 +792,7 @@ function renderAlcPlayer(box,g,mine,ps){
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
 })();
 
-/* v2.14.3: botão de sincronização (no lugar do F5). Mostra há quanto tempo o segundo plano conferiu a sala; clicar força tudo de novo. */
+/* v2.14.4: botão de sincronização (no lugar do F5). Mostra há quanto tempo o segundo plano conferiu a sala; clicar força tudo de novo. */
 {
   let last=0,askT=0;const b=$("#b-sync"),tx=$("#sync-t");
   const draw=()=>{const s=last?Math.round((Date.now()-last)/1000):-1;

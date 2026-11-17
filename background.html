@@ -5,20 +5,20 @@
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@3.1.0/+esm" crossorigin>
 <meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
 <body>
-<script src="engine.js?v=2.14.3"></script>
-<script src="dice-style.js?v=2.14.3"></script>
+<script src="engine.js?v=2.14.4"></script>
+<script src="dice-style.js?v=2.14.4"></script>
 <script type="module">
 /* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
    2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
    3) recebe as edições que o mestre faz na ficha do jogador. */
-import {loadOBR,ready} from "./obr.js?v=2.14.3";
-import {VER,KEY,KEY_NPC,KEY_NIMG,KEY_IMG,KEY_Z,LS,store,makePublisher,sigNpcs,sigNpcImgs,buildNpcs,buildNpcImgs,unpack} from "./mesa-lib.js?v=2.14.3";
-import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.14.3";
-import {K_C,K_CP,normC,normCP} from "./alcancar-lib.js?v=2.14.3";
-import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET} from "./equilibrio-lib.js?v=2.14.3";
-import {makeState,pickGm} from "./estado.js?v=2.14.3";
-import {localChannel} from "./canal.js?v=2.14.3";
+import {loadOBR,ready} from "./obr.js?v=2.14.4";
+import {VER,KEY,KEY_NPC,KEY_NIMG,KEY_IMG,KEY_Z,LS,store,makePublisher,sigNpcs,sigNpcImgs,buildNpcs,buildNpcImgs,unpack} from "./mesa-lib.js?v=2.14.4";
+import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.14.4";
+import {K_C,K_CP,normC,normCP} from "./alcancar-lib.js?v=2.14.4";
+import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET} from "./equilibrio-lib.js?v=2.14.4";
+import {makeState,pickGm} from "./estado.js?v=2.14.4";
+import {localChannel} from "./canal.js?v=2.14.4";
 (async()=>{
   /* o SDK pode falhar ao carregar (internet instável quando o jogador entra): tenta de novo até conseguir, em vez de ficar morto até o F5 */
   let OBR=null;
@@ -49,7 +49,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   async function openOverlay(e,tries=0){
     const id="ordem.ficha/overlay/"+Date.now();
     open=true;hello=false;mid=id;lastAct=Date.now();lastTry=Date.now();
-    const q="?v=2.14.3&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&warm="+(warmOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&cl="+((clRemote||balLocal)?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
+    const q="?v=2.14.4&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&warm="+(warmOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&cl="+((clRemote||balLocal)?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
     try{
       await OBR.modal.open({id,url:abs("overlay.html")+q,
         fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:!arrange});
@@ -64,9 +64,26 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   }
   /* zonas de arrastar: um popover transparente do tamanho de cada foto (a camada dos cartões não recebe cliques) */
   const grabs=new Map(),gid=id=>"ordem.hud/grab/"+id;
+  let lastRects=[];
+  /* v2.14.4: uma zona de arrastar (popover transparente) que reabria DEPOIS da janela da Escalada/Balança ficava por cima dela e roubava os cliques
+     ("a janela abre mas não dá para mexer"). Agora zona que encosta numa janela do jogo não abre enquanto a janela estiver ali. */
+  function winRects(){
+    try{
+      const vw=vpc?vpc.vw:1280,vh=vpc?vpc.vh:800,out=[];
+      for(const [on,k] of [[!!clShown&&store.get("cl-closed")!==String(clShown),"cl"],[!!balKey&&store.get("bal-closed")!==balKey,"bal"]]){
+        if(!on)continue;const {W,H}=boxOf(k,vw,vh);let xy=null;try{xy=JSON.parse(store.get(k+"-xy")||"null")}catch(e){}
+        if(xy&&Number.isFinite(xy.x)&&Number.isFinite(xy.y))out.push({x:xy.x-6,y:xy.y-6,w:W+12,h:H+12});
+      }
+      return out;
+    }catch(e){return[]}
+  }
+  const hits=(r,a)=>r.x<a.x+a.w&&r.x+r.w>a.x&&r.y<a.y+a.h&&r.y+r.h>a.y;
+  const covered=r=>winRects().some(a=>hits(r,a));
+  const regrab=()=>{try{if(open&&!arrange)syncGrabs(lastRects,true)}catch(e){}};
   async function openGrab(r){
     const pid=gid(r.id),g={...r,alive:Date.now(),tried:Date.now()};grabs.set(r.id,g);
     try{await OBR.popover.close(pid)}catch(e){}
+    if(covered(r)){g.hid=true;return}           // há uma janela do jogo aqui: a zona espera
     try{
       await OBR.popover.open({id:pid,url:abs(r.id==="quick"||r.id==="dicecfg"?"quick.html":"grab.html")+"?v="+VER+"&id="+encodeURIComponent(r.id)+(r.id==="quick"?"&mode=icon":r.id==="dicecfg"?"&mode=cfg":""),width:r.w,height:r.h,
         anchorReference:"POSITION",anchorPosition:{left:r.x,top:r.y},
@@ -74,11 +91,11 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
         hidePaper:true,disableClickAway:true,marginThreshold:0});
     }catch(e){console.warn("[hud] não consegui abrir a zona de arrastar",e)}
   }
-  function syncGrabs(list){
+  function syncGrabs(list,force){
     const ok=r=>r&&typeof r.id==="string"&&[r.x,r.y,r.w,r.h].every(Number.isFinite)&&r.w>=20&&r.w<=900&&r.h>=20&&r.h<=900;
-    const rects=(Array.isArray(list)?list:[]).filter(ok).slice(0,16),want=new Set(rects.map(r=>r.id));
+    const rects=(Array.isArray(list)?list:[]).filter(ok).slice(0,16),want=new Set(rects.map(r=>r.id));lastRects=rects;
     for(const [id] of grabs)if(!want.has(id)){OBR.popover.close(gid(id)).catch(()=>{});grabs.delete(id)}
-    for(const r of rects){const g=grabs.get(r.id);if(g&&g.x===r.x&&g.y===r.y&&g.w===r.w&&g.h===r.h)continue;openGrab(r)}
+    for(const r of rects){const g=grabs.get(r.id);if(g&&g.x===r.x&&g.y===r.y&&g.w===r.w&&g.h===r.h&&!!g.hid===covered(r))continue;openGrab(r)}
   }
   /* clicou no dadinho: abre a caixa de digitar ao lado dele (para o lado com espaço) */
   OBR.broadcast.onMessage("ordem.hud/quick",async()=>{
@@ -150,7 +167,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   OBR.broadcast.onMessage("ordem.hud/cfg",()=>cfg());
   OBR.broadcast.onMessage("ordem.hud/arrange",ev=>setArrange(!!(ev.data&&ev.data.on)));
   addEventListener("storage",ev=>{if(ev.key==="hud-on"||ev.key==="tray-always"||ev.key==="esc-on"||ev.key==="warm")cfg()});
-  /* v2.14.3: ao voltar para a aba do Owlbear, dá um tempo de graça (os sinais de vida atrasaram só porque a aba estava escondida) */
+  /* v2.14.4: ao voltar para a aba do Owlbear, dá um tempo de graça (os sinais de vida atrasaram só porque a aba estava escondida) */
   document.addEventListener("visibilitychange",()=>{
     if(document.hidden)return;
     const n=Date.now();clAlive=balAlive=n;clTry=balTry=n;lastTry=n;for(const [,g] of grabs){g.alive=n;g.tried=n}
@@ -158,12 +175,12 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   /* garantia: se a camada parou de responder, reabre (no máximo uma vez a cada 20 s) */
   setInterval(()=>{
     if(!keepOn())return;
-    if(document.hidden)return;           // v2.14.3: aba em segundo plano: o navegador atrasa os relógios, então "sem sinal" não quer dizer "janela morta"
+    if(document.hidden)return;           // v2.14.4: aba em segundo plano: o navegador atrasa os relógios, então "sem sinal" não quer dizer "janela morta"
     dropStale();
     if(!open&&Date.now()-lastTry>20000)ensure();
-    if(clShown&&store.get("cl-closed")!==String(clShown)&&Date.now()-clAlive>30000&&Date.now()-clTry>30000)openCl();
-    if(balKey&&store.get("bal-closed")!==balKey&&Date.now()-balAlive>30000&&Date.now()-balTry>30000)openBal();   // a janela da balança não deu sinal: reabre   // a janela da escalada não deu sinal: reabre
-    for(const [,g] of grabs)if(Date.now()-g.alive>20000&&Date.now()-g.tried>20000)openGrab(g);   // a zona sumiu (ex.: outra janela fechou): reabre
+    if(clShown&&store.get("cl-closed")!==String(clShown)&&Date.now()-clAlive>12000&&Date.now()-clTry>12000)openCl();
+    if(balKey&&store.get("bal-closed")!==balKey&&Date.now()-balAlive>12000&&Date.now()-balTry>12000)openBal();   // a janela da balança não deu sinal: reabre   // a janela da escalada não deu sinal: reabre
+    for(const [,g] of grabs)if(!g.hid&&Date.now()-g.alive>20000&&Date.now()-g.tried>20000)openGrab(g);   // a zona sumiu (ex.: outra janela fechou): reabre
   },5000);
 
   /* ===== mesa: publicar a minha ficha na sala (só se eu entrei) =====
@@ -315,14 +332,16 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
       anchorReference:"POSITION",anchorPosition:{left:xy.x,top:xy.y},
       anchorOrigin:{horizontal:"LEFT",vertical:"TOP"},transformOrigin:{horizontal:"LEFT",vertical:"TOP"},hidePaper:true,disableClickAway:true,marginThreshold:0});
     }catch(e){console.warn("[alcançar] não consegui abrir a janela",e)}
+    ghost("cl",null);regrab();
   }
-  const closeCl=()=>OBR.popover.close(CLW).catch(()=>{});
+  const closeCl=()=>OBR.popover.close(CLW).catch(()=>{}).then(()=>setTimeout(regrab,50));
   function clSync(gm){                         // chamada a cada leitura do estado do mestre
     const g=normC(pickGm(ST,gm,K_C));
     if(g.on!==clRemote){clRemote=g.on;keepSync()}
     if(g.on){if(clShown!==g.id){clShown=g.id;if(store.get("cl-closed")!==String(g.id))openCl()}}
     else if(clShown){clShown=0;closeCl()}
   }
+  LC.on("ordem.cl/stuck",()=>{if(clShown&&store.get("cl-closed")!==String(clShown)&&Date.now()-clTry>6000)openCl()});
   LC.on("ordem.cl/place",()=>{if(clShown)openCl(false)});
   LC.on("ordem.cl/move",()=>{if(clShown)openCl(false)});                 // arrastando: atualiza a posição sem fechar
   LC.on("ordem.cl/alive",()=>{clAlive=Date.now()});                     // mudou tamanho ou canto
@@ -361,8 +380,9 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
       anchorReference:"POSITION",anchorPosition:{left:xy.x,top:xy.y},
       anchorOrigin:{horizontal:"LEFT",vertical:"TOP"},transformOrigin:{horizontal:"LEFT",vertical:"TOP"},hidePaper:true,disableClickAway:true,marginThreshold:0});
     }catch(e){console.warn("[balança] não consegui abrir a janela",e)}
+    ghost("bal",null);regrab();
   }
-  const closeBal=()=>OBR.popover.close(BW).catch(()=>{});
+  const closeBal=()=>OBR.popover.close(BW).catch(()=>{}).then(()=>setTimeout(regrab,50));
   function balSync(gm,all){                      // chamada a cada leitura do estado da sala
     const g=normB(pickGm(ST,gm,K_B)),players=all.filter(p=>p&&p.role!=="GM");
     const occ=g.on?occupant(g,all):null,me=all.find(p=>String(p.id)===myId),mine=normBP(me&&me.metadata&&me.metadata[K_BP]);
@@ -376,6 +396,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
       if(key){if(store.get("bal-closed")!==key)openBal()}else closeBal();
     }
   }
+  LC.on("ordem.bal/stuck",()=>{if(balKey&&store.get("bal-closed")!==balKey&&Date.now()-balTry>6000)openBal()});
   LC.on("ordem.bal/place",()=>{if(balKey)openBal(false)});
   LC.on("ordem.bal/move",()=>{if(balKey)openBal(false)});
   LC.on("ordem.bal/alive",()=>{balAlive=Date.now()});
@@ -408,7 +429,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   readEsc();
   setInterval(async()=>{try{cMeta=(await OBR.player.getMetadata())||{};cParty=await OBR.party.getPlayers()}catch(e){}readEsc()},15000);   // garantia
 
-  /* ===== v2.14.3: CENTRAL DE RESSINCRONIZAÇÃO (o que antes só o F5 resolvia) =====
+  /* ===== v2.14.4: CENTRAL DE RESSINCRONIZAÇÃO (o que antes só o F5 resolvia) =====
      Por que o jogador "some" ou recebe a informação atrasada sem F5:
      1) o Owlbear APAGA os metadados de quem reconecta (internet que oscila, notebook que dorme) e o publicador achava que já tinha enviado -> agora confere a sala e republica;
      2) aba escondida/em segundo plano: eventos e relógios chegam atrasados -> ao voltar (ou ao ganhar foco / a internet voltar) relê tudo na hora;

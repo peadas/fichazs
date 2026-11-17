@@ -2,7 +2,7 @@
    Estado nos metadados do Owlbear: o mestre em K_B (a balança: ligada, nome, rodadas da travessia) e cada jogador em K_BP
    (se subiu, os dois d10, os dados de equilíbrio gastos...). Só UM jogador fica na balança por vez: vale quem subiu primeiro (campo t).
    O mestre expulsa por mensagem (ordem.bal/kick). */
-import {sheet} from "./esconder-lib.js?v=2.14.3";
+import {sheet} from "./esconder-lib.js?v=2.14.4";
 export const K_B="ordem.bal/g", K_BP="ordem.bal/p";
 const num=(v,d)=>{const n=parseInt(v,10);return Number.isFinite(n)?n:d};
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
