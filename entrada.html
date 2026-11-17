@@ -259,16 +259,18 @@ h3.sec{margin:16px 0 10px;font-size:.92rem;color:var(--muted)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js?v=2.13.1"></script>
+<script src="efeitos.js?v=2.14.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.13.1";
-import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.13.1";
-import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI} from "./alcancar-lib.js?v=2.13.1";
-import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET} from "./equilibrio-lib.js?v=2.13.1";
-import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.13.1";
+import {loadOBR,ready} from "./obr.js?v=2.14.0";
+import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.14.0";
+import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI} from "./alcancar-lib.js?v=2.14.0";
+import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET} from "./equilibrio-lib.js?v=2.14.0";
+import {makeState,pickGm} from "./estado.js?v=2.14.0";
+import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.14.0";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";
+let ST=null;   // estado do mestre (Esconder/Escalada/Balança) nos metadados da sala
 const stOK=storageOk();
 /* "estou na mesa?": o que eu cliquei agora manda; senão vale a marca salva ou a minha ficha já estar publicada na sala */
 const joined=()=>wantJoin!==null?wantJoin:(store.get(LS.joined)==="1"||!!(self&&self.metadata&&self.metadata[KEY]));
@@ -434,8 +436,8 @@ addEventListener("storage",()=>{if(role==="GM"&&tab==="npc")renderNpcs();else if
 const E={act:"",way:0,skill:"Furtividade",custom:false,face:8,qty:1,addFace:6,discard:false,msg:"",evOpen:false,dex:-1,dsk:"Enganação",dcustom:false,pick:-1,a1:-1,a2:-1};
 let kE="",msgT=0,nums="",stTxt=null;
 const gmSt=()=>{
-  if(role==="GM")return normG(self&&self.metadata&&self.metadata[K_G]);
-  const p=party.find(x=>x.role==="GM");return normG(p&&p.metadata&&p.metadata[K_G]);
+  const p=role==="GM"?self:party.find(x=>x.role==="GM");
+  return normG(ST?pickGm(ST,p,K_G):(p&&p.metadata&&p.metadata[K_G]));
 };
 const mineSt=()=>normP(self&&self.metadata&&self.metadata[K_P]);
 const escLoc=()=>store.get("esc-on")==="1";
@@ -446,7 +448,15 @@ function sw(label,on,fn){const r=el("div","hudset"),b=el("button","sw");b.type="
 function stp(text,minus,plus){const w=el("div","stp");w.append(mk("button","small","−",minus),el("span","sv",text),mk("button","small","+",plus));return w}
 const cfgPing=()=>OBR&&OBR.broadcast.sendMessage("ordem.hud/cfg",{},{destination:"LOCAL"}).catch(()=>{});
 const setP=async patch=>{if(!OBR)return;const cur=mineSt();await OBR.player.setMetadata({[K_P]:{...cur,...patch}});await refresh()};
-const setG=async patch=>{if(!OBR)return;const cur=gmSt();await OBR.player.setMetadata({[K_G]:{...cur,...patch}});await refresh()};
+/* grava o estado do mestre na SALA (some só se o mestre apagar; sobrevive ao F5). Se a sala não aceitar, grava no jogador como antes */
+const setGM=async(k,v)=>{
+  if(!OBR)return;
+  let ok=false;try{ok=!!(ST&&await ST.set(k,v))}catch(e){}
+  if(ok)OBR.player.setMetadata({[k]:undefined}).catch(()=>{});      // limpa a cópia antiga do mestre (menos peso e sem versão velha)
+  else await OBR.player.setMetadata({[k]:v});
+  await refresh();
+};
+const setG=async patch=>{await setGM(K_G,{...gmSt(),...patch})};
 /* manda rolar na camada do Owlbear; se o painel ainda não está ligado, liga e espera a camada abrir */
 function rollEsc(dice,names,title,esc){
   if(!OBR){say("Abra esta página dentro do Owlbear Rodeo.");return}
@@ -628,15 +638,15 @@ function renderGm(box,g){
 /* ================= aba Equilíbrio (balança): Equilibrar e Alcançar ================= */
 const Q={sub:""};
 const gmP=()=>role==="GM"?self:party.find(x=>x.role==="GM");
-const cgSt=()=>{const p=gmP();return normC(p&&p.metadata&&p.metadata[K_C])};
+const cgSt=()=>{const p=gmP();return normC(ST?pickGm(ST,p,K_C):(p&&p.metadata&&p.metadata[K_C]))};
 const cpSt=x=>normCP(x&&x.metadata&&x.metadata[K_CP]);
-const setC=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_C]:{...cgSt(),...patch}});await refresh()};
+const setC=async patch=>{await setGM(K_C,{...cgSt(),...patch})};
 const setCP=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_CP]:{...cpSt(self),...patch}});await refresh()};
 const clShow=()=>OBR&&OBR.broadcast.sendMessage("ordem.cl/show",{},{destination:"LOCAL"}).catch(()=>{});
 /* Equilibrar: estado do mestre (K_B) e de cada jogador (K_BP) */
-const cbSt=()=>{const p=gmP();return normB(p&&p.metadata&&p.metadata[K_B])};
+const cbSt=()=>{const p=gmP();return normB(ST?pickGm(ST,p,K_B):(p&&p.metadata&&p.metadata[K_B]))};
 const bpSt=x=>normBP(x&&x.metadata&&x.metadata[K_BP]);
-const setB=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_B]:{...cbSt(),...patch}});await refresh()};
+const setB=async patch=>{await setGM(K_B,{...cbSt(),...patch})};
 const setBP=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_BP]:{...bpSt(self),...patch}});await refresh()};
 const balShow=()=>OBR&&OBR.broadcast.sendMessage("ordem.bal/show",{},{destination:"LOCAL"}).catch(()=>{});
 const balPlayers=()=>[...(role==="GM"?[]:[self]),...party.filter(x=>x.role!=="GM")].filter(Boolean);
@@ -768,10 +778,12 @@ function renderAlcPlayer(box,g,mine,ps){
     try{await OBR.action.close()}catch(e){}
   };
   refresh=async()=>{try{role=await OBR.player.getRole();self=await me();party=await OBR.party.getPlayers();if(wantJoin!==null&&self.metadata&&!!self.metadata[KEY]===wantJoin)wantJoin=null;render()}catch(e){}};
+  ST=makeState(OBR);await ST.load();
   await refresh();
   let rq=0;const renderSoon=()=>{if(rq)return;rq=requestAnimationFrame(()=>{rq=0;render()})};   // várias mudanças seguidas viram um desenho só
   OBR.player.onChange(p=>{self={id:p.id||self.id,name:p.name,color:p.color,metadata:p.metadata};role=p.role||role;renderSoon()});
   OBR.party.onChange(ps=>{party=ps;renderSoon()});
+  ST.subs.add(renderSoon);
   setInterval(()=>{if(!document.hidden)refresh()},15000);       // garantia: a lista sempre se corrige sozinha (os eventos já atualizam na hora)
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
 })();

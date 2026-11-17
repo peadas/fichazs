@@ -125,21 +125,23 @@ header .tools button{padding:0;width:24px;height:22px;line-height:1;font-size:.9
   <div id="ctl"></div>
 </div>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.13.1";
-import {KEY,entryOf,store} from "./mesa-lib.js?v=2.13.1";
-import {SK,testDice} from "./alcancar-lib.js?v=2.13.1";
-import {K_B,K_BP,normB,normBP,occupant,diceCount,balOK,afterTest,afterSpend,afterAdd,RESET} from "./equilibrio-lib.js?v=2.13.1";
+import {loadOBR,ready} from "./obr.js?v=2.14.0";
+import {KEY,entryOf,store} from "./mesa-lib.js?v=2.14.0";
+import {SK,testDice} from "./alcancar-lib.js?v=2.14.0";
+import {K_B,K_BP,normB,normBP,occupant,diceCount,balOK,afterTest,afterSpend,afterAdd,RESET} from "./equilibrio-lib.js?v=2.14.0";
+import {makeState,pickGm} from "./estado.js?v=2.14.0";
 const $=s=>document.querySelector(s);
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 const NS="http://www.w3.org/2000/svg";
 const sv=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e};
 let OBR=null,self=null,party=[],role="PLAYER",myId="";
+let ST=null;const POP=new URLSearchParams(location.search).get("pop")||"";
 const gm=()=>role==="GM";
 const MAINB=["Acrobacia","Atletismo"];
 let other=store.get("bal-other")||"",rolling=null,msg="",kCtl="",kSay="";
 
 const players=()=>[...(gm()?[]:[self]),...party.filter(x=>x.role!=="GM")].filter(Boolean);
-const curG=()=>{const p=gm()?self:party.find(x=>x.role==="GM");return normB(p&&p.metadata&&p.metadata[K_B])};
+const curG=()=>{const p=gm()?self:party.find(x=>x.role==="GM");return normB(ST?pickGm(ST,p,K_B):(p&&p.metadata&&p.metadata[K_B]))};
 const mineBP=()=>normBP(self&&self.metadata&&self.metadata[K_BP]);
 const occ=()=>occupant(curG(),players());
 const iAm=o=>!!(o&&String(o.p.id)===myId);
@@ -180,7 +182,13 @@ $("#b-max").onclick=()=>setScale(sc()+.15);
   $("#b-fold").onclick=fold;
   $("header").addEventListener("dblclick",e=>{if(!e.target.closest("button"))fold()});
 }
-$("#b-x").onclick=()=>bcast("ordem.bal/close");
+/* fechar: marca como fechada (mesma chave do segundo plano), avisa ele E fecha a própria janela direto */
+$("#b-x").onclick=()=>{
+  try{const g=curG();if(g.id)store.set("bal-closed",gm()?"g"+g.id:"p"+g.id+":"+mineBP().t)}catch(_){}
+  if(!OBR)return;
+  bcast("ordem.bal/close");
+  setTimeout(()=>{if(POP)OBR.popover.close(POP).catch(()=>{})},150);
+};
 addEventListener("wheel",e=>{e.preventDefault();setScale(sc()+(e.deltaY<0?.1:-.1))},{passive:false});
 
 /* ---------- a balança (SVG) ---------- */
@@ -370,10 +378,12 @@ const leave=()=>setBP({in:0,...RESET}).then(()=>{kCtl="";render()});
   OBR=await loadOBR();
   if(!OBR||!(await ready(OBR))){OBR=null;$("#say").textContent="Abra esta página dentro do Owlbear Rodeo.";return}
   myId=String(OBR.player.id||"");
+  ST=makeState(OBR);await ST.load();
   role=await OBR.player.getRole();
   const me=async()=>({id:OBR.player.id,name:await OBR.player.getName(),color:await OBR.player.getColor(),metadata:await OBR.player.getMetadata()});
   const refresh=async()=>{try{role=await OBR.player.getRole();self=await me();party=await OBR.party.getPlayers();render()}catch(e){}};
   await refresh();
+  ST.subs.add(()=>render());
   OBR.player.onChange(p=>{self={id:p.id||self.id,name:p.name,color:p.color,metadata:p.metadata};role=p.role||role;render()});
   OBR.party.onChange(ps=>{party=ps;render()});
   OBR.broadcast.onMessage("ordem.bal/result",ev=>onResult(ev.data||{}));

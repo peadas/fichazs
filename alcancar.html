@@ -104,16 +104,18 @@ header .tools svg{width:14px;height:14px}
   <div id="ctl"></div>
 </div>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.13.1";
-import {KEY,entryOf,store,mineLive,setMine} from "./mesa-lib.js?v=2.13.1";
-import {K_C,K_CP,RISK_DT,SK,MAIN,normC,normCP,testDice,ICON} from "./alcancar-lib.js?v=2.13.1";
+import {loadOBR,ready} from "./obr.js?v=2.14.0";
+import {KEY,entryOf,store,mineLive,setMine} from "./mesa-lib.js?v=2.14.0";
+import {K_C,K_CP,RISK_DT,SK,MAIN,normC,normCP,testDice,ICON} from "./alcancar-lib.js?v=2.14.0";
+import {makeState,pickGm} from "./estado.js?v=2.14.0";
 const $=s=>document.querySelector(s);
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",myId="";
+let ST=null;const POP=new URLSearchParams(location.search).get("pop")||"";
 const gm=()=>role==="GM";
 let mode=store.get("cl-mode")==="r"?"r":"s",other=store.get("cl-other")||"",rolling=null,msg="",msgCls="",dmgDone=0,kCtl="";
 
-const curG=()=>{const p=gm()?self:party.find(x=>x.role==="GM");return normC(p&&p.metadata&&p.metadata[K_C])};
+const curG=()=>{const p=gm()?self:party.find(x=>x.role==="GM");return normC(ST?pickGm(ST,p,K_C):(p&&p.metadata&&p.metadata[K_C]))};
 const mineCP=()=>normCP(self&&self.metadata&&self.metadata[K_CP]);
 const nick=p=>{const e=p.metadata&&p.metadata[KEY];return String((e&&e.nome)||p.name||"Jogador").trim().slice(0,22)||"Jogador"};
 const climbers=g=>{
@@ -154,7 +156,13 @@ $("#b-pos").onclick=()=>{store.set("cl-pos",String(((+store.get("cl-pos")||0)+1)
   $("#b-fold").onclick=fold;
   $("header").addEventListener("dblclick",e=>{if(!e.target.closest("button"))fold()});
 }
-$("#b-x").onclick=()=>OBR&&OBR.broadcast.sendMessage("ordem.cl/close",{},{destination:"LOCAL"}).catch(()=>{});
+/* fechar: marca como fechada, avisa o segundo plano E fecha a própria janela direto (antes dependia só do segundo plano: se ele não respondesse, o ✕ não fazia nada) */
+$("#b-x").onclick=()=>{
+  try{const id=curG().id;if(id)store.set("cl-closed",String(id))}catch(_){}
+  if(!OBR)return;
+  OBR.broadcast.sendMessage("ordem.cl/close",{},{destination:"LOCAL"}).catch(()=>{});
+  setTimeout(()=>{if(POP)OBR.popover.close(POP).catch(()=>{})},150);
+};
 addEventListener("wheel",e=>{e.preventDefault();setScale(sc()+(e.deltaY<0?.1:-.1))},{passive:false});
 
 /* ---------- desenho ---------- */
@@ -282,10 +290,12 @@ function onResult(d){
   OBR=await loadOBR();
   if(!OBR||!(await ready(OBR))){OBR=null;$("#rows").textContent="Abra esta página dentro do Owlbear Rodeo.";return}
   myId=String(OBR.player.id||"");
+  ST=makeState(OBR);await ST.load();
   role=await OBR.player.getRole();
   const me=async()=>({id:OBR.player.id,name:await OBR.player.getName(),color:await OBR.player.getColor(),metadata:await OBR.player.getMetadata()});
   const refresh=async()=>{try{role=await OBR.player.getRole();self=await me();party=await OBR.party.getPlayers();render()}catch(e){}};
   await refresh();
+  ST.subs.add(()=>render());
   OBR.player.onChange(p=>{self={id:p.id||self.id,name:p.name,color:p.color,metadata:p.metadata};role=p.role||role;render()});
   OBR.party.onChange(ps=>{party=ps;render()});
   OBR.broadcast.onMessage("ordem.cl/result",ev=>onResult(ev.data||{}));

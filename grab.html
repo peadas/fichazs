@@ -16,7 +16,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:transparent}
 <script type="module">
 /* Fica por cima da foto de um cartão (a camada dos cartões não recebe cliques para não bloquear o mapa).
    Quem aperta e arrasta a foto aqui move o cartão lá na camada. */
-import {loadOBR,ready} from "./obr.js?v=2.13.1";
+import {loadOBR,ready} from "./obr.js?v=2.14.0";
 const id=new URLSearchParams(location.search).get("id")||"",g=document.getElementById("g");
 let OBR=null,st=null,raf=0,last=null;
 const send=d=>OBR&&OBR.broadcast.sendMessage("ordem.hud/drag",{id,...d},{destination:"LOCAL"}).catch(()=>{});

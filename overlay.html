@@ -32,8 +32,8 @@ body.arr #tray{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outl
 .hres.pop{animation:rpop .45s ease-out}
 @keyframes rpop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 .hres .dz{gap:5px;flex-wrap:nowrap}
-.hres .dd{width:36px;height:36px;font-size:1.12rem}.hres .dd.s2{font-size:.92rem}
-.hres .tot{font-size:1.3rem}
+.hres .dd{width:26px;height:26px;font-size:.85rem}.hres .dd.s2{font-size:.7rem}
+.hres .tot{font-size:1rem}
 .hres .x2m{font-size:.7rem}
 /* histórico: fica em cima da mesa de dados, sem fundo; só 3 linhas, as antigas sobem e somem */
 #hist{position:fixed;display:flex;flex-direction:column;justify-content:flex-end;gap:3px;pointer-events:none;max-width:min(560px,94vw);z-index:2}
@@ -89,17 +89,17 @@ body.arr #tray{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outl
 
 /* cartões dos jogadores na tela (sem fundo: foto, nome, PV e PD) */
 #hud{position:fixed;inset:0;overflow:hidden;pointer-events:none}
-.hc{position:absolute;left:0;top:0;display:flex;gap:10px;align-items:center;transform:scale(var(--s,1));transform-origin:0 0;user-select:none;-webkit-user-select:none;touch-action:none;color:#fff}
+.hc{position:absolute;left:0;top:0;display:flex;gap:8px;align-items:center;transform:scale(var(--s,1));transform-origin:0 0;user-select:none;-webkit-user-select:none;touch-action:none;color:#fff}
 body.arr .hc{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outline-offset:8px}
 .hc.drag{cursor:grabbing;filter:brightness(1.15)}
-.hp{width:84px;height:84px;flex:none;display:grid;place-items:center;background:#0000 center/cover no-repeat;border:2px solid var(--c,#ecc962);box-shadow:0 3px 14px #000b;font:800 2.2rem Cinzel,serif;color:var(--c,#ecc962);text-shadow:0 2px 6px #000}
-.hi{display:grid;gap:3px;min-width:170px}
-.hn{font:700 1.45rem/1.05 "Barlow Condensed",sans-serif;letter-spacing:.03em;max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 3px #000,0 1px 5px #000,0 0 12px #000}
+.hp{width:56px;height:56px;flex:none;display:grid;place-items:center;background:#0000 center/cover no-repeat;border:2px solid var(--c,#ecc962);box-shadow:0 3px 14px #000b;font:800 1.5rem Cinzel,serif;color:var(--c,#ecc962);text-shadow:0 2px 6px #000}
+.hi{display:grid;gap:2px;min-width:118px}
+.hn{font:700 1.05rem/1.05 "Barlow Condensed",sans-serif;letter-spacing:.03em;max-width:165px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 3px #000,0 1px 5px #000,0 0 12px #000}
 .hn.npc::after{content:" · NPC";font-size:.8em;color:#c9b27a}
-.hv{display:grid;grid-template-columns:24px 140px auto;gap:7px;align-items:center;text-shadow:0 0 3px #000,0 1px 4px #000}
-.hv b{font:800 .95rem Cinzel,serif}
-.hv em{font:700 1rem "Barlow Condensed",sans-serif;font-style:normal;white-space:nowrap}
-.hb{height:12px;border:1px solid #fffc;background:#000a;transform:skewX(-14deg);box-shadow:0 1px 5px #000a;overflow:hidden;position:relative}
+.hv{display:grid;grid-template-columns:18px 100px auto;gap:5px;align-items:center;text-shadow:0 0 3px #000,0 1px 4px #000}
+.hv b{font:800 .72rem Cinzel,serif}
+.hv em{font:700 .82rem "Barlow Condensed",sans-serif;font-style:normal;white-space:nowrap}
+.hb{height:9px;border:1px solid #fffc;background:#000a;transform:skewX(-14deg);box-shadow:0 1px 5px #000a;overflow:hidden;position:relative}
 .hb u{display:block;height:100%;transition:width .4s}
 .hb s{position:absolute;inset:0;background:repeating-linear-gradient(90deg,#0000 0 calc(100%/var(--n) - 1.5px),#000b calc(100%/var(--n) - 1.5px) calc(100%/var(--n)))}
 .pvv u{background:linear-gradient(90deg,#a82f2d,#f0655f)}.pdv u{background:linear-gradient(90deg,#2d6fa8,#63b5f2)}
@@ -148,21 +148,22 @@ body.arr #esc{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outli
 </style>
 </head>
 <body>
-<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.13.1" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.13.1" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
+<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.14.0" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.14.0" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
 <div id="hist" aria-hidden="true"></div>
 <div id="hud" aria-hidden="true"></div>
 <div id="esc" aria-hidden="true"></div>
 <div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
 <div id="hbar"><span>Arraste os cartões e a mesa</span><button id="t-menos" title="Mesa menor" aria-label="Mesa menor">Mesa −</button><button id="t-mais" title="Mesa maior" aria-label="Mesa maior">Mesa +</button><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js?v=2.13.1"></script>
-<script src="dice-style.js?v=2.13.1"></script>
+<script src="engine.js?v=2.14.0"></script>
+<script src="dice-style.js?v=2.14.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.13.1";
-import {KEY,npcsOf,entryOf} from "./mesa-lib.js?v=2.13.1";
-import {K_P,K_G,normP,normG,MAXD,ICON} from "./esconder-lib.js?v=2.13.1";
+import {loadOBR,ready} from "./obr.js?v=2.14.0";
+import {KEY,npcsOf,entryOf} from "./mesa-lib.js?v=2.14.0";
+import {K_P,K_G,normP,normG,MAXD,ICON} from "./esconder-lib.js?v=2.14.0";
+import {makeState,pickGm} from "./estado.js?v=2.14.0";
 const $=s=>document.querySelector(s);
-const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",ESC=qs.get("esc")==="1"&&!standalone,CL=qs.get("cl")==="1"&&!standalone,KEEP=HUD||ESC||CL||qs.get("tray")==="1"||qs.get("warm")==="1";
+const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",ESC=qs.get("esc")==="1"&&!standalone,CL=qs.get("cl")==="1"&&!standalone;let KEEP=HUD||ESC||CL||qs.get("tray")==="1"||qs.get("warm")==="1";const KEEP0=KEEP;let ST=null;
 const CH=ENG.CH,HOLD=4000,CHIP_LIFE=9000,QMAX=12000;
 let OBR=null,received=0,idleTimer=0,dsOK=false,myId="";
 const dsMeta=new Map();   // estilo dos dados de cada jogador (metadados do Owlbear)
@@ -730,7 +731,7 @@ function startHud(){
     const o={};res.forEach((v,k)=>{o[k]=v});lss("hud-res",JSON.stringify(o));
     setRes(c,true);layout();return true;
   };
-  let ents=[],pos={},scale=Math.min(2,Math.max(.5,parseFloat(lsg("hud-scale"))||1)),drag=null;
+  let ents=[],pos={},scale=Math.min(2,Math.max(.5,parseFloat(lsg("hud-scale"))||Math.max(.8,Math.min(1,innerWidth/1700)))),drag=null;
   try{pos=JSON.parse(lsg("hud-pos")||"{}")||{}}catch(e){pos={}}
   if(ARR)document.body.classList.add("arr");
   const okImg=u=>typeof u==="string"&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(u)&&u.length<20000;
@@ -863,7 +864,7 @@ function startEsc(){
     try{
       const me=PL.me;
       myRole=me.role;const all=[me,...PL.party];
-      const gmP=all.find(p=>p.role==="GM"),g=normG(gmP&&gmP.metadata&&gmP.metadata[K_G]);
+      const gmP=all.find(p=>p.role==="GM"),g=normG(ST?pickGm(ST,gmP,K_G):(gmP&&gmP.metadata&&gmP.metadata[K_G]));
       if(!g.on&&lsg("esc-on")!=="1"){box.classList.remove("on");sg="";report();return}
       const viewGM=myRole==="GM",now=Date.now();
       const list=all.filter(p=>p.role!=="GM"&&p.metadata&&(p.metadata[KEY]||p.metadata[K_P])).map(p=>{
@@ -951,10 +952,14 @@ function startEsc(){
     OBR.broadcast.onMessage(CH.feed,ev=>{const d=ev.data||{};enqueue(d.p,+d.seq||0)});
     OBR.broadcast.sendMessage(CH.idle,{seen:s0,idle:false,mid},{destination:"LOCAL"}).catch(()=>{});
     initTray();
-    if(KEEP)setInterval(()=>OBR.broadcast.sendMessage(CH.idle,{seen:received,idle:false,mid},{destination:"LOCAL"}).catch(()=>{}),15000);   // sinal de vida: o segundo plano só reabre esta camada se ela parar de responder
+    setInterval(()=>OBR.broadcast.sendMessage(CH.idle,{seen:received,idle:false,mid},{destination:"LOCAL"}).catch(()=>{}),15000);   // sinal de vida: o segundo plano só reabre esta camada se ela parar de responder
     if(alwaysOn()&&!ARR)showTray(false);                       // setting "mesa sempre visível"
     if(HUD)startHud();
-    if(ESC)startEsc();
+    /* o painel Esconder agora liga/desliga sozinho pelo estado da sala (antes dependia desta camada ser fechada e reaberta com ?esc=1) */
+    ST=makeState(OBR);ST.subs.add(plFire);ST.load();
+    /* o segundo plano avisa em tempo real se um minijogo precisa desta camada aberta (sem reabrir) */
+    OBR.broadcast.onMessage("ordem.hud/keep",ev=>{const d=ev.data||{};if(d.mid&&d.mid!==mid)return;KEEP=KEEP0||!!d.on;if(KEEP)clearTimeout(idleTimer);else maybeIdle()});
+    if(!standalone)startEsc();
   }
   if(qs.get("p")){try{enqueue(ENG.unb64(qs.get("p")),s0)}catch(e){maybeIdle()}}
 })();

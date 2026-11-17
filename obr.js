@@ -1,5 +1,5 @@
 /* Carrega o SDK oficial do Owlbear Rodeo direto de uma CDN (sem precisar de npm).
-   v2.13.1: antes, se as CDNs falhassem UMA vez (internet instável na hora que o jogador entra), a página ficava morta até dar F5.
+   v2.14.0: antes, se as CDNs falhassem UMA vez (internet instável na hora que o jogador entra), a página ficava morta até dar F5.
    Agora cada tentativa tem limite de tempo, repete em várias rodadas e muda o endereço (#rN) para o navegador não reaproveitar a falha. */
 const URLS=[
   "https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@3.1.0/+esm",

@@ -5,18 +5,19 @@
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@3.1.0/+esm" crossorigin>
 <meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
 <body>
-<script src="engine.js?v=2.13.1"></script>
-<script src="dice-style.js?v=2.13.1"></script>
+<script src="engine.js?v=2.14.0"></script>
+<script src="dice-style.js?v=2.14.0"></script>
 <script type="module">
 /* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
    2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
    3) recebe as edições que o mestre faz na ficha do jogador. */
-import {loadOBR,ready} from "./obr.js?v=2.13.1";
-import {VER,KEY,KEY_NPC,KEY_NIMG,KEY_IMG,KEY_Z,LS,store,makePublisher,sigNpcs,sigNpcImgs,buildNpcs,buildNpcImgs,unpack} from "./mesa-lib.js?v=2.13.1";
-import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.13.1";
-import {K_C,K_CP,normC,normCP} from "./alcancar-lib.js?v=2.13.1";
-import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET} from "./equilibrio-lib.js?v=2.13.1";
+import {loadOBR,ready} from "./obr.js?v=2.14.0";
+import {VER,KEY,KEY_NPC,KEY_NIMG,KEY_IMG,KEY_Z,LS,store,makePublisher,sigNpcs,sigNpcImgs,buildNpcs,buildNpcImgs,unpack} from "./mesa-lib.js?v=2.14.0";
+import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.14.0";
+import {K_C,K_CP,normC,normCP} from "./alcancar-lib.js?v=2.14.0";
+import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET} from "./equilibrio-lib.js?v=2.14.0";
+import {makeState,pickGm} from "./estado.js?v=2.14.0";
 (async()=>{
   /* o SDK pode falhar ao carregar (internet instável quando o jogador entra): tenta de novo até conseguir, em vez de ficar morto até o F5 */
   let OBR=null;
@@ -28,6 +29,7 @@ import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET} from "./equilibrio-lib.j
   }
   addEventListener("unhandledrejection",e=>{console.warn("[ficha] erro solto",e.reason);e.preventDefault()});
   const abs=p=>new URL(p,location.href).href;
+  const ST=makeState(OBR);                              // estado do mestre (Esconder/Escalada/Balança) nos metadados da SALA
   if(window.DICE){DICE.useOBR(OBR);DICE.publish(false)}   // republica o estilo dos dados deste jogador ao entrar na sala
 
   /* ===== dados + cartões na tela (a mesma camada transparente faz as duas coisas) ===== */
@@ -45,7 +47,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   async function openOverlay(e,tries=0){
     const id="ordem.ficha/overlay/"+Date.now();
     open=true;hello=false;mid=id;lastAct=Date.now();lastTry=Date.now();
-    const q="?v=2.13.1&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&warm="+(warmOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&cl="+((clRemote||balLocal)?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
+    const q="?v=2.14.0&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&warm="+(warmOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&cl="+((clRemote||balLocal)?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
     try{
       await OBR.modal.open({id,url:abs("overlay.html")+q,
         fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:!arrange});
@@ -106,6 +108,16 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
     if(!keepOn()){arrange=false;if(open)await closeOverlay();return}
     if(open)await closeOverlay();ensure();      // reabre com a configuração nova
   }
+  /* um minijogo ligou/desligou: NÃO fecha e reabre a camada dos dados (antes fazia isso, e se a reabertura falhasse o painel sumia até o F5).
+     Só garante que ela está aberta e avisa a camada em tempo real se deve ficar aberta. */
+  function keepSync(){
+    if(keepOn()){
+      if(!open)ensure();
+      else OBR.broadcast.sendMessage("ordem.hud/keep",{on:true,mid},{destination:"LOCAL"}).catch(()=>{});
+    }else if(open){
+      OBR.broadcast.sendMessage("ordem.hud/keep",{on:false,mid},{destination:"LOCAL"}).catch(()=>{});
+    }
+  }
   async function setArrange(on){
     arrange=!!on&&keepOn();
     if(open)await closeOverlay();
@@ -141,8 +153,8 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
     if(!keepOn())return;
     dropStale();
     if(!open&&Date.now()-lastTry>20000)ensure();
-    if(clShown&&store.get("cl-closed")!==String(clShown)&&Date.now()-clAlive>15000&&Date.now()-clTry>15000)openCl();
-    if(balKey&&store.get("bal-closed")!==balKey&&Date.now()-balAlive>15000&&Date.now()-balTry>15000)openBal();   // a janela da balança não deu sinal: reabre   // a janela da escalada não deu sinal: reabre
+    if(clShown&&store.get("cl-closed")!==String(clShown)&&Date.now()-clAlive>30000&&Date.now()-clTry>30000)openCl();
+    if(balKey&&store.get("bal-closed")!==balKey&&Date.now()-balAlive>30000&&Date.now()-balTry>30000)openBal();   // a janela da balança não deu sinal: reabre   // a janela da escalada não deu sinal: reabre
     for(const [,g] of grabs)if(Date.now()-g.alive>20000&&Date.now()-g.tried>20000)openGrab(g);   // a zona sumiu (ex.: outra janela fechou): reabre
   },5000);
 
@@ -206,8 +218,8 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   async function readEsc(){
     const ps=cParty;
     const me={id:OBR.player.id,role:isGM?"GM":"PLAYER",metadata:cMeta};
-    const gm=[me,...ps].find(p=>p.role==="GM"),g=normG(gm&&gm.metadata&&gm.metadata[K_G]);
-    if(g.on!==escRemote){escRemote=g.on;cfg()}
+    const gm=[me,...ps].find(p=>p.role==="GM"),g=normG(pickGm(ST,gm,K_G));
+    if(g.on!==escRemote){escRemote=g.on;keepSync()}
     clSync(gm);
     balSync(gm,[me,...ps]);
     if(isGM)return;
@@ -256,8 +268,8 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   }
   const closeCl=()=>OBR.popover.close(CLW).catch(()=>{});
   function clSync(gm){                         // chamada a cada leitura do estado do mestre
-    const g=normC(gm&&gm.metadata&&gm.metadata[K_C]);
-    if(g.on!==clRemote){clRemote=g.on;cfg()}
+    const g=normC(pickGm(ST,gm,K_C));
+    if(g.on!==clRemote){clRemote=g.on;keepSync()}
     if(g.on){if(clShown!==g.id){clShown=g.id;if(store.get("cl-closed")!==String(g.id))openCl()}}
     else if(clShown){clShown=0;closeCl()}
   }
@@ -302,13 +314,13 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   }
   const closeBal=()=>OBR.popover.close(BW).catch(()=>{});
   function balSync(gm,all){                      // chamada a cada leitura do estado da sala
-    const g=normB(gm&&gm.metadata&&gm.metadata[K_B]),players=all.filter(p=>p&&p.role!=="GM");
+    const g=normB(pickGm(ST,gm,K_B)),players=all.filter(p=>p&&p.role!=="GM");
     const occ=g.on?occupant(g,all):null,me=all.find(p=>String(p.id)===myId),mine=normBP(me&&me.metadata&&me.metadata[K_BP]);
     /* dois subiram ao mesmo tempo: fica quem subiu primeiro, o outro é tirado */
     if(!isGM&&g.on&&mine.in&&mine.id===g.id&&occ&&String(occ.p.id)!==myId)OBR.player.setMetadata({[K_BP]:{...mine,in:0,...BRESET}}).catch(()=>{});
     let key="";
     if(g.on){if(isGM)key="g"+g.id;else if(occ&&String(occ.p.id)===myId)key="p"+g.id+":"+mine.t}
-    if((key!=="")!==balLocal){balLocal=key!=="";cfg()}
+    if((key!=="")!==balLocal){balLocal=key!=="";keepSync()}
     if(key!==balKey){
       balKey=key;
       if(key){if(store.get("bal-closed")!==key)openBal()}else closeBal();
@@ -342,6 +354,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   });
   let reT=0;const readSoon=()=>{clearTimeout(reT);reT=setTimeout(readEsc,100)};   // junta várias mudanças seguidas numa leitura só
   try{OBR.party.onChange(ps=>{cParty=ps;readSoon()});OBR.player.onChange(p=>{cMeta=p.metadata||{};readSoon()})}catch(e){}
+  ST.subs.add(()=>readSoon());await ST.load();      // o estado do mestre veio da sala: qualquer mudança dele reaplica na hora
   readEsc();
   setInterval(async()=>{try{cMeta=(await OBR.player.getMetadata())||{};cParty=await OBR.party.getPlayers()}catch(e){}readEsc()},15000);   // garantia
 })();

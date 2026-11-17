@@ -72,7 +72,7 @@ Embaixo dos atributos há um cartão com a habilidade do **Perfil** escolhido no
 - O que a Mesa mostra é publicado nos metadados do jogador no Owlbear (some quando o jogador sai da sala).
 
 ## Arquivos
-`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `mesa.webp` + `mesa2x.webp` (mesa de dados) · `gm.html` (ficha do jogador aberta pelo mestre) · `efeitos.js` · `nevoa.png` · `moldura-menu.jpg` · `quick.html` (ícone e caixa de rolagem rápida) · `alcancar.html` + `alcancar-lib.js` (Equilíbrio > Alcançar) · `balanca.html` + `equilibrio-lib.js` (Equilíbrio > Equilibrar) · `mesa-lib.js` · `obr.js` · `icon.svg`
+`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `mesa.webp` + `mesa2x.webp` (mesa de dados) · `gm.html` (ficha do jogador aberta pelo mestre) · `efeitos.js` · `nevoa.png` · `moldura-menu.jpg` · `quick.html` (ícone e caixa de rolagem rápida) · `alcancar.html` + `alcancar-lib.js` (Equilíbrio > Alcançar) · `balanca.html` + `equilibrio-lib.js` (Equilíbrio > Equilibrar) · `mesa-lib.js` · `estado.js` · `obr.js` · `icon.svg`
 
 ## v2.10.0: Esconder
 - Nova aba **Esconder** no menu (jogador e mestre). Ela controla o painel **Esconda-se** que aparece na tela do Owlbear (título, subtítulo editável como "Caçando", e um quadro por jogador com foto e dados de esconderijo). Arraste o título para mover; a roda do mouse sobre o título (ou − / + na aba) muda o tamanho.
@@ -128,3 +128,11 @@ Embaixo dos atributos há um cartão com a habilidade do **Perfil** escolhido no
 - **Agora:** o SDK tenta 3 endereços, com limite de tempo, em várias rodadas (e o navegador não reaproveita a falha anterior). O segundo plano insiste até conectar; a aba mostra "Conectando ao Owlbear…" e tenta sozinha.
 - A camada dos dados tem 12 s (antes 6) para carregar e tenta até 3 vezes, também quando está só "pronta" sem rolagem. Antes, em conexão lenta, ela era fechada enquanto ainda carregava, em ciclo.
 - Rolagem que chega com 15 a 60 s de atraso aparece só como resultado (antes sumia); acima de 60 s é descartada. Se a hora do computador de alguém for ajustada, o relógio é recalibrado em 20 s em vez de silenciar as rolagens dele.
+
+## v2.14.0: estabilidade e sincronização (Esconder, Escalada, Balança)
+- **Novo `estado.js`**: o estado do mestre (Esconder, Escalada e Balança: ligado/desligado, DT, altura, rodadas…) agora fica nos **metadados da sala**, não nos do jogador-mestre. Antes, F5 ou queda de internet do mestre apagava tudo e os jogadores ficavam sem painel/janela até todos darem F5. Se a sala não aceitar a gravação, cai no jeito antigo automaticamente.
+- **Ligar/desligar minijogo não reinicia mais a camada dos dados** (antes fechava e reabria; se a reabertura falhasse, o painel Esconder não aparecia). O painel Esconder agora liga e desliga pelo estado da sala.
+- **✕ das janelas de Escalada e Balança** fecha a própria janela direto (antes dependia do segundo plano responder; se não respondesse, não fechava ou reabria sozinha).
+- Vigia das janelas menos nervoso: só reabre depois de 30 s sem sinal (antes 15 s; em conexão lenta a janela reiniciava em loop e parecia travada).
+- **Cartões dos jogadores na tela (avatar, nome, PV/PD) ~35% menores**, e o tamanho inicial se adapta à tela (monitor menor = um pouco menor). Quem já ajustou com − / + mantém o próprio tamanho.
+- Versão dos arquivos: `?v=2.14.0` (força o navegador a baixar tudo de novo). Lembre de enviar também o novo `estado.js`.
