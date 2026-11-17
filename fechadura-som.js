@@ -1,5 +1,6 @@
 /* Sons da fechadura, sintetizados na hora (sem arquivo de áudio, nada para baixar).
-   trunk = número ALTO demais (meio agudo, seco)   ·   trink = número BAIXO demais (tilintar de metal)   ·   click = pino certo
+   alto = número ALTO demais: "tic" agudo e seco de metal   ·   baixo = número BAIXO demais: "toc" grave e abafado de metal
+   click = pino certo (o tambor encaixa: clic-clac)   ·   open = chave girando e trava deslizando   ·   broke = metal estalando
    O navegador só libera o som depois de um clique do jogador: o botão "Tentar abrir" chama unlock(). */
 let ctx=null;
 const C0=typeof window!=="undefined"&&(window.AudioContext||window.webkitAudioContext);
@@ -26,16 +27,20 @@ function tone(c,t,type,f0,f1,dur,peak,lp){
   n.connect(out(c,peak,0.004,dur,t));o.start(t);o.stop(t+dur+0.05);
 }
 const play=fn=>{if(!soundOn())return;const c=ac();if(!c)return;try{fn(c,c.currentTime+0.01)}catch(e){}};
+/* metal de verdade: vários tons "desafinados" entre si (como uma barra de aço) que somem rápido */
+const metal=(c,t,f,parts,dur,peak)=>parts.forEach(([r,g,d])=>tone(c,t,"sine",f*r,f*r,dur*d,peak*g));
+const TIC=[[1,1,1],[2.76,.55,.6],[5.4,.3,.35],[8.9,.15,.2]];
+const TOC=[[1,1,1],[2.32,.6,.7],[4.1,.3,.45]];
 export const sfx={
   unlock:()=>{ac()},
-  /* "trunk": número alto. Pancada curta e seca, meio aguda */
-  trunk:()=>play((c,t)=>{tone(c,t,"square",470,250,0.13,0.2,1500);burst(c,t,950,1.2,0.05,0.35)}),
-  /* "trink": número baixo. Tilintar agudo de metal */
-  trink:()=>play((c,t)=>{tone(c,t,"sine",2150,2150,0.24,0.2);tone(c,t,"sine",3220,3220,0.16,0.1);burst(c,t,5200,2,0.02,0.2,"highpass")}),
-  /* "click": pino certo, o pino sobe */
-  click:()=>play((c,t)=>{burst(c,t,2600,3,0.03,0.4);tone(c,t,"sine",190,110,0.09,0.3);tone(c,t+0.05,"triangle",900,1500,0.07,0.08)}),
-  /* fechadura abriu */
-  open:()=>play((c,t)=>{tone(c,t,"sine",95,55,0.28,0.45);burst(c,t+0.04,700,0.8,0.3,0.12);burst(c,t+0.3,2200,4,0.04,0.25)}),
-  /* fechadura quebrou */
-  broke:()=>play((c,t)=>{burst(c,t,500,0.5,0.5,0.5,"lowpass");tone(c,t,"square",150,40,0.35,0.25,600);[0.08,0.19,0.31].forEach((d,i)=>tone(c,t+d,"sine",1500+i*650,1500+i*650,0.12,0.08))})
+  /* número ALTO: "tic" agudo, seco, de pino de aço */
+  alto:()=>play((c,t)=>{metal(c,t,2350,TIC,0.17,0.2);burst(c,t,6500,1.5,0.012,0.32,"highpass")}),
+  /* número BAIXO: "toc" grave e abafado, de peça pesada de latão */
+  baixo:()=>play((c,t)=>{metal(c,t,520,TOC,0.24,0.34);tone(c,t,"sine",170,95,0.1,0.34);burst(c,t,800,1,0.03,0.3)}),
+  /* pino certo: o tambor encaixa (clic-clac) */
+  click:()=>play((c,t)=>{burst(c,t,3300,3,0.02,0.4);metal(c,t,1450,TIC,0.08,0.2);tone(c,t+0.055,"sine",240,150,0.07,0.32);burst(c,t+0.055,1800,2,0.025,0.3);metal(c,t+0.06,1900,TIC,0.1,0.14)}),
+  /* abriu: chave girando (catraca) e a trava deslizando com um baque */
+  open:()=>play((c,t)=>{[0,0.07,0.14,0.21].forEach((d,i)=>{burst(c,t+d,2600+i*250,4,0.02,0.3);metal(c,t+d,1700+i*150,TIC,0.06,0.1)});tone(c,t+0.3,"sine",120,55,0.3,0.5);burst(c,t+0.3,650,0.8,0.22,0.16);metal(c,t+0.32,880,TOC,0.32,0.14);burst(c,t+0.6,3000,4,0.03,0.2)}),
+  /* quebrou: metal estalando */
+  broke:()=>play((c,t)=>{burst(c,t,3800,1,0.1,0.5,"highpass");burst(c,t,450,0.5,0.45,0.5,"lowpass");tone(c,t,"square",150,40,0.35,0.22,600);metal(c,t+0.02,1240,TIC,0.3,0.14);[0.1,0.2,0.33].forEach((d,i)=>metal(c,t+d,2100+i*700,TIC,0.12,0.1))})
 };

@@ -181,7 +181,7 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
 #v-eq .res button{margin-left:6px;padding:1px 8px;font-size:.78rem;border-color:var(--bad);color:#ff8f8c}
 
 
-/* ===== Equilibrar (v2.16.0): cena dentro da aba ===== */
+/* ===== Equilibrar (v2.16.2): cena dentro da aba ===== */
 #v-eq .bcard{padding:10px 12px 12px}
 #v-eq .bwho{display:flex;align-items:center;gap:8px;min-height:30px;font:700 1rem/1.2 "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase}
 #v-eq .bwho i{width:26px;height:26px;border-radius:50%;border:2px solid var(--c,#e9ece7);background:#0e1213 center/cover no-repeat;flex:none;display:grid;place-items:center;font:800 .75rem Cinzel,serif;font-style:normal;color:var(--c,#e9ece7)}
@@ -218,7 +218,7 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
 #v-eq .blog p.sm{border-color:transparent;padding-left:10px;color:var(--muted);font-size:.78rem}
 
 
-/* ===== Fechadura (v2.16.0): mesmas regras do Equilíbrio + as próprias ===== */
+/* ===== Fechadura (v2.16.2): mesmas regras do Equilíbrio + as próprias ===== */
 #v-fech input.t{background:#0e1213;border:1px solid var(--line);color:#eef0ee;padding:6px 8px;font:inherit;min-width:0}
 #v-fech .lbl{font:700 .72rem "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 #v-fech .cwhost{max-width:400px;margin:0 auto 8px}
@@ -290,6 +290,9 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
 #v-fech .fgm{margin-top:10px;padding-top:8px;border-top:1px solid var(--line);display:grid;gap:6px}
 #v-fech .fgm h5{margin:0;font:700 .72rem "Barlow Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 #v-fech .fgm:empty{display:none}
+#v-fech .bagh{display:flex;align-items:center;gap:8px;margin:10px 0 4px;padding-top:8px;border-top:1px solid var(--line)}
+#v-fech .bagh h5{flex:1;margin:0;font:700 .72rem "Barlow Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+#v-fech .bagi{gap:6px}
 
 /* ===== v2.13: visual mais limpo e legível ===== */
 :root{--muted:#a4afad;--line:#37414a}
@@ -382,20 +385,20 @@ h3.sec{margin:16px 0 10px;font-size:.92rem;color:var(--muted)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js?v=2.16.0"></script>
+<script src="efeitos.js?v=2.16.2"></script>
 <script type="module">
-import {localChannel} from "./canal.js?v=2.16.0";
-import {loadOBR,ready} from "./obr.js?v=2.16.0";
-import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.16.0";
-import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI,SK,testDice,climbersOf,clWants} from "./alcancar-lib.js?v=2.16.0";
-import {mountWall} from "./alcancar-cena.js?v=2.16.0";
-import {mountScale,d4Icon} from "./balanca-cena.js?v=2.16.0";
-import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET,afterAdd,afterFall,balWants,statusText} from "./equilibrio-lib.js?v=2.16.0";
-import {K_F,K_FP,NMIN,NMAX,FACES as FACESF,normF,normFP,crimeFace,triesPerRound,triesLeft as triesLeftF,occupant as occupantF,lockState as lockStateF,status as statusF,enterPatch as enterPatchF,setDie as setDieF,tryOpen as tryOpenF,rollSecret as rollSecretF,kindName as kindNameF,statusText as statusTextF} from "./fechadura-lib.js?v=2.16.0";
-import {mountLock} from "./fechadura-cena.js?v=2.16.0";
-import {sfx} from "./fechadura-som.js?v=2.16.0";
-import {makeState,pickGm} from "./estado.js?v=2.16.0";
-import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.16.0";
+import {localChannel} from "./canal.js?v=2.16.2";
+import {loadOBR,ready} from "./obr.js?v=2.16.2";
+import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.16.2";
+import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI,SK,testDice,climbersOf,clWants} from "./alcancar-lib.js?v=2.16.2";
+import {mountWall} from "./alcancar-cena.js?v=2.16.2";
+import {mountScale,d4Icon} from "./balanca-cena.js?v=2.16.2";
+import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET,afterAdd,afterFall,balWants,statusText} from "./equilibrio-lib.js?v=2.16.2";
+import {K_F,K_FP,NMIN,NMAX,FACES as FACESF,normF,normFP,crimeFace,triesPerRound,triesLeft as triesLeftF,replaysLeft as replaysLeftF,replaysPerRound,occupant as occupantF,lockState as lockStateF,status as statusF,enterPatch as enterPatchF,setDie as setDieF,tryOpen as tryOpenF,rollSecret as rollSecretF,kindName as kindNameF,statusText as statusTextF,fechWants,sceneView,bagItem,bagLoad} from "./fechadura-lib.js?v=2.16.2";
+import {mountLock} from "./fechadura-cena.js?v=2.16.2";
+import {sfx} from "./fechadura-som.js?v=2.16.2";
+import {makeState,pickGm} from "./estado.js?v=2.16.2";
+import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.16.2";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";
@@ -772,7 +775,7 @@ const gmP=()=>role==="GM"?self:party.find(x=>x.role==="GM");
 const cgSt=()=>{const p=gmP();return normC(ST?pickGm(ST,p,K_C):(p&&p.metadata&&p.metadata[K_C]))};
 const cpSt=x=>normCP(x&&x.metadata&&x.metadata[K_CP]);
 const setC=async patch=>{await setGM(K_C,{...cgSt(),...patch})};
-/* ---------- Equilibrar (v2.16.0: sem janela própria; a cena é desenhada aqui e na tela do Owlbear) ----------
+/* ---------- Equilibrar (v2.16.2: sem janela própria; a cena é desenhada aqui e na tela do Owlbear) ----------
    Quem rolou os dados: a camada dos dados devolve o resultado e o SEGUNDO PLANO aplica (não depende desta aba continuar aberta). */
 const cbSt=()=>{const p=gmP();return normB(ST?pickGm(ST,p,K_B):(p&&p.metadata&&p.metadata[K_B]))};
 const bpSt=x=>normBP(x&&x.metadata&&x.metadata[K_BP]);
@@ -916,7 +919,7 @@ function renderBal(g,o){
   });
 }
 const cbOcc=()=>occupant(cbSt(),balPlayers());
-/* ---------- Alcançar (v2.16.0: sem janela própria; a parede com as fotos subindo é desenhada aqui e na tela do Owlbear) ----------
+/* ---------- Alcançar (v2.16.2: sem janela própria; a parede com as fotos subindo é desenhada aqui e na tela do Owlbear) ----------
    Quem rolou os dados: a camada dos dados devolve o resultado e o SEGUNDO PLANO aplica (não depende desta aba continuar aberta). */
 const sleepC=ms=>new Promise(r=>setTimeout(r,ms));
 const setCP=async patch=>{
@@ -1053,18 +1056,20 @@ function renderEq(){
   else if(Q.sub==="alc")renderCl(g);
 }
 
-/* ================= aba Fechadura (v2.16.0) =================
+/* ================= aba Fechadura (v2.16.2) =================
    Mesmo molde do Equilibrar: sem janela própria. A cena é desenhada aqui; o estado do mestre fica na sala (K_F) e o de cada jogador nos
    metadados dele (K_FP). Só um jogador por vez. O resultado dos dados do arrombamento é aplicado pelo segundo plano. */
 const cfSt=()=>{const p=gmP();return normF(ST?pickGm(ST,p,K_F):(p&&p.metadata&&p.metadata[K_F]))};
 const fpSt=x=>normFP(x&&x.metadata&&x.metadata[K_FP]);
-const setF=async patch=>{await setGM(K_F,{...cfSt(),...patch})};
+const setF=async patch=>{await setGM(K_F,{...cfSt(),...patch});pingF()};
+/* avisa todos que a fechadura mudou: eles releem a sala na hora (sem depender do F5 nem de esperar o intervalo) */
+const pingF=()=>{try{OBR&&OBR.broadcast.sendMessage("ordem.fech/ping",{t:Date.now()},{destination:"ALL"}).catch(()=>{})}catch(e){}};
 /* o jogador grava o próprio estado; os números dos dados (▲▼) vão com 250 ms de calma, o resto na hora */
 let fpT=0,fpNext=null;
 async function fpFlush(){
   clearTimeout(fpT);fpT=0;const sent=fpNext;if(!OBR||!sent)return;
   for(let i=0;;i++){
-    try{await OBR.player.setMetadata({[K_FP]:sent});break}
+    try{await OBR.player.setMetadata({[K_FP]:sent});pingF();break}
     catch(e){if(i>=2){console.warn("[fechadura] não consegui salvar",e);break}await sleep(700*(i+1))}
   }
   if(fpNext===sent)fpNext=null;
@@ -1101,6 +1106,15 @@ function fechTry(){
   const p=tryOpenF(g,c);if(!p)return;
   fBusy=Date.now()+c.ok.filter(x=>!x).length*310+500;
   setFP(p,true);
+}
+/* ouvir de novo (modo sem guia): repete os sons da última tentativa; o limite por rodada vem do dado de Crime */
+function fechReplay(){
+  const g=cfSt(),c=fpCur();sfx.unlock();
+  if(!g.snd||!c.at||replaysLeftF(c,g)<=0||Date.now()<fBusy)return;
+  const nn=(c.nw||[]).filter(Boolean).length;if(!nn)return;
+  fBusy=Date.now()+nn*310+450;
+  FW.scene.echo({fb:c.fb,nw:c.nw});
+  setFP({pu:(c.rr===g.rd?c.pu:0)+1,rr:g.rd,ru:(c.rr===g.rd?c.ru:0)},true);
 }
 const fechBump=(i,d)=>{const g=cfSt(),c=fpCur(),p=setDieF(g,c,i,(c.v[i]||1)+d);if(p)setFP(p)};
 
@@ -1149,6 +1163,24 @@ function buildFechForm(box,g){
     g.items.forEach((x,i)=>{const row=el("div","fitem");row.append(el("span",null,x),mk("button","small","✕",()=>setF({items:g.items.filter((_,k)=>k!==i)}),"Remover"));l.append(row)});
     box.append(l);
   }
+  /* bolsa: salvar esta fechadura para usar de novo; "Mostrar" coloca na tela dos dados na hora */
+  const bag=bagLoad(store.get("fech-bolsa")),saveBag=l=>{store.set("fech-bolsa",JSON.stringify(l));FW.k.form="";renderFech()};
+  const cfgOf=b=>({kind:b.kind,name:b.name,n:b.n,faces:b.faces,pa:b.pa,dt:b.dt,max:b.max,snd:b.snd,items:b.items,s:b.s.length===b.n?b.s:rollSecretF(b.n,b.faces)});
+  const bh=el("div","bagh");
+  bh.append(el("h5",null,"Bolsa de fechaduras ("+bag.length+")"),mk("button","small","Salvar esta na bolsa",()=>{
+    const cur={...cfSt(),...vals()},it=bagItem(cur);
+    saveBag([it,...bag.filter(x=>!(x.name===it.name&&x.kind===it.kind))].slice(0,40));
+  },"Guarda a fechadura que está montada aqui"));
+  box.append(bh);
+  if(!bag.length)box.append(el("p","hint","Vazia. Monte uma fechadura, aperte Salvar e ela fica aqui para usar de novo quando quiser."));
+  bag.forEach((b,i)=>{
+    const r=el("div","fitem bagi");
+    r.append(el("span",null,(b.kind==="bau"?"Baú · ":"Porta · ")+b.name+" — "+b.n+"d"+b.faces+(b.kind==="bau"&&b.items.length?" · "+b.items.length+" itens":"")));
+    r.append(mk("button","small","Preparar",()=>{if(cfSt().on){fGmMsg="Encerre a fechadura ativa para preparar outra.";FW.k.gmb="";renderFech();return}setF({...cfgOf(b),on:false,dead:[]})},"Carrega no formulário sem mostrar para os jogadores"));
+    r.append(mk("button","small go","Mostrar",()=>setF({...cfgOf(b),on:true,id:Date.now(),br:0,bt:0,ko:0,rd:0,dead:[]}),"Carrega e coloca na tela dos dados agora"));
+    r.append(mk("button","small","✕",()=>saveBag(bag.filter((_,k)=>k!==i)),"Tirar da bolsa"));
+    box.append(r);
+  });
   const row=el("div","row2");
   row.append(g.on?mk("button","small","Encerrar fechadura",()=>setF({on:false})):mk("button","go","Ativar fechadura",()=>{
     const v=vals(),s=g.s.length===g.n?g.s:rollSecretF(g.n,g.faces);
@@ -1198,9 +1230,14 @@ function buildFechCtl(g,o,me,S,ls){
     box.append(row);
     const b=mk("button","bbig",left>0?"Tentar abrir":"Sem tentativas nesta rodada",fechTry);b.disabled=left<=0||Date.now()<fBusy;box.append(b);
     if(left<=0)box.append(el("p","hint","Espere o mestre iniciar uma nova rodada para tentar de novo."));
-    const sr=sw("Som das dicas (trunk = alto · trink = baixo)",fSndOn(),()=>{store.set("fech-snd",fSndOn()?"0":"1");FW.k.ctl="";renderFech()});box.append(sr);
-    if(!g.snd){const dm=el("div","row2");dm.append(el("span","lbl","Ouvir"),mk("button","small","▶ trunk (alto)",()=>{sfx.unlock();sfx.trunk()}),mk("button","small","▶ trink (baixo)",()=>{sfx.unlock();sfx.trink()}));box.append(dm)}
-    else box.append(el("p","hint","O mestre desligou o texto: guie-se só pelo som e descubra qual é qual."));
+    const sr=sw("Som das dicas (tic agudo = alto · toc grave = baixo)",fSndOn(),()=>{store.set("fech-snd",fSndOn()?"0":"1");FW.k.ctl="";renderFech()});box.append(sr);
+    if(!g.snd){const dm=el("div","row2");dm.append(el("span","lbl","Ouvir"),mk("button","small","▶ tic agudo (alto)",()=>{sfx.unlock();sfx.alto()}),mk("button","small","▶ toc grave (baixo)",()=>{sfx.unlock();sfx.baixo()}));box.append(dm)}
+    else{
+      box.append(el("p","hint","O mestre desligou o texto: guie-se só pelo som e descubra qual é qual."));
+      const rl=replaysLeftF(c,g),rb=mk("button","bbig","🔊 Ouvir de novo ("+rl+" de "+replaysPerRound()+" nesta rodada)",fechReplay);
+      rb.disabled=rl<=0||!c.at||!(c.nw||[]).some(Boolean)||Date.now()<fBusy;box.append(rb);
+      if(!c.at)box.append(el("p","hint","Depois da primeira tentativa você pode ouvir os sons de novo (Crime d"+crimeFace()+" = "+replaysPerRound()+" vezes por rodada)."));
+    }
   }else{
     const pct=Math.min(100,Math.round(c.ar/g.pa*100));
     const bar=el("div","fbar");bar.append(el("i"));bar.firstChild.style.width=pct+"%";box.append(el("p","hint","Força acumulada: "+c.ar+" / "+g.pa),bar);
@@ -1250,7 +1287,7 @@ function renderFech(){
   const g=cfSt(),pl=balPlayers(),o=occupantF(g,pl),gm=role==="GM",me=iAmOcc(o),ls=lockStateF(g,pl),S=statusF(g,ls),c=o?o.c:null,K=FW.k;
   const part=(slot,key,fn)=>{const k=JSON.stringify(key);if(K[slot]===k)return;K[slot]=k;fn()};
   FW.form.hidden=!gm;
-  if(gm&&!fSpin)part("form",[g.on,g.id,g.kind,g.n,g.faces,g.name,g.pa,g.dt,g.max,g.snd,g.s,g.items],()=>buildFechForm(FW.form,g));
+  if(gm&&!fSpin)part("form",[g.on,g.id,g.kind,g.n,g.faces,g.name,g.pa,g.dt,g.max,g.snd,g.s,g.items,store.get("fech-bolsa")],()=>buildFechForm(FW.form,g));
   part("who",[g.on,g.kind,g.name,gm,g.rd,o&&[o.p.id,fnick(o.p),o.p.color,(entryOf(o.p)||{}).th&&1]],()=>{
     FW.who.replaceChildren();
     const head=(g.name?g.name:kindNameF(g.kind));
@@ -1262,17 +1299,20 @@ function renderFech(){
     if(gm)FW.who.append(mk("button","small bad","Expulsar",()=>OBR.broadcast.sendMessage("ordem.fech/kick",{to:String(o.p.id)},{destination:"ALL"}).catch(()=>{}),"Tira o jogador da fechadura e libera para outro"));
   });
   /* a cena: pinos mostram o que o jogador escolheu; o pino certo sobe e a gazua avança */
-  const src=c||ls,hint=!g.snd,mode=S.broken?"f":(c?c.md:"d");
-  const okv=Array.from({length:g.n},(_,i)=>src.ok[i]?1:0);
-  FW.scene.update({n:g.n,ok:g.on?okv:okv.map(()=>0),
-    vals:Array.from({length:g.n},(_,i)=>g.on&&(src.ok[i]||c)?(src.v[i]||(c?1:0)):0),
-    tint:Array.from({length:g.n},(_,i)=>g.on&&c&&hint&&!src.ok[i]&&src.fb[i]&&src.lv[i]===src.v[i]?src.fb[i]:0),
-    fb:src.fb,at:g.on?src.at:0,pick:g.on&&c&&mode==="d"&&!S.open&&!S.broken?"in":"out",
-    open:g.on&&S.open,how:S.how,broken:g.on&&S.broken,cracks:g.on&&S.cracks,hint,sound:!!(me&&fSndOn())});
+  FW.scene.update(sceneView(g,o,ls,S,!!(me&&fSndOn())));
   const [t,cl]=statusTextF(g,o,me,fnick,S);
   FW.say.className="bsay "+(fRoll?"":cl);FW.say.textContent=fRoll?"Rolando os dados…":(fMsg||t);
   part("ctl",[gm,g.on,g.id,g.n,g.faces,g.pa,g.dt,g.snd,g.rd,S,me,o&&[o.p.id,o.c],!!fRoll,fMsg,fOther,fSndOn(),Date.now()<fBusy,ls.tu],()=>buildFechCtl(g,o,me,S,ls));
   part("gmb",[gm,g.on,g.id,g.rd,g.pa,g.max,g.s,g.kind,g.items,g.dead,S,ls.tu,ls.ar,fGmMsg],()=>buildFechGm(g,o,S,ls));
+  part("vis",[g.on,fechWants(store.get("fech-view"))],()=>{
+    FW.vis.replaceChildren();if(!g.on)return;
+    const on=fechWants(store.get("fech-view")),r=sw("Mostrar a fechadura na tela do Owlbear",on,()=>{
+      store.set("fech-view",fechWants(store.get("fech-view"))?"0":"1");FW.k.vis="";
+      LC.send("ordem.fech/view");OBR&&OBR.broadcast.sendMessage("ordem.fech/view",{},{destination:"LOCAL"}).catch(()=>{});renderFech();
+    });
+    r.querySelector(".t").append(el("small",null,"Ligado por padrão para todos. Desligue se não quiser a fechadura na tela; ela continua aqui na aba."));
+    FW.vis.append(r);
+  });
   part("lg",[c&&c.lg,ls.lg,g.on],()=>{
     FW.lg.replaceChildren();
     const l=(c||ls).lg;if(!g.on||!l.length)return;
@@ -1306,7 +1346,7 @@ function renderFechTab(){
     try{await OBR.broadcast.sendMessage("ordem.hud/arrange",{on:true},{destination:"LOCAL"})}catch(e){}
     try{await OBR.action.close()}catch(e){}
   };
-  refresh=async()=>{try{role=await OBR.player.getRole();self=await me();party=await OBR.party.getPlayers();if(wantJoin!==null&&self.metadata&&!!self.metadata[KEY]===wantJoin)wantJoin=null;render()}catch(e){}};
+  refresh=async()=>{try{await ST.load().catch(()=>{});role=await OBR.player.getRole();self=await me();party=await OBR.party.getPlayers();if(wantJoin!==null&&self.metadata&&!!self.metadata[KEY]===wantJoin)wantJoin=null;render()}catch(e){}};
   ST=makeState(OBR);await ST.load();
   await refresh();
   let rq=0;const renderSoon=()=>{if(rq)return;rq=requestAnimationFrame(()=>{rq=0;render()})};   // várias mudanças seguidas viram um desenho só
@@ -1316,11 +1356,13 @@ function renderFechTab(){
   OBR.broadcast.onMessage("ordem.bal/result",ev=>{const d=ev.data||{};if(bRoll&&d.rid===bRoll.rid){bRoll=null;bMsg="";renderEq()}});
   OBR.broadcast.onMessage("ordem.cl/result",ev=>{const d=ev.data||{};if(cRoll&&d.rid===cRoll.rid){cRoll=null;cMsg="";renderEq()}});
   OBR.broadcast.onMessage("ordem.fech/result",ev=>{const d=ev.data||{};if(fRoll&&d.rid===fRoll.rid){fRoll=null;fMsg="";renderFech()}});
+  OBR.broadcast.onMessage("ordem.fech/ping",()=>{refresh()});          // o mestre mexeu na fechadura: reler agora
+  setInterval(()=>{if(!document.hidden&&(tab==="fech"||cfSt().on))refresh()},3000);      // com fechadura ativa, confere a cada 3 s (antes só a cada 15 s)
   setInterval(()=>{if(!document.hidden)refresh()},15000);       // garantia: a lista sempre se corrige sozinha (os eventos já atualizam na hora)
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
 })();
 
-/* v2.16.0: botão de sincronização (no lugar do F5). Mostra há quanto tempo o segundo plano conferiu a sala; clicar força tudo de novo. */
+/* v2.16.2: botão de sincronização (no lugar do F5). Mostra há quanto tempo o segundo plano conferiu a sala; clicar força tudo de novo. */
 {
   let last=0,askT=0;const b=$("#b-sync"),tx=$("#sync-t");
   const draw=()=>{const s=last?Math.round((Date.now()-last)/1000):-1;

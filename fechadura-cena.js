@@ -196,14 +196,28 @@ export function mountLock(host,opts){
         else{
           const p=pins[i];p.classList.remove("bump");void p.getBoundingClientRect();p.classList.add("bump");later(380,()=>p.classList.remove("bump"));
           if(v.hint){shown.tint[i]=f;paintTint(i)}
-          if(v.sound){if(f>0&&sfx.trunk)sfx.trunk();else if(f<0&&sfx.trink)sfx.trink()}
+          if(v.sound){if(f>0&&sfx.alto)sfx.alto();else if(f<0&&sfx.baixo)sfx.baixo()}
         }
       });
     });
     later(idx.length*STEP+260,()=>{seq=null;applyStatic(lastView,true)});
   }
+  /* ouvir de novo: toca só os sons da última tentativa (pinos novos), sem mexer no estado */
+  function echo(v){
+    if(dead||seq||!lastView||!Array.isArray(v.fb))return;
+    endSeq();seq=true;const idx=[];for(let i=0;i<N;i++)if(v.nw&&v.nw[i])idx.push(i);
+    idx.forEach((i,j)=>{
+      later(j*310,()=>{shown.pickK=-9;movePick(i)});
+      later(j*310+190,()=>{const f=v.fb[i];
+        if(f===0){if(sfx.click)sfx.click()}
+        else{const p=pins[i];p.classList.remove("bump");void p.getBoundingClientRect();p.classList.add("bump");later(380,()=>p.classList.remove("bump"));
+          if(f>0&&sfx.alto)sfx.alto();else if(f<0&&sfx.baixo)sfx.baixo()}});
+    });
+    later(idx.length*310+260,()=>{seq=null;shown.pickK=-9;applyStatic(lastView,true)});
+  }
   build(3);
   return{
+    echo,
     update(v){
       if(dead)return;
       const n=Math.max(3,Math.min(10,+v.n||4));

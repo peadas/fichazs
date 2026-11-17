@@ -11,13 +11,13 @@ html,body{margin:0;min-height:100%;background:#0f1416;color:#eef0ee;font:15px/1.
 .top button{background:none;border:1px solid var(--line);color:inherit;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem}
 #root{padding:2px 14px 22px}
 </style>
-<script src="dice-style.js?v=2.16.0"></script>
+<script src="dice-style.js?v=2.16.2"></script>
 </head>
 <body>
 <div class="top"><span>Personalizar dados</span><button id="x" type="button" aria-label="Fechar">✕</button></div>
 <div id="root"></div>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.16.0";
+import {loadOBR,ready} from "./obr.js?v=2.16.2";
 const qs=new URLSearchParams(location.search),pop=qs.get("pop")||"";
 let OBR=null;
 try{OBR=await loadOBR();if(!OBR||!(await ready(OBR)))OBR=null}catch(e){OBR=null}

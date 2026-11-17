@@ -1,7 +1,7 @@
 /* Equilíbrio > Alcançar: peças compartilhadas (menu, janela da escalada e segundo plano).
    Estado nos metadados do Owlbear: o mestre em K_C (a escalada: DT, altura, se a altura está revelada),
    cada jogador em K_CP (se entrou, quanto já subiu, último teste). O mestre derruba um jogador por mensagem (ordem.cl/drop). */
-import {sheet,ATTR} from "./esconder-lib.js?v=2.16.0";
+import {sheet,ATTR} from "./esconder-lib.js?v=2.16.2";
 export const K_C="ordem.cl/g", K_CP="ordem.cl/p";
 export const RISK_DT=3;                         // modo arriscado: DT +3
 export const FACES=[4,6,8,10,12,14,16,18,20];
@@ -37,7 +37,7 @@ export const ICON={
   fall:`<svg viewBox="0 0 24 24" ${S}><path d="M12 3v14M6 12l6 6 6-6"/></svg>`
 };
 
-/* ---- v2.16.0: sem janela própria. As regras abaixo são puras e usadas pelo menu, pela camada da tela e pelo segundo plano ---- */
+/* ---- v2.16.2: sem janela própria. As regras abaixo são puras e usadas pelo menu, pela camada da tela e pelo segundo plano ---- */
 /* quem está na parede: jogadores (sem o mestre) que entraram NESTA escalada. players = [{id,role,metadata}] */
 export function climbersOf(g,players){
   if(!g||!g.on||!g.id)return[];
