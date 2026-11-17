@@ -161,6 +161,18 @@ html.view #rmimg{display:none}
   -webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
 .np.vazio{color:#6b7675;font-style:italic}
 
+/* ===== v2.13: painéis arrastáveis, fechar mais claro ===== */
+#notas,#rels,#cust,#sett{background:#000a}
+.pdrag{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;position:relative}
+.pdrag.mv{cursor:grabbing}
+.pdrag::before{content:"";position:absolute;left:50%;top:-8px;width:34px;height:4px;margin-left:-17px;border-radius:2px;background:#4a5557;opacity:.7}
+.pdrag:hover::before,.pdrag.mv::before{background:#c9d1cf;opacity:1}
+.pnl-box{will-change:transform}
+.ib#nclose:hover,#sclose:hover,#rclose:hover,#cclose:hover{border-color:#e0524f;color:#ff9a97;background:#2a1717}
+.ntab{border-radius:0;transition:color .15s,border-color .15s,background .15s}
+.ntab.on{background:linear-gradient(180deg,#1b2325,#0f1213)}
+.nt{box-shadow:0 14px 50px #000c}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 /* painel grande de anotações */
 #notas{position:fixed;inset:0;z-index:25;background:#000c;display:flex;align-items:stretch;justify-content:center;padding:max(14px,env(safe-area-inset-top,0px)) 14px 14px}
 #notas[hidden]{display:none}
@@ -428,10 +440,10 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
   }
 })();
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
-<script src="engine.js?v=2.12.0"></script>
-<script src="dice-style.js?v=2.12.0"></script>
-<script src="efeitos.js?v=2.12.0"></script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
+<script src="engine.js?v=2.13.1"></script>
+<script src="dice-style.js?v=2.13.1"></script>
+<script src="efeitos.js?v=2.13.1"></script>
 <input type="file" id="file" accept="image/*" hidden>
 
 <script>
@@ -442,7 +454,13 @@ const SK=[["Acrobacia","fis"],["Animais","emo"],["Aptidão","men"],["Atletismo",
 const $=s=>document.querySelector(s);
 let d={};
 try{d=JSON.parse(localStorage.getItem("ficha-ordem")||"{}")}catch(e){}
-const save=()=>{try{localStorage.setItem("ficha-ordem",JSON.stringify(d))}catch(e){}};
+/* grava na hora que o jogador para de mexer (80 ms): digitar numa caixa de texto não regrava a ficha inteira a cada letra */
+let saveT=0;
+const saveNow=()=>{clearTimeout(saveT);saveT=0;try{localStorage.setItem("ficha-ordem",JSON.stringify(d))}catch(e){}};
+const save=()=>{if(!saveT)saveT=setTimeout(saveNow,80)};
+window.__flushSave=saveNow;
+addEventListener("pagehide",saveNow);addEventListener("beforeunload",saveNow);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)saveNow()});
 const val=k=>d[k]||(k[0]==="a"?6:4);
 
 $("#attrs").innerHTML=Object.entries(NM).map(([k,n])=>`<div class="attr"><button class="nm big" data-roll="a-${k}" title="Rolar ${n}">${n}</button><button class="die lg" data-die="a-${k}" data-sz="lg"></button><span class="up" data-up="${k}" hidden></span><button type="button" class="bolt" data-ib="${k}" hidden title="Gastar os 3 de Ímpeto: ${n} sobe +1 passo até o fim da cena" aria-label="Ímpeto: aumentar ${n}">⚡</button></div>`).join("");
@@ -484,7 +502,7 @@ notasPrev();
 
 document.addEventListener("input",e=>{
   const k=e.target.dataset&&e.target.dataset.k;if(!k)return;
-  d[k]=e.target.value;save();bars();pavor();if(k==="hab"||k==="equip")notasPrev();if(k==="perfil"){impPick=false;msg("");$("#acts").innerHTML="";renderCls()}
+  d[k]=e.target.value;save();if(k==="pv"||k==="pvmax"||k==="pd"||k==="pdmax")bars();if(k==="pd"||k==="pavor")pavor();if(k==="hab"||k==="equip")notasPrev();if(k==="perfil"){impPick=false;msg("");$("#acts").innerHTML="";renderCls()}
 });
 
 /* dados: menu de passos */
@@ -514,6 +532,37 @@ document.addEventListener("click",e=>{
   }
   closeMenu();
 });
+/* painéis (Habilidades/Equipamento, Settings, Relações, Rolagem personalizada): arraste pelo título; some ao fechar e volta ao centro ao abrir */
+(function(){
+  const defs=[["#notas",".nt",".nth"],["#sett",".rp","h2"],["#rels",".rp","h2"],["#cust",".rp","h2"]];
+  defs.forEach(([ov,pn,hd])=>{
+    const o=document.querySelector(ov),p=o&&o.querySelector(pn),h=p&&p.querySelector(hd);if(!h)return;
+    h.classList.add("pdrag");p.classList.add("pnl-box");
+    let x=0,y=0,d=null;
+    const put=()=>{p.style.transform=x||y?"translate("+x+"px,"+y+"px)":""};
+    h.addEventListener("pointerdown",e=>{
+      if(e.button>0||e.target.closest("button,input,textarea,select"))return;
+      d={sx:e.clientX,sy:e.clientY,x,y};h.classList.add("mv");
+      try{h.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();
+    });
+    h.addEventListener("pointermove",e=>{
+      if(!d)return;
+      const r=p.getBoundingClientRect(),W=innerWidth,H=innerHeight;
+      let nx=d.x+e.clientX-d.sx,ny=d.y+e.clientY-d.sy;
+      /* não deixa o título sair da tela */
+      const dx=nx-x,dy=ny-y;
+      if(r.left+dx>W-80)nx=x+(W-80-r.left);if(r.right+dx<80)nx=x+(80-r.right);
+      if(r.top+dy<0)ny=y-r.top;if(r.top+dy>H-40)ny=y+(H-40-r.top);
+      x=nx;y=ny;put();
+    });
+    const end=()=>{if(!d)return;d=null;h.classList.remove("mv");o._drag=Date.now()};
+    h.addEventListener("pointerup",end);h.addEventListener("pointercancel",end);
+    h.addEventListener("dblclick",e=>{if(!e.target.closest("button")){x=0;y=0;put()}});     // duplo clique no título: volta ao centro
+    new MutationObserver(()=>{if(o.hidden){x=0;y=0;put()}}).observe(o,{attributes:true,attributeFilter:["hidden"]});
+    /* soltar o mouse fora do painel depois de arrastar não pode contar como "clicar fora" */
+    o.addEventListener("click",e=>{if(e.target===o&&Date.now()-(o._drag||0)<250)e.stopImmediatePropagation()},true);
+  });
+})();
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMenu();closeRoll();$("#rels").hidden=true;$("#cust").hidden=true;$("#sett").hidden=true;if(!$("#notas").hidden)fecharNota()}});
 
 /* ===== física de dados (corpo rígido, sem dependências) ===== */
@@ -927,6 +976,7 @@ const metaOBR=()=>{const X=window.OBRX||{};return{pid:String(X.id||""),gm:!!(X.g
 function obrSend(p){
   const X=window.OBRX;if(!X||typeof ENG==="undefined")return;
   if(!p.ds&&window.DICE)p.ds=DICE.mine();
+  p.t=Date.now();
   X.OBR.broadcast.sendMessage(ENG.CH.roll,p,{destination:npcOculto()?"LOCAL":"ALL"}).catch(()=>{});
 }
 /* mostra o resultado refeito aqui e manda o mesmo resultado (sem animação) para a mesa */
@@ -954,10 +1004,19 @@ function analise(i,s){
 function prontidao(i){
   const r=LR.res[i];if(!r||d.pro||r[2]===1||(+d.pd||0)<PD_PRONT)return;
   const o=r[2],f=r[1];let nv=0,seed=0,ms=0,fl=false;
-  if(window.OBRX&&typeof ENG!=="undefined"){
+  if(window.OBRX&&typeof ENG!=="undefined"&&!LR.busy){
     seed=window.crypto.getRandomValues(new Uint32Array(1))[0];
-    try{const sim=new ENG.Sim([[r[0],f]],seed),rs=sim.runAll();nv=rs[0][2];ms=Math.min(9000,sim.W.t*1000+600);fl=!!d.foco&&sim.hits()[0]}catch(e){nv=0}
+    let sim=null;try{sim=new ENG.Sim([[r[0],f]],seed)}catch(e){sim=null}
+    if(sim){
+      LR.busy=true;                                  // o cálculo roda em fatias: evita um segundo clique enquanto isso
+      sim.runAllAsync().then(rs=>{nv=rs[0][2];ms=Math.min(9000,sim.W.t*1000+600);fl=!!d.foco&&sim.hits()[0]}).catch(()=>{nv=0}).then(()=>{LR.busy=false;prontidaoFim(i,o,f,nv,seed,ms,fl)});
+      return;
+    }
   }
+  prontidaoFim(i,o,f,nv,seed,ms,fl);
+}
+function prontidaoFim(i,o,f,nv,seed,ms,fl){
+  const r=LR.res[i];if(!r)return;
   if(!nv){nv=rolarDados("1d"+f).total;seed=0;ms=0}
   d.pro=true;d.pd=(+d.pd||0)-PD_PRONT;syncPD();bars();save();renderCls();
   r[2]=nv;r[3]=fl;LR.acts.push("Prontidão (−"+PD_PRONT+" PD): "+r[0]+" "+o+"→"+nv+(fl?" · Foco ×2":""));LR.lastAn=-1;
@@ -1157,24 +1216,29 @@ function npcOculto(){
 function throwOBR(list,pv,rb,render){
   const X=window.OBRX;
   if(!X||typeof ENG==="undefined")return false;
-  const seed=window.crypto.getRandomValues(new Uint32Array(1))[0];
-  let res=null,ms=3500,dbl=list.map(()=>false);const foco=!!d.foco;
-  try{const sim=new ENG.Sim(list.map(([n,f])=>[n,f]),seed);res=sim.runAll();ms=Math.min(9000,sim.W.t*1000+600);if(foco)dbl=sim.hits()}catch(e){res=null;dbl=list.map(()=>false)}
-  if(!res)res=list.map(([n,f])=>[n,f,rolarDados("1d"+f).total]);
-  /* Foco: o dado que parou com o centro sobre o círculo 2x vale o dobro (a face de cima continua a mesma) */
-  res=res.map((r,i)=>[r[0],r[1],r[2],!!dbl[i]]);
-  res.forEach(r=>{if(r[3])rollBuff.push("Foco: "+r[0]+" caiu no 2× ("+r[2]+"→"+r[2]*2+")")});
-  const o=render(res);
-  const who=((d.nome||"")+" "+(d.sob||"")).trim()||X.name||"Jogador";
-  const kinds=list.map((_,i)=>pv&&i===2?"pv":rb&&i===list.length-1?"rel":"");
-  const tr=o.rows.filter(r=>r.l==="Valor do teste"||r.l==="Total").pop();
-  const text=who+" · "+rollTitle+": "+(tr?tr.v:res.map(r=>r[2]).join(", "))+(o.crit?" ("+o.crit.t+")":"");
-  const payload={id:String(Date.now()),seed,who,color:X.color,title:rollTitle,list:list.map(([n,f])=>[n,f]),kinds,ds:window.DICE?DICE.mine():null,res:res.map(r=>r[2]),dbl:res.map(r=>!!r[3]),foco,...metaOBR(),anim:true,rows:o.rows,crit:o.crit,note:o.note,text};
-  if(LR){LR.who=who;LR.color=X.color;LR.kinds=kinds;LR.seed=seed;LR.foco=foco}
-  /* NPC com o olho fechado: o dado cai só para o mestre (destino LOCAL), os outros jogadores não recebem nada */
-  X.OBR.broadcast.sendMessage(ENG.CH.roll,payload,{destination:npcOculto()?"LOCAL":"ALL"}).catch(()=>{});
+  const seed=window.crypto.getRandomValues(new Uint32Array(1))[0],foco=!!d.foco;
+  /* a tela já mostra "rolando" e o cálculo do resultado roda em fatias: a ficha não congela (antes travava até 0,5 s com vários dados) */
   rolling=true;$("#roll").hidden=false;$("#rres").innerHTML="";$("#acts").innerHTML="";
-  setTimeout(()=>{rolling=false;$("#rres").innerHTML=o.html;showActs()},ms);
+  const fin=(res,ms,dbl)=>{
+    if(!res)res=list.map(([n,f])=>[n,f,rolarDados("1d"+f).total]);
+    /* Foco: o dado que parou com o centro sobre o círculo 2x vale o dobro (a face de cima continua a mesma) */
+    res=res.map((r,i)=>[r[0],r[1],r[2],!!dbl[i]]);
+    res.forEach(r=>{if(r[3])rollBuff.push("Foco: "+r[0]+" caiu no 2× ("+r[2]+"→"+r[2]*2+")")});
+    const o=render(res);
+    const who=((d.nome||"")+" "+(d.sob||"")).trim()||X.name||"Jogador";
+    const kinds=list.map((_,i)=>pv&&i===2?"pv":rb&&i===list.length-1?"rel":"");
+    const tr=o.rows.filter(r=>r.l==="Valor do teste"||r.l==="Total").pop();
+    const text=who+" · "+rollTitle+": "+(tr?tr.v:res.map(r=>r[2]).join(", "))+(o.crit?" ("+o.crit.t+")":"");
+    const payload={id:String(Date.now()),t:Date.now(),seed,who,color:X.color,title:rollTitle,list:list.map(([n,f])=>[n,f]),kinds,ds:window.DICE?DICE.mine():null,res:res.map(r=>r[2]),dbl:res.map(r=>!!r[3]),foco,...metaOBR(),anim:true,rows:o.rows,crit:o.crit,note:o.note,text};
+    if(LR){LR.who=who;LR.color=X.color;LR.kinds=kinds;LR.seed=seed;LR.foco=foco}
+    /* NPC com o olho fechado: o dado cai só para o mestre (destino LOCAL), os outros jogadores não recebem nada */
+    X.OBR.broadcast.sendMessage(ENG.CH.roll,payload,{destination:npcOculto()?"LOCAL":"ALL"}).catch(()=>{});
+    setTimeout(()=>{rolling=false;$("#rres").innerHTML=o.html;showActs()},ms);
+  };
+  let sim=null;
+  try{sim=new ENG.Sim(list.map(([n,f])=>[n,f]),seed)}catch(e){sim=null}
+  if(!sim){fin(null,3500,list.map(()=>false));return true}
+  sim.runAllAsync().then(res=>fin(res,Math.min(9000,sim.W.t*1000+600),foco?sim.hits():list.map(()=>false))).catch(()=>fin(null,3500,list.map(()=>false)));
   return true;
 }
 function throwDice(list,pv,rb,render){
@@ -1271,8 +1335,8 @@ window.fichaRecarregar=()=>{
 };
 </script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.12.0";
-import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.12.0";
+import {loadOBR,ready} from "./obr.js?v=2.13.1";
+import {LS,unpack} from "./mesa-lib.js?v=2.13.1";
 (async()=>{
   if(document.documentElement.classList.contains("view"))return;
   const OBR=await loadOBR();
@@ -1283,16 +1347,11 @@ import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.12.0";
   window.OBRX={OBR,name,color,id:OBR.player.id,gm};
   if(window.__SHEETKEY!=="ficha-ordem")return;        // ficha de NPC não vai para a mesa
 
-  /* ao salvar, atualiza o meu cartão na mesa (direto daqui; não depende do segundo plano) */
+  /* ao salvar, avisa o segundo plano (que publica só o que mudou); antes a ficha também publicava tudo sozinha, em dobro */
   let t=0;
-  const pub=async()=>{
-    try{const m=await OBR.player.getMetadata();if(!(m&&m[KEY]))return;      // só se eu entrei na mesa
-      await OBR.player.setMetadata({[KEY]:await buildEntry(name)})}
-    catch(e){console.warn("[mesa] não consegui atualizar o meu cartão",e)}
-  };
-  const sched=()=>{clearTimeout(t);t=setTimeout(pub,700)};
+  const nudge=()=>{clearTimeout(t);t=setTimeout(()=>OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"}).catch(()=>{}),150)};
   const orig=Storage.prototype.setItem;
-  Storage.prototype.setItem=function(k){const r=orig.apply(this,arguments);if(k===LS.sheet||k===LS.img)sched();return r};
+  Storage.prototype.setItem=function(k){const r=orig.apply(this,arguments);if(k===LS.sheet||k===LS.img)nudge();return r};
 
   /* o mestre editou a minha ficha com esta janela aberta: aplica aqui também */
   OBR.broadcast.onMessage("ordem.mesa/edit",async ev=>{
@@ -1322,7 +1381,7 @@ import {KEY,LS,buildEntry,unpack} from "./mesa-lib.js?v=2.12.0";
   /* se a ficha mudar em outra janela (ex.: o mestre ajustou o PV de um NPC), atualiza aqui */
   addEventListener("storage",function(e){if(e.key===window.__SHEETKEY&&window.fichaRecarregar)window.fichaRecarregar()});
   ex.onclick=function(){
-    var sheet="{}",img=null;try{sheet=localStorage.getItem("ficha-ordem")||"{}";img=localStorage.getItem("ficha-ordem-img")}catch(e){}
+    if(window.__flushSave)window.__flushSave();var sheet="{}",img=null;try{sheet=localStorage.getItem("ficha-ordem")||"{}";img=localStorage.getItem("ficha-ordem-img")}catch(e){}
     var nm="ficha";try{var d=JSON.parse(sheet);nm=((d.nome||"")+"-"+(d.sob||"")).replace(/[^\w-]+/g,"")||"ficha"}catch(e){}
     var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify({ficha:"ordem",v:1,sheet:sheet,img:img})],{type:"application/json"}));
     a.download=nm+".json";document.body.append(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(a.href)},500);

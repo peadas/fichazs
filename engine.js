@@ -220,7 +220,7 @@ const NUM=(f,i)=>PAREADOS.includes(f)?ENG.analyze(f).lab[i]:i+1;            // �
 const IDX=(f,n)=>PAREADOS.includes(f)?ENG.analyze(f).lab.indexOf(n):n-1;      // número -> índice da face
 const cache={};
 /* analisa o poliedro de um dado: faces, vértices e o "casco" usado pela física */
-const ENG={PH,GEO,faces,mulberry32,NUM,IDX,VER:"2.12.0",FORMAS:"d14 = poliedro antigo, d16 = barril octogonal, d18 = cubo chanfrado"};
+const ENG={PH,GEO,faces,mulberry32,NUM,IDX,VER:"2.13.1",FORMAS:"d14 = poliedro antigo, d16 = barril octogonal, d18 = cubo chanfrado"};
 ENG.analyze=function(f){
   if(cache[f])return cache[f];
   const g=GEO[f](),Fs=faces(g.index?g.toNonIndexed():g),vm={},V=[];
@@ -278,6 +278,22 @@ class Sim{
   hits(){const F=ENG.FOCO;return this.bodies.map(b=>{const dx=b.p[0]-F.x,dz=b.p[2]-F.z;return dx*dx+dz*dz<F.r*F.r})}
   /* roda tudo de uma vez (sem desenhar): é assim que a ficha descobre o resultado */
   runAll(){let n=0;while(!this.finished&&n++<4000)this.stepOnce();if(!this.finished)throw new Error("simulação não terminou");return this.results}
+  /* igual ao runAll, mas em fatias de ~6 ms: a ficha/menu não congelam enquanto o resultado é calculado (o resultado é idêntico) */
+  runAllAsync(slice=6){
+    return new Promise((ok,no)=>{
+      let n=0;
+      const go=()=>{
+        try{
+          const t0=performance.now();
+          while(!this.finished&&n<4000){this.stepOnce();n++;if((n&7)===0&&performance.now()-t0>slice)break}
+          if(this.finished)return ok(this.results);
+          if(n>=4000)return no(new Error("simulação não terminou"));
+          setTimeout(go,0);
+        }catch(e){no(e)}
+      };
+      go();
+    });
+  }
 }
 ENG.Sim=Sim;
 
@@ -300,11 +316,36 @@ ENG.clean=function(p){
   const cls=s=>str(s,20).split(/\s+/).filter(t=>CLS.includes(t)).join(" ");
   const rows=(Array.isArray(p.rows)?p.rows:[]).slice(0,14).map(r=>({l:str(r&&r.l,60),v:str(r&&r.v,12),c:cls(r&&r.c)}));
   const crit=p.crit&&typeof p.crit==="object"?{t:str(p.crit.t,50),c:cls(p.crit.c)}:null;
-  return{id:str(p.id,32),seed:(+p.seed)>>>0,who:str(p.who,40)||"Jogador",color:/^#[0-9a-f]{6}$/i.test(p.color)?p.color:"#ecc962",
+  return{id:str(p.id,32),t:Math.max(0,Math.floor(+p.t||0)),seed:(+p.seed)>>>0,who:str(p.who,40)||"Jogador",color:/^#[0-9a-f]{6}$/i.test(p.color)?p.color:"#ecc962",
     pid:str(p.pid,64),gm:!!p.gm,hid:!!p.hid,foco:!!p.foco,ds:window.DICE?DICE.clean(p.ds):null,dbl,title:str(p.title,40),list,kinds,res,anim:p.anim!==false,rows,crit,note:p.note?str(p.note,120):"",text:str(p.text,160)};
 };
 ENG.b64=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 ENG.unb64=s=>JSON.parse(decodeURIComponent(escape(atob(String(s).replace(/-/g,"+").replace(/_/g,"/")))));
+/* ---------- rolagens velhas: idade da mensagem e repetição ----------
+   Cada rolagem leva o horário de quem rolou (t). Os relógios de cada computador podem diferir, então a idade é medida contra
+   o MENOR atraso já visto daquele remetente (o relógio dele fica "zerado" na primeira mensagem). Mensagem que ficou presa
+   (aba em segundo plano, internet caindo) e chega muito depois aparece com idade grande e é descartada. */
+const OFF=new Map(),BAD=new Map();
+ENG.age=function(pid,t){
+  t=+t||0;if(!t)return 0;
+  const k=String(pid||"?"),off=Date.now()-t,m=OFF.get(k);
+  if(m===undefined||off<m){OFF.set(k,off);BAD.delete(k);if(OFF.size>64)OFF.delete(OFF.keys().next().value);return 0}
+  const a=off-m;
+  if(a<=ENG.MAX_AGE){BAD.delete(k);return a}
+  /* continua "velho" por mais de 20 s: não é mensagem presa, é o relógio do remetente (ou o meu) que foi ajustado: recalibra */
+  const b=BAD.get(k);
+  if(!b){BAD.set(k,Date.now());return a}
+  if(Date.now()-b>20000){OFF.set(k,off);BAD.delete(k);return 0}
+  return a;
+};
+ENG.MAX_AGE=15000;                  // rolagem com mais que isso de idade não é mais animada
+const SEEN=new Map();
+ENG.seen=function(p){               // true se esta rolagem (mesmo remetente, id e semente) já foi vista aqui
+  const k=p.pid+"|"+p.id+"|"+p.seed+"|"+(p.anim?1:0)+"|"+(p.rows?p.rows.length:0)+"|"+(p.res||[]).join(",");
+  if(SEEN.has(k))return true;
+  SEEN.set(k,Date.now());if(SEEN.size>80)SEEN.delete(SEEN.keys().next().value);
+  return false;
+};
 ENG.CH={roll:"ordem.ficha/roll",feed:"ordem.ficha/feed",idle:"ordem.ficha/idle"};
 
 root.ENG=ENG;

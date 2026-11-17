@@ -23,12 +23,13 @@ button:not(.die):not(.bx):not(.vs):not(.nm):hover,.card:hover,.chip:hover,.tag:h
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}.ef-nev i,.ef-nev{animation:none!important}}
 
 /* névoa */
-.ef-nev{position:fixed;inset:0;overflow:hidden;pointer-events:none}
+.ef-nev{position:fixed;inset:0;overflow:hidden;pointer-events:none;contain:strict}
 .ef-nev i{position:absolute;left:-1280px;top:-1280px;right:0;bottom:0;background:url("${base}nevoa.png") 0 0/var(--sz,512px) var(--sz,512px) repeat;will-change:transform}
-.ef-nev.back{z-index:1}.ef-nev.front{z-index:6;mix-blend-mode:screen}
+.ef-nev.back{z-index:1}.ef-nev.front{z-index:6}
 .ef-nev.back i:nth-child(1){opacity:.20;animation:ef-nevoa-a 95s linear infinite}
 .ef-nev.back i:nth-child(2){opacity:.13;--sz:640px;animation:ef-nevoa-b 150s linear infinite}
-.ef-nev.front i{opacity:.07;--sz:768px;animation:ef-nevoa-a 120s linear infinite}
+.ef-nev.front i{opacity:.05;--sz:768px;animation:ef-nevoa-a 120s linear infinite}
+html.ef-off .ef-nev i,html.ef-off .ef-nev{animation-play-state:paused!important}
 /* modo Jujutsu: a névoa vira energia amaldiçoada, azulada e translúcida (a textura vira máscara de uma cor que respira) */
 @keyframes ef-ce{0%,100%{filter:brightness(.9) saturate(1)}50%{filter:brightness(1.25) saturate(1.3)}}
 html.ef-jj .ef-nev i{background:linear-gradient(115deg,#1d4ed8 0%,#3b82f6 38%,#7c5cff 72%,#22d3ee 100%);background-size:100% 100%;
@@ -38,6 +39,9 @@ html.ef-jj .ef-nev.back i:nth-child(2){opacity:.24}
 html.ef-jj .ef-nev.front i{opacity:.14}
 html.ef-jj .ef-nev.back{animation:ef-ce 7s ease-in-out infinite}
 html.ef-jj .ef-nev.front{animation:ef-ce 9s ease-in-out infinite reverse}
+/* dica de desempenho: pausa a animação quando a janela está escondida ou o computador é fraco */
+html.ef-lite .ef-nev.front{display:none}
+html.ef-lite .ef-nev.back i:nth-child(2){display:none}
 body>main{position:relative;z-index:2}
 `;
   var st=document.createElement("style");st.textContent=css;document.head.appendChild(st);
@@ -49,15 +53,23 @@ body>main{position:relative;z-index:2}
   /* modo Jujutsu (Settings da ficha): vale para a ficha e para o menu da Mesa. A ficha marca a classe "jujutsu";
      o menu (e qualquer outra janela) lê o mesmo dado salvo da ficha e acompanha quando ele muda. */
   var root=document.documentElement;
+  var lastRaw=null,lastJJ=false;
   function jjOn(){
     if(root.classList.contains("jujutsu"))return true;
-    try{var d=JSON.parse(localStorage.getItem(window.__SHEETKEY||"ficha-ordem")||"{}");return !!(d&&d.jujutsu)}catch(e){return false}
+    try{
+      var raw=localStorage.getItem(window.__SHEETKEY||"ficha-ordem")||"";
+      if(raw===lastRaw)return lastJJ;                     // nada mudou: não refaz o JSON.parse da ficha inteira
+      lastRaw=raw;lastJJ=/"jujutsu"\s*:\s*true/.test(raw);return lastJJ;
+    }catch(e){return false}
   }
   function jjSync(){root.classList.toggle("ef-jj",jjOn())}
   jjSync();
   addEventListener("storage",jjSync);
-  setInterval(jjSync,1500);
+  setInterval(function(){if(!document.hidden)jjSync()},6000);
   try{new MutationObserver(jjSync).observe(root,{attributes:true,attributeFilter:["class"]})}catch(e){}
+  /* janela escondida: pausa a névoa (não gasta GPU à toa); computador fraco: usa só uma camada */
+  document.addEventListener("visibilitychange",function(){root.classList.toggle("ef-off",document.hidden)});
+  try{if((navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4)root.classList.add("ef-lite")}catch(e){}
 
   /* letras pulando: divide o texto em letras na primeira vez que o mouse passa */
   var SEL="h1,h2,h3,.nm,.tag,.chip,.sec,.rl,.vl,label,button:not(.die):not(.bx):not(.vs):not(.dt):not(.ft):not(.at)";

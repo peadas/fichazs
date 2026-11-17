@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@3.1.0/+esm" crossorigin>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dados</title>
@@ -145,22 +148,22 @@ body.arr #esc{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outli
 </style>
 </head>
 <body>
-<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.12.0" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.12.0" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
+<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.13.1" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.13.1" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
 <div id="hist" aria-hidden="true"></div>
 <div id="hud" aria-hidden="true"></div>
 <div id="esc" aria-hidden="true"></div>
 <div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
 <div id="hbar"><span>Arraste os cartões e a mesa</span><button id="t-menos" title="Mesa menor" aria-label="Mesa menor">Mesa −</button><button id="t-mais" title="Mesa maior" aria-label="Mesa maior">Mesa +</button><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js?v=2.12.0"></script>
-<script src="dice-style.js?v=2.12.0"></script>
+<script src="engine.js?v=2.13.1"></script>
+<script src="dice-style.js?v=2.13.1"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.12.0";
-import {KEY,npcsOf} from "./mesa-lib.js?v=2.12.0";
-import {K_P,K_G,normP,normG,MAXD,ICON} from "./esconder-lib.js?v=2.12.0";
+import {loadOBR,ready} from "./obr.js?v=2.13.1";
+import {KEY,npcsOf,entryOf} from "./mesa-lib.js?v=2.13.1";
+import {K_P,K_G,normP,normG,MAXD,ICON} from "./esconder-lib.js?v=2.13.1";
 const $=s=>document.querySelector(s);
-const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",ESC=qs.get("esc")==="1"&&!standalone,CL=qs.get("cl")==="1"&&!standalone,KEEP=HUD||ESC||CL||qs.get("tray")==="1";
-const CH=ENG.CH,HOLD=4500,CHIP_LIFE=9000;
+const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",ESC=qs.get("esc")==="1"&&!standalone,CL=qs.get("cl")==="1"&&!standalone,KEEP=HUD||ESC||CL||qs.get("tray")==="1"||qs.get("warm")==="1";
+const CH=ENG.CH,HOLD=4000,CHIP_LIFE=9000,QMAX=12000;
 let OBR=null,received=0,idleTimer=0,dsOK=false,myId="";
 const dsMeta=new Map();   // estilo dos dados de cada jogador (metadados do Owlbear)
 const dsFor=p=>{if(!window.DICE)return null;return DICE.clean(dsMeta.get(String(p.pid)))||DICE.clean(p.ds)||(OBR&&p.pid&&String(p.pid)===myId?DICE.mine():null)};
@@ -288,8 +291,9 @@ function play2d(p){
   const ds=p.list.map(([nm,f],i)=>({f,k:KS[p.kinds[i]]||KS[""],st:window.DICE&&p.ds&&p.ds[p.kinds[i]||""]||null,kd:p.kinds[i]||"",res:p.res[i],x:w/2+(i-(n-1)/2)*rad*2.5+(rnd()-.5)*rad,y:-rad*(1+i*.8),
     vx:(rnd()-.5)*110,vy:0,a:rnd()*6.283,w:(rnd()<.5?-1:1)*(9+rnd()*9),stop:1300+i*160+rnd()*350,n:1+Math.floor(rnd()*f),tn:0,done:false}));
   const lastStop=Math.max(...ds.map(d=>d.stop));
-  cur={p,mode:"2d"};
+  cur={p,mode:"2d",born:Date.now(),shown:false};
   const T0=performance.now();let last=T0,phase="roll",t1=0,al=1;
+  cur.skipHold=()=>{if(phase==="hold")t1=-1e9};
   const poly=d=>{const S=SIDES[d.f],off=d.f===6?Math.PI/4:-Math.PI/2;x.beginPath();for(let i=0;i<S;i++){const q=off+i*2*Math.PI/S,px=Math.cos(q)*rad,py=Math.sin(q)*rad;i?x.lineTo(px,py):x.moveTo(px,py)}x.closePath()};
   const frame=now=>{
     raf2=0;
@@ -310,7 +314,7 @@ function play2d(p){
       x.fillStyle=d.k.t;x.textAlign="center";x.textBaseline="middle";x.font=`italic 700 ${Math.round(rad*(d.n>9?.85:1.1))}px Georgia,serif`;x.fillText(d.n,0,rad*.05);x.restore();
     }
     x.globalAlpha=1;
-    if(phase==="roll"&&t>lastStop+350){phase="hold";t1=now;showResult(p);if(p.dbl.some(Boolean))flashHit()}
+    if(phase==="roll"&&t>lastStop+350){phase="hold";t1=now;if(cur)cur.shown=true;showResult(p);if(p.dbl.some(Boolean))flashHit()}
     else if(phase==="hold"&&now-t1>=(queue.length?1300:HOLD)){phase="out";t1=now}
     else if(phase==="out"){al=Math.max(0,1-(now-t1)/300);if(al<=0){x.clearRect(0,0,w,h);cv.hidden=true;cur=null;if(!queue.length)hideTray();pump();return}}
     raf2=requestAnimationFrame(frame);
@@ -374,14 +378,39 @@ function enqueue(raw,seq){
   clearTimeout(idleTimer);
   const p=ENG.clean(raw);if(!p)return maybeIdle();
   p.ds=window.DICE?DICE.clean(raw&&raw.ds):null;   // não depende do engine.js em cache
-  queue.push(p);pump();
+  /* rolagem velha (chegou presa) ou repetida: não anima de novo */
+  if(ENG.seen(p))return maybeIdle();
+  {const a=ENG.age(p.pid,p.t);if(a>60000)return maybeIdle();if(a>ENG.MAX_AGE)p.anim=false}
+  p.qa=Date.now();
+  /* tem dado parado só esperando o tempo de mostrar o resultado: libera a mesa para o novo já */
+  if(cur&&cur.skipHold)cur.skipHold();
+  queue.push(p);
+  /* fila grande (várias rolagens seguidas): as mais antigas só mostram o resultado, sem animar */
+  while(queue.length>2){const o=queue.shift();showResult(o)}
+  pump();
 }
+/* a aba/janela ficou escondida: o navegador congela as animações. Ao voltar, o que ficou para trás aparece só como resultado */
+function abortCur(){
+  const c=cur;if(!c)return;
+  cancelAnimationFrame(raf);raf=0;cancelAnimationFrame(raf2);raf2=0;
+  if(c.mode==="2d"){const cv=$("#cv2");try{cv.getContext("2d").clearRect(0,0,cv.width,cv.height)}catch(e){}cv.hidden=true}
+  else{disposeGroup(c);try{R.render(scene,cam)}catch(e){}}
+  if(!c.shown)showResult(c.p);
+  cur=null;if(!queue.length)hideTray();
+}
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden)return;
+  const stale=queue.splice(0);
+  if(cur&&Date.now()-(cur.born||0)>2500)abortCur();
+  stale.forEach(p=>showResult(p));
+  pump();
+});
 function pump(){
   if(cur)return;
   if(threeOK===null||!dsOK)return;          // ainda decidindo se o three.js carregou / lendo o estilo dos dados
   const p=queue.shift();if(!p)return maybeIdle();
   p.ds=dsFor(p);
-  if(!p.anim){showResult(p);return pump()}
+  if(!p.anim||document.hidden||Date.now()-(p.qa||Date.now())>QMAX){showResult(p);return pump()}
   if(threeOK&&!glFailed){
     const meshes=[];
     try{
@@ -394,7 +423,7 @@ function pump(){
         const sh=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:shTex,transparent:true,depthWrite:false}));
         sh.frustumCulled=false;sh.rotation.x=-Math.PI/2;m.userData.sh=sh;scene.add(m,sh);meshes.push(m);
       });
-      cur={p,sim,meshes,phase:"roll",acc:0,last:performance.now(),t0:0};
+      cur={p,sim,meshes,phase:"roll",acc:0,last:performance.now(),t0:0,born:Date.now(),shown:false,skipHold(){if(this.phase==="hold")this.t0=-1e9}};
       sync(cur);
     }catch(e){
       console.warn("[ficha] 3D indisponível, usando os dados em 2D",e);
@@ -421,7 +450,8 @@ function loop(now){
     if($("#cv").clientWidth!==vw||$("#cv").clientHeight!==vh)setView();        // a janela pode ganhar tamanho depois de abrir
     const dt=Math.min(.1,Math.max(0,(now-c.last)/1000));c.last=now;
     if(c.phase==="roll"){
-      c.acc+=dt;let n=0;
+      c.acc+=dt*(queue.length?1.7:1);let n=0;   // com rolagens esperando, a física anda mais rápido (o resultado é o mesmo: o passo é fixo)
+      
       while(c.acc>=ENG.DT&&!c.sim.finished&&n++<40){c.sim.stepOnce();c.acc-=ENG.DT}
       sync(c);
       if(c.sim.finished){
@@ -440,7 +470,7 @@ function loop(now){
     if(c.phase==="snap"){
       const k=Math.min(1,(now-c.t0)/300);
       c.fix.forEach(f=>{c.meshes[f.i].quaternion.copy(f.from).slerp(f.to,k)});
-      if(k>=1){c.phase="hold";c.t0=now;showResult(c.p);if(c.p.dbl.some(Boolean))flashHit()}
+      if(k>=1){c.phase="hold";c.t0=now;c.shown=true;showResult(c.p);if(c.p.dbl.some(Boolean))flashHit()}
     }else if(c.phase==="hold"){
       if(now-c.t0>=(queue.length?1300:HOLD)){c.phase="out";c.t0=now}
     }else if(c.phase==="out"){
@@ -469,6 +499,24 @@ function maybeIdle(){
   if(!KEEP)idleTimer=setTimeout(()=>{if(mid)OBR.modal.close(mid).catch(()=>{})},12000);   // garantia: fecha sozinha
 }
 
+
+/* ---------- jogadores da sala: cópia local alimentada pelos eventos do Owlbear ----------
+   Antes cada parte desta camada (cartões, painel Esconder…) pedia nome, cor, metadados e a lista de jogadores ao Owlbear
+   a cada mudança e a cada 3-4 s. Agora é UMA leitura inicial + os eventos, e todos usam esta cópia. */
+const PL={me:{id:"",name:"",color:"#ecc962",role:"PLAYER",metadata:{}},party:[],subs:new Set()};
+let plT=0;
+const plFire=()=>{clearTimeout(plT);plT=setTimeout(()=>PL.subs.forEach(f=>{try{f()}catch(e){console.warn("[sala]",e)}}),90)};
+async function plLoad(){
+  try{
+    const [name,color,role,metadata,party]=await Promise.all([OBR.player.getName(),OBR.player.getColor(),OBR.player.getRole(),OBR.player.getMetadata(),OBR.party.getPlayers()]);
+    PL.me={id:String(OBR.player.id||""),name,color,role,metadata:metadata||{}};PL.party=party||[];
+  }catch(e){console.warn("[sala] não consegui ler os jogadores",e)}
+}
+function plStart(){
+  OBR.party.onChange(ps=>{PL.party=ps||[];plFire()});
+  OBR.player.onChange(pl=>{PL.me={...PL.me,id:String(pl.id||PL.me.id),name:pl.name!=null?pl.name:PL.me.name,color:pl.color||PL.me.color,role:pl.role||PL.me.role,metadata:pl.metadata||{}};plFire()});
+  setInterval(async()=>{await plLoad();plFire()},15000);       // garantia
+}
 
 /* ---------- cartões dos jogadores na tela ---------- */
 const lsg=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lss=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
@@ -600,7 +648,7 @@ async function quickRoll(m){
   let res,dbl=list.map(()=>false),ms=3500;
   try{
     if(!window.THREE)throw new Error("sem three");
-    const sim=new ENG.Sim(list.map(([n,f])=>[n,f]),seed);res=sim.runAll();ms=Math.min(9000,Math.round(sim.W.t*1000)+700);if(foco)dbl=sim.hits();
+    const sim=new ENG.Sim(list.map(([n,f])=>[n,f]),seed);res=await sim.runAllAsync();ms=Math.min(9000,Math.round(sim.W.t*1000)+700);if(foco)dbl=sim.hits();
   }catch(e){res=list.map(([n,f])=>[n,f,1+Math.floor(Math.random()*f)]);dbl=list.map(()=>false)}   // os outros jogadores giram o dado até o número certo
   let tot=mod;
   const rows=res.map(([n,f,x],i)=>{const v=x*(dbl[i]?2:1);tot+=ok[i][0]*v;return{l:n,v:(ok[i][0]<0?"−":"")+v,c:dbl[i]?"x2":""}});
@@ -608,7 +656,7 @@ async function quickRoll(m){
   const showTot=!m.esc||m.esc.k==="climb"||(m.esc.k==="bal"&&m.esc.kind==="s");
   if(showTot&&(res.length>1||mod))rows.push({l:"Total",v:String(tot),c:"ok"});
   const title=(m.title?String(m.title):"Rolagem "+exp).slice(0,40);
-  const payload={id:String(Date.now()),seed,who,color:meCache.color,title,list:list.map(([n,f])=>[n,f]),kinds:list.map((_,i)=>["","pv","rel"].includes((m.kinds||[])[i])?m.kinds[i]:""),ds:window.DICE?DICE.mine():null,res:res.map(r=>r[2]),dbl,foco,pid:String(meCache.id),gm:!!meCache.gm,hid:!!(m.esc&&(m.esc.k==="hide"||m.esc.k==="add")),anim:true,rows,crit:null,note:foco&&dbl.some(Boolean)?"Foco: caiu no 2×":"",text:who+" · "+title+(showTot?": "+tot:"")};
+  const payload={id:String(Date.now()),t:Date.now(),seed,who,color:meCache.color,title,list:list.map(([n,f])=>[n,f]),kinds:list.map((_,i)=>["","pv","rel"].includes((m.kinds||[])[i])?m.kinds[i]:""),ds:window.DICE?DICE.mine():null,res:res.map(r=>r[2]),dbl,foco,pid:String(meCache.id),gm:!!meCache.gm,hid:!!(m.esc&&(m.esc.k==="hide"||m.esc.k==="add")),anim:true,rows,crit:null,note:foco&&dbl.some(Boolean)?"Foco: caiu no 2×":"",text:who+" · "+title+(showTot?": "+tot:"")};
   OBR.broadcast.sendMessage(CH.roll,payload,{destination:m.test?"LOCAL":"ALL"}).catch(()=>{});
   if(m.esc)setTimeout(()=>escStore(m.esc,res.map(r=>[r[1],r[2]]),list.map(l=>l[0])),ms);   // grava o resultado quando o dado para de girar
 }
@@ -723,21 +771,17 @@ function startHud(){
     layout();
     $("#hvazio").style.display=ARR&&!ents.length?"block":"none";
   }
-  async function pull(){
+  function pull(){
     try{
-      const me={id:OBR.player.id,name:await OBR.player.getName(),color:await OBR.player.getColor(),metadata:await OBR.player.getMetadata()};
-      const base=[me,...await OBR.party.getPlayers()],out=[];
-      base.forEach(p=>{const e=p.metadata&&p.metadata[KEY];if(e&&typeof e==="object")out.push({id:String(p.id),nome:String(e.nome||p.name||"Jogador").slice(0,60),color:p.color,e})});
+      const base=[PL.me,...PL.party],out=[];
+      base.forEach(p=>{const e=entryOf(p);if(e)out.push({id:String(p.id),nome:String(e.nome||p.name||"Jogador").slice(0,60),color:p.color,e})});
       npcsOf(base).forEach(n=>{const e=n.metadata[KEY];if(e&&typeof e==="object")out.push({id:String(n.id),nome:String(e.nome||n.name||"NPC").slice(0,60),color:n.color,e,npc:1})});
       out.sort((a,b)=>a.id<b.id?-1:1);ents=out;render();
     }catch(e){console.warn("[hud] não consegui ler a mesa",e)}
   }
-  let t=0;const soon=()=>{clearTimeout(t);t=setTimeout(pull,150)};
-  OBR.party.onChange(soon);OBR.player.onChange(soon);
-  setInterval(pull,4000);
+  PL.subs.add(pull);
   addEventListener("resize",()=>layout());
   /* sinal de vida: o segundo plano só reabre esta camada se ela parar de responder */
-  setInterval(()=>OBR.broadcast.sendMessage(CH.idle,{seen:received,idle:false,mid},{destination:"LOCAL"}).catch(()=>{}),15000);
   pull();
 
   /* posição das fotos: o segundo plano põe uma zona de arrastar transparente por cima de cada uma */
@@ -815,15 +859,15 @@ function startEsc(){
       reportAll();
     },120);
   }
-  async function pull(){
+  function pull(){
     try{
-      const me={id:OBR.player.id,role:(await OBR.player.getRole()),name:await OBR.player.getName(),color:await OBR.player.getColor(),metadata:await OBR.player.getMetadata()};
-      myRole=me.role;const all=[me,...await OBR.party.getPlayers()];
+      const me=PL.me;
+      myRole=me.role;const all=[me,...PL.party];
       const gmP=all.find(p=>p.role==="GM"),g=normG(gmP&&gmP.metadata&&gmP.metadata[K_G]);
       if(!g.on&&lsg("esc-on")!=="1"){box.classList.remove("on");sg="";report();return}
       const viewGM=myRole==="GM",now=Date.now();
       const list=all.filter(p=>p.role!=="GM"&&p.metadata&&(p.metadata[KEY]||p.metadata[K_P])).map(p=>{
-        const e=p.metadata[KEY]||{},st=normP(p.metadata[K_P]);
+        const e=entryOf(p)||{},st=normP(p.metadata[K_P]);
         return{id:String(p.id),nome:String(e.nome||p.name||"Jogador").slice(0,40),color:p.color,th:e.th,st,note:st.note&&now-st.note.t<7000&&st.note.k!=="found"?st.note.k:""};
       }).sort((a,b)=>a.id<b.id?-1:1);
       const nsg=JSON.stringify([viewGM,g,list]);
@@ -881,9 +925,9 @@ function startEsc(){
     box.addEventListener("pointerup",up);box.addEventListener("pointercancel",up);
     box.addEventListener("wheel",e=>{e.preventDefault();setScale(scale*(e.deltaY<0?1.08:1/1.08))},{passive:false});
   }
-  try{OBR.party.onChange(pull);OBR.player.onChange(pull)}catch(e){}
+  PL.subs.add(pull);
   addEventListener("resize",()=>{place();report()});
-  pull();setInterval(pull,3000);
+  pull();
 }
 
 /* ---------- início ---------- */
@@ -900,12 +944,14 @@ function startEsc(){
   if(OBR){
     myId=String(OBR.player.id||"");
     const setM=(id,m)=>dsMeta.set(String(id),m&&window.DICE?m[DICE.META]:null);
-    try{OBR.party.onChange(ps=>ps.forEach(pl=>setM(pl.id,pl.metadata)));OBR.player.onChange(pl=>setM(pl.id||myId,pl.metadata))}catch(e){}
-    (async()=>{try{setM(myId,await OBR.player.getMetadata());(await OBR.party.getPlayers()).forEach(pl=>setM(pl.id,pl.metadata))}catch(e){console.warn("[dados] não li o estilo dos jogadores",e)}dsOK=true;pump()})();
+    const feedStyles=()=>{setM(myId,PL.me.metadata);PL.party.forEach(pl=>setM(pl.id,pl.metadata))};
+    PL.subs.add(feedStyles);plStart();
+    (async()=>{await plLoad();feedStyles();dsOK=true;pump();plFire()})();
     setTimeout(()=>{if(!dsOK){dsOK=true;pump()}},1500);
     OBR.broadcast.onMessage(CH.feed,ev=>{const d=ev.data||{};enqueue(d.p,+d.seq||0)});
     OBR.broadcast.sendMessage(CH.idle,{seen:s0,idle:false,mid},{destination:"LOCAL"}).catch(()=>{});
     initTray();
+    if(KEEP)setInterval(()=>OBR.broadcast.sendMessage(CH.idle,{seen:received,idle:false,mid},{destination:"LOCAL"}).catch(()=>{}),15000);   // sinal de vida: o segundo plano só reabre esta camada se ela parar de responder
     if(alwaysOn()&&!ARR)showTray(false);                       // setting "mesa sempre visível"
     if(HUD)startHud();
     if(ESC)startEsc();

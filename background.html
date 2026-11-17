@@ -1,22 +1,32 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
+<head>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@3.1.0/+esm" crossorigin>
+<meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
 <body>
-<script src="engine.js?v=2.12.0"></script>
-<script src="dice-style.js?v=2.12.0"></script>
+<script src="engine.js?v=2.13.1"></script>
+<script src="dice-style.js?v=2.13.1"></script>
 <script type="module">
 /* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
    2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
    3) recebe as edições que o mestre faz na ficha do jogador. */
-import {loadOBR,ready} from "./obr.js?v=2.12.0";
-import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.12.0";
-import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.12.0";
-import {K_C,K_CP,normC,normCP} from "./alcancar-lib.js?v=2.12.0";
-import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET} from "./equilibrio-lib.js?v=2.12.0";
+import {loadOBR,ready} from "./obr.js?v=2.13.1";
+import {VER,KEY,KEY_NPC,KEY_NIMG,KEY_IMG,KEY_Z,LS,store,makePublisher,sigNpcs,sigNpcImgs,buildNpcs,buildNpcImgs,unpack} from "./mesa-lib.js?v=2.13.1";
+import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.13.1";
+import {K_C,K_CP,normC,normCP} from "./alcancar-lib.js?v=2.13.1";
+import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET} from "./equilibrio-lib.js?v=2.13.1";
 (async()=>{
-  const OBR=await loadOBR();
-  if(!OBR||!(await ready(OBR)))return;
+  /* o SDK pode falhar ao carregar (internet instável quando o jogador entra): tenta de novo até conseguir, em vez de ficar morto até o F5 */
+  let OBR=null;
+  for(let n=0;;n++){
+    const o=await loadOBR();
+    if(o){if(!(await ready(o)))return;OBR=o;break}       // carregou mas não está dentro do Owlbear: nada a fazer
+    console.warn("[ficha] sem conexão com o SDK, tentando de novo…");
+    await new Promise(r=>setTimeout(r,Math.min(20000,2000*(n+1))));
+  }
+  addEventListener("unhandledrejection",e=>{console.warn("[ficha] erro solto",e.reason);e.preventDefault()});
   const abs=p=>new URL(p,location.href).href;
   if(window.DICE){DICE.useOBR(OBR);DICE.publish(false)}   // republica o estilo dos dados deste jogador ao entrar na sala
 
@@ -26,26 +36,27 @@ import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET} from "./equilibrio-lib.j
   const log=[];
   const hudOn=()=>store.get("hud-on")!=="0";
 const trayOn=()=>store.get("tray-always")==="1";      // setting "mesa de dados sempre visível"
+const warmOn=()=>store.get("warm")!=="0";             // camada dos dados já aberta e pronta (rolagem aparece na hora); padrão: ligado
 let escRemote=false,amGM=false,myId="";               // Esconder: o mestre mostrou o painel para todos / eu sou o mestre
 let clRemote=false,clShown=0;                         // Equilíbrio > Alcançar: o mestre ativou uma escalada / id da escalada cuja janela já foi aberta
 let balLocal=false;                                    // Equilíbrio > Equilibrar: tenho a janela da balança (mestre com balança ativa, ou o jogador que está nela)
-const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote||clRemote||balLocal;   // a camada dos dados fica aberta durante a escalada (os testes rolam nela)
+const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||balLocal;   // a camada dos dados fica aberta durante a escalada (os testes rolam nela)
   const feed=e=>OBR.broadcast.sendMessage(CH.feed,e,{destination:"LOCAL"}).catch(()=>{});
-  async function openOverlay(e){
+  async function openOverlay(e,tries=0){
     const id="ordem.ficha/overlay/"+Date.now();
     open=true;hello=false;mid=id;lastAct=Date.now();lastTry=Date.now();
-    const q="?v=2.12.0&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&cl="+((clRemote||balLocal)?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
+    const q="?v=2.13.1&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&warm="+(warmOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&cl="+((clRemote||balLocal)?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
     try{
       await OBR.modal.open({id,url:abs("overlay.html")+q,
         fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:!arrange});
     }catch(err){if(mid===id)open=false;console.warn("[ficha] não consegui abrir a camada de dados",err);return}
-    /* se a camada não der sinal de vida em 6 s (não carregou), fecha e tenta de novo uma vez */
+    /* se a camada não der sinal de vida em 12 s (não carregou: CDN lenta), fecha e tenta de novo (até 3 vezes) */
     clearTimeout(helloT);
     helloT=setTimeout(()=>{
       if(mid!==id||!open||hello)return;
       OBR.modal.close(id).catch(()=>{});open=false;
-      if(e&&!e.retry)openOverlay({...e,retry:1});
-    },6000);
+      if(tries<2)setTimeout(()=>{if(!open&&(e||keepOn()))openOverlay(e,tries+1)},600*(tries+1));
+    },12000);
   }
   /* zonas de arrastar: um popover transparente do tamanho de cada foto (a camada dos cartões não recebe cliques) */
   const grabs=new Map(),gid=id=>"ordem.hud/grab/"+id;
@@ -87,6 +98,8 @@ const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote||clRemote||balLocal;  
   });
   OBR.broadcast.onMessage("ordem.hud/layout",ev=>{if(open&&!arrange)syncGrabs((ev.data||{}).rects)});   // fotos dos cartões e a mesa de dados
   OBR.broadcast.onMessage("ordem.hud/alive",ev=>{const g=grabs.get(String((ev.data||{}).id));if(g)g.alive=Date.now()});
+  /* a camada parou de responder: FECHA a velha antes de abrir outra (antes ficavam duas abertas e cada rolagem caía duas vezes) */
+  function dropStale(){if(open&&Date.now()-lastAct>45000){const old=mid;open=false;syncGrabs([]);OBR.modal.close(old).catch(()=>{})}}
   const ensure=()=>{if(!open&&keepOn())openOverlay(null)};
   async function closeOverlay(){const id=mid;open=false;syncGrabs([]);try{await OBR.modal.close(id)}catch(e){}}
   async function cfg(){                         // ligou/desligou os cartões na tela ou a mesa sempre visível
@@ -101,9 +114,14 @@ const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote||clRemote||balLocal;  
   OBR.broadcast.onMessage(CH.roll,ev=>{
     const p=ENG.clean(ev.data);if(!p)return;
     if(p.hid&&amGM&&String(p.pid)!==myId)return;      // dados de esconderijo: o mestre não os vê
+    /* rolagem que ficou presa (aba em segundo plano, internet caindo) e chegou tarde: não anima mais, senão os dados "velhos" caem de repente */
+    const age=ENG.age(p.pid,p.t);
+    if(age>60000){console.info("[dados] rolagem muito antiga ignorada ("+Math.round(age/1000)+" s)");return}
+    if(age>ENG.MAX_AGE)p.anim=false;                   // chegou tarde: mostra só o resultado, sem os dados caírem de repente
+    if(ENG.seen(p))return;                            // a mesma rolagem chegando duas vezes
     p.ds=window.DICE?DICE.clean(ev.data&&ev.data.ds):null;
-    if(open&&Date.now()-lastAct>45000)open=false;
-    const e={seq:++seq,p};log.push(e);while(log.length>20)log.shift();
+    dropStale();
+    const e={seq:++seq,p,at:Date.now()};log.push(e);while(log.length>12)log.shift();
     lastAct=Date.now();
     if(open)feed(e);else openOverlay(e);
   });
@@ -111,61 +129,69 @@ const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote||clRemote||balLocal;  
     const d=ev.data||{},seen=+d.seen||0;
     if(d.mid&&d.mid!==mid)return;                 // recado de uma camada antiga: não pode fechar a nova
     hello=true;clearTimeout(helloT);lastAct=Date.now();
-    const missing=log.filter(e=>e.seq>seen);
+    const missing=log.filter(e=>e.seq>seen&&Date.now()-e.at<8000);   // só as recentes: nunca "reanima" rolagem velha
     if(missing.length){missing.forEach(feed);return}
     if(d.idle&&open&&!keepOn()){open=false;syncGrabs([]);OBR.modal.close(mid).catch(()=>{})}
   });
   OBR.broadcast.onMessage("ordem.hud/cfg",()=>cfg());
   OBR.broadcast.onMessage("ordem.hud/arrange",ev=>setArrange(!!(ev.data&&ev.data.on)));
-  addEventListener("storage",ev=>{if(ev.key==="hud-on"||ev.key==="tray-always"||ev.key==="esc-on")cfg()});
+  addEventListener("storage",ev=>{if(ev.key==="hud-on"||ev.key==="tray-always"||ev.key==="esc-on"||ev.key==="warm")cfg()});
   /* garantia: se a camada parou de responder, reabre (no máximo uma vez a cada 20 s) */
   setInterval(()=>{
     if(!keepOn())return;
-    if(open&&Date.now()-lastAct>45000)open=false;
+    dropStale();
     if(!open&&Date.now()-lastTry>20000)ensure();
     if(clShown&&store.get("cl-closed")!==String(clShown)&&Date.now()-clAlive>15000&&Date.now()-clTry>15000)openCl();
     if(balKey&&store.get("bal-closed")!==balKey&&Date.now()-balAlive>15000&&Date.now()-balTry>15000)openBal();   // a janela da balança não deu sinal: reabre   // a janela da escalada não deu sinal: reabre
     for(const [,g] of grabs)if(Date.now()-g.alive>20000&&Date.now()-g.tried>20000)openGrab(g);   // a zona sumiu (ex.: outra janela fechou): reabre
   },5000);
 
-  /* ===== mesa: publicar a minha ficha na sala (só se eu entrei) ===== */
+  /* ===== mesa: publicar a minha ficha na sala (só se eu entrei) =====
+     3 partes independentes (ver mesa-lib.js): o essencial (nome/PV/PD) sai em ~150 ms; foto e ficha completa só quando mudam. */
   let isGM=false;try{isGM=(await OBR.player.getRole())==="GM"}catch(e){}
-  let last="",lastN=null,busy=false,again=false,timer=0;
+  const pub=makePublisher(OBR);
+  let lastN=null,lastNI=null,busy=false,again=false,againForce=false,timer=0,zT=0;
+  const meta=async()=>{try{return await OBR.player.getMetadata()}catch(e){return{}}};
   async function pubMine(force){
-    const sg=sig();if(!force&&sg===last)return;
-    last=sg;
     const j=store.get(LS.joined);
-    if(j==="0"){const m=await OBR.player.getMetadata();if(m&&m[KEY])await OBR.player.setMetadata({[KEY]:undefined});return}
+    if(j==="0"){const m=await meta();if(m&&m[KEY]){await pub.remove()}return}
     if(j!=="1")return;      // não sei (ou este navegador não divide o armazenamento com a janela da mesa): não mexo no que ela publicou
-    let name="";try{name=await OBR.player.getName()}catch(e){}
-    await OBR.player.setMetadata({[KEY]:await buildEntry(name)});
+    await pub.lite(force);
+    pub.img(false).catch(e=>console.warn("[mesa] foto",e));
+    clearTimeout(zT);zT=setTimeout(()=>pub.z(false).catch(e=>console.warn("[mesa] ficha completa",e)),force?250:2500);
   }
   async function pubNpcs(force){            // só o mestre publica NPCs, e só os que ele mostrou
     if(!isGM)return;
-    const sg=sigNpcs();if(!force&&sg===lastN)return;
-    lastN=sg;
-    const a=await buildNpcs();
-    await OBR.player.setMetadata({[KEY_NPC]:a.length?a:undefined});
+    const sg=sigNpcs();
+    if(force||sg!==lastN){
+      lastN=sg;const a=buildNpcs();
+      await OBR.player.setMetadata({[KEY_NPC]:a.length?a:undefined,...(a.length?{}:{[KEY_NIMG]:undefined})});
+    }
+    const si=sigNpcImgs();
+    if(force||si!==lastNI){
+      lastNI=si;const o=await buildNpcImgs();
+      await OBR.player.setMetadata({[KEY_NIMG]:Object.keys(o).length?o:undefined});
+    }
   }
   async function publish(force){
-    if(busy){again=true;return}
+    if(busy){again=true;againForce=againForce||!!force;return}
     busy=true;
-    try{await pubMine(force)}catch(e){console.warn("[mesa] não consegui publicar a ficha",e);last=""}
-    try{await pubNpcs(force)}catch(e){console.warn("[mesa] não consegui publicar os NPCs",e);lastN=null}
-    busy=false;if(again){again=false;publish()}
+    try{await pubMine(force)}catch(e){console.warn("[mesa] não consegui publicar a ficha",e)}
+    try{await pubNpcs(force)}catch(e){console.warn("[mesa] não consegui publicar os NPCs",e);lastN=null;lastNI=null}
+    busy=false;if(again){const f=againForce;again=false;againForce=false;publish(f)}
   }
-  const soon=force=>{clearTimeout(timer);timer=setTimeout(()=>publish(force),force?0:500)};
-  addEventListener("storage",()=>soon(false));            // a ficha (outra janela, mesmo domínio) salvou algo
-  setInterval(()=>publish(false),3000);                   // garantia
-  OBR.broadcast.onMessage("ordem.mesa/nudge",()=>soon(true));
+  const soon=force=>{clearTimeout(timer);timer=setTimeout(()=>publish(force),force?0:120)};
+  addEventListener("storage",ev=>{if(!ev.key||ev.key===LS.sheet||ev.key===LS.img||ev.key===LS.joined||ev.key.startsWith("npc:")||ev.key==="mesa-npcs")soon(false)});   // a ficha (outra janela, mesmo domínio) salvou algo
+  setInterval(()=>publish(false),8000);                   // garantia (só manda se algo mudou)
+  OBR.broadcast.onMessage("ordem.mesa/nudge",()=>soon(false));
   /* o mestre editou a minha ficha: só aceita se quem mandou for mesmo o mestre */
   OBR.broadcast.onMessage("ordem.mesa/edit",async ev=>{
     try{
       const d=ev.data||{};if(d.to!==OBR.player.id)return;
-      const from=(await OBR.party.getPlayers()).find(p=>p.connectionId===ev.connectionId);
+      const from=((await OBR.party.getPlayers()).find(p=>p.connectionId===ev.connectionId));
       if(!from||from.role!=="GM")return;
       const sheet=await unpack(d.z);JSON.parse(sheet);
-      store.set(LS.sheet,sheet);soon(true);
+      store.set(LS.sheet,sheet);soon(false);
     }catch(e){console.warn("[mesa] edição do mestre ignorada",e)}
   });
   publish(true);
@@ -174,9 +200,12 @@ const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote||clRemote||balLocal;  
   /* ===== Esconder: painel remoto (ligado pelo mestre) e descarte automático dos dados chamados ===== */
   amGM=isGM;myId=String(OBR.player.id||"");
   const LSCT="esc-ct";let timerD=0;
+  /* cópia local dos jogadores e dos meus metadados: vem dos próprios eventos do Owlbear (sem pedir tudo de novo a cada mudança) */
+  let cParty=[],cMeta={};
+  try{cMeta=(await OBR.player.getMetadata())||{};cParty=await OBR.party.getPlayers()}catch(e){}
   async function readEsc(){
-    let ps=[];try{ps=await OBR.party.getPlayers()}catch(e){}
-    const me={id:OBR.player.id,role:isGM?"GM":"PLAYER",metadata:await OBR.player.getMetadata()};
+    const ps=cParty;
+    const me={id:OBR.player.id,role:isGM?"GM":"PLAYER",metadata:cMeta};
     const gm=[me,...ps].find(p=>p.role==="GM"),g=normG(gm&&gm.metadata&&gm.metadata[K_G]);
     if(g.on!==escRemote){escRemote=g.on;cfg()}
     clSync(gm);
@@ -187,7 +216,7 @@ const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote||clRemote||balLocal;  
       store.set(LSCT,String(g.ct));
       if(g.ap&&g.calls.length)setTimeout(async()=>{                   // dá tempo de todo mundo ver o número revelado
         try{
-          const m=await OBR.player.getMetadata(),pp=normP(m&&m[K_P]);
+          const m=cMeta,pp=normP(m&&m[K_P]);
           const keep=pp.dice.filter(x=>!g.calls.includes(x.v));
           if(keep.length!==pp.dice.length)await OBR.player.setMetadata({[K_P]:{...pp,dice:keep,note:{k:"found",t:Date.now()}}});
         }catch(e){console.warn("[esconder] descarte falhou",e)}
@@ -198,10 +227,23 @@ const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote||clRemote||balLocal;  
   const CLW="ordem.cl/win";
   let clAlive=0,clTry=0;
   /* posição absoluta (canto de cima-esquerda) em "cl-xy"; sem ela, usa o canto escolhido em "cl-pos". Arrastar muda "cl-xy". */
-  async function openCl(fresh=true){
+  let clBusy=false,clAgain=false,vpc=null;
+  /* tamanho da tela do Owlbear em cache (pedir a cada movimento do mouse era o que deixava o arrastar das janelas "pesado") */
+  async function viewport(){
+    if(vpc&&Date.now()-vpc.t<3000)return vpc;
     let vw=1280,vh=800;try{vw=await OBR.viewport.getWidth();vh=await OBR.viewport.getHeight()}catch(e){}
+    return vpc={vw,vh,t:Date.now()};
+  }
+  async function openCl(fresh=true){
+    if(clBusy){clAgain=true;return}                // já tem uma chamada em andamento: só guarda que precisa repetir com a posição mais nova
+    clBusy=true;
+    try{await openClNow(fresh)}finally{clBusy=false;if(clAgain){clAgain=false;openCl(false)}}
+  }
+  async function openClNow(fresh){
+    const {vw,vh}=await viewport();
     const sc=Math.min(1.7,Math.max(.7,parseFloat(store.get("cl-scale"))||1)),pos=(+store.get("cl-pos")||0)%4;   // 0 baixo-direita, 1 baixo-esquerda, 2 cima-esquerda, 3 cima-direita
-    const W=Math.round(Math.min(vw-16,360*sc)),H=Math.round(Math.min(vh-16,580*sc));
+    const mn=store.get("cl-min")==="1";                                                                       // minimizada: só o cabeçalho
+    const W=Math.round(Math.min(vw-16,360*sc)),H=mn?Math.round(46*sc):Math.round(Math.min(vh-16,580*sc));
     let xy=null;try{xy=JSON.parse(store.get("cl-xy")||"null")}catch(e){}
     if(!xy||!Number.isFinite(xy.x)||!Number.isFinite(xy.y))xy={x:(pos===1||pos===2)?12:vw-12-W,y:(pos===2||pos===3)?12:vh-12-H};
     xy={x:Math.round(Math.max(0,Math.min(vw-W,xy.x))),y:Math.round(Math.max(0,Math.min(vh-H,xy.y)))};
@@ -238,10 +280,16 @@ const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote||clRemote||balLocal;  
   /* ===== Equilíbrio > Equilibrar: só o mestre e o jogador que está na balança recebem a janela (nunca os outros) ===== */
   const BW="ordem.bal/win";
   let balKey="",balAlive=0,balTry=0;
+  let balBusy=false,balAgain=false;
   async function openBal(fresh=true){
-    let vw=1280,vh=800;try{vw=await OBR.viewport.getWidth();vh=await OBR.viewport.getHeight()}catch(e){}
-    const sc=Math.min(1.7,Math.max(.7,parseFloat(store.get("bal-scale"))||1));
-    const W=Math.round(Math.min(vw-16,440*sc)),H=Math.round(Math.min(vh-16,640*sc));
+    if(balBusy){balAgain=true;return}
+    balBusy=true;
+    try{await openBalNow(fresh)}finally{balBusy=false;if(balAgain){balAgain=false;openBal(false)}}
+  }
+  async function openBalNow(fresh){
+    const {vw,vh}=await viewport();
+    const sc=Math.min(1.7,Math.max(.7,parseFloat(store.get("bal-scale"))||1)),mn=store.get("bal-min")==="1";
+    const W=Math.round(Math.min(vw-16,440*sc)),H=mn?Math.round(46*sc):Math.round(Math.min(vh-16,640*sc));
     let xy=null;try{xy=JSON.parse(store.get("bal-xy")||"null")}catch(e){}
     if(!xy||!Number.isFinite(xy.x)||!Number.isFinite(xy.y))xy={x:Math.round((vw-W)/2),y:Math.round((vh-H)/2)};
     xy={x:Math.round(Math.max(0,Math.min(vw-W,xy.x))),y:Math.round(Math.max(0,Math.min(vh-H,xy.y)))};
@@ -292,8 +340,10 @@ const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote||clRemote||balLocal;  
       await OBR.player.setMetadata({[K_P]:{...pp,h:1,dice:[...pp.dice,{f,v,n:String(d.n||"Presente").slice(0,24),id:Math.random().toString(36).slice(2,8)}]}});
     }catch(e){console.warn("[esconder] dado recebido falhou",e)}
   });
-  try{OBR.party.onChange(()=>readEsc());OBR.player.onChange(()=>readEsc())}catch(e){}
-  readEsc();setInterval(readEsc,5000);
+  let reT=0;const readSoon=()=>{clearTimeout(reT);reT=setTimeout(readEsc,100)};   // junta várias mudanças seguidas numa leitura só
+  try{OBR.party.onChange(ps=>{cParty=ps;readSoon()});OBR.player.onChange(p=>{cMeta=p.metadata||{};readSoon()})}catch(e){}
+  readEsc();
+  setInterval(async()=>{try{cMeta=(await OBR.player.getMetadata())||{};cParty=await OBR.party.getPlayers()}catch(e){}readEsc()},15000);   // garantia
 })();
 </script>
 </body>

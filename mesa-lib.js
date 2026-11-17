@@ -1,9 +1,12 @@
 /* Peças compartilhadas da Mesa (painel, mestre e segundo plano).
    Tudo roda no mesmo domínio da ficha, então a ficha é lida direto do localStorage
    e compartilhada na sala pelos metadados do jogador do Owlbear. Sem servidor. */
-export const VER="2.12.0";
+export const VER="2.13.1";
 export const KEY="ordem.mesa/ficha";
-export const KEY_NPC="ordem.mesa/npcs";   // NPCs que o mestre mostrou na mesa
+export const KEY_NPC="ordem.mesa/npcs";   // NPCs que o mestre mostrou na mesa (só texto e números: leve)
+export const KEY_IMG="ordem.mesa/img";    // miniatura da foto do jogador (só muda quando a foto muda)
+export const KEY_Z="ordem.mesa/z";        // ficha completa comprimida, para o mestre abrir (publicada com calma)
+export const KEY_NIMG="ordem.mesa/nimg";  // miniaturas dos NPCs mostrados {id: foto}
 export const LS={sheet:"ficha-ordem",img:"ficha-ordem-img",joined:"mesa-joined",collapsed:"mesa-collapsed"};
 const MAX=12000;   // folga sob o limite de metadados do Owlbear (~16 kB)
 
@@ -46,19 +49,66 @@ export function thumb(url,S=128,q=.55){
   });
 }
 
-/* assinatura barata para saber se algo mudou */
-export const sig=()=>(g(LS.sheet)||"")+"|"+((g(LS.img)||"").length)+((g(LS.img)||"").slice(-24))+"|"+g(LS.joined);
-
-/* o que este jogador publica na sala: resumo + miniatura + ficha completa (para o mestre) */
-export async function buildEntry(fallbackName){
+/* ---- o que este jogador publica na sala, em 3 partes independentes ----
+   1) KEY   : nome, PV, PD, nível, perfil (centenas de bytes: sai na hora, a cada mudança de PV/PD)
+   2) KEY_IMG: miniatura da foto (só quando a foto muda)
+   3) KEY_Z : ficha completa comprimida para o mestre (só depois que o jogador para de mexer)
+   Antes tudo ia junto (até 12 kB) a cada letra digitada, e isso era a maior causa do atraso entre jogadores. */
+export function liteOf(fallbackName){
   const sheet=g(LS.sheet)||"{}";let d={};try{d=JSON.parse(sheet)||{}}catch(e){}
-  const base={v:1,nome:((d.nome||"")+" "+(d.sob||"")).trim()||fallbackName||"",perfil:d.perfil||"",nivel:num(d.nivel,1),
-    pv:num(d.pv,10),pvmax:num(d.pvmax,10),pd:num(d.pd,10),pdmax:num(d.pdmax,10),t:Date.now()};
-  const th=await thumb(g(LS.img));
-  for(const t of [{th,z:await pack(sheet)},{th,big:1},{big:1}]){
-    const e={...base,...t};if(JSON.stringify(e).length<=MAX)return e;
-  }
-  return base;
+  return{v:2,nome:((d.nome||"")+" "+(d.sob||"")).trim()||fallbackName||"",perfil:d.perfil||"",nivel:num(d.nivel,1),
+    pv:num(d.pv,10),pvmax:num(d.pvmax,10),pd:num(d.pd,10),pdmax:num(d.pdmax,10)};
+}
+const imgSig=()=>{const i=g(LS.img)||"";return i.length+":"+i.slice(-32)};
+export async function imgOf(){
+  const url=g(LS.img);if(!url)return null;
+  let th=await thumb(url,128,.55);
+  if(th&&th.length>7000)th=await thumb(url,96,.45);      // foto pesada: miniatura menor para caber nos metadados
+  return th?{th}:null;
+}
+export async function zOf(lite,th){
+  const sheet=g(LS.sheet)||"{}",z=await pack(sheet);
+  const room=MAX-JSON.stringify(lite).length-(th?th.length+10:0);
+  return z.length<=room?{z}:{big:1};                      // ficha grande demais: o mestre vê só o resumo
+}
+/* publicador: guarda o que já foi enviado e só manda o que mudou */
+export function makePublisher(OBR){
+  let lastLite="",lastImg=null,lastZ=null,th=null,seq=0;
+  const nameOf=async()=>{try{return await OBR.player.getName()}catch(e){return ""}};
+  return{
+    reset(){lastLite="";lastImg=null;lastZ=null},
+    /* rápido: nome/PV/PD. Devolve true se mandou algo */
+    async lite(force){
+      const l=liteOf(await nameOf()),k=JSON.stringify(l);
+      if(!force&&k===lastLite)return false;
+      lastLite=k;await OBR.player.setMetadata({[KEY]:{...l,t:Date.now()}});return true;
+    },
+    async img(force){
+      const k=imgSig();if(!force&&k===lastImg)return false;
+      lastImg=k;const i=await imgOf();th=i&&i.th;
+      await OBR.player.setMetadata({[KEY_IMG]:i||undefined});return true;
+    },
+    async z(force){
+      const full=g(LS.sheet)||"";if(!force&&full===lastZ)return false;
+      lastZ=full;const me=++seq;
+      if(th===null&&g(LS.img)){const i=await imgOf();th=i&&i.th}
+      const o=await zOf(liteOf(""),th);
+      if(me!==seq)return false;                              // já tem uma ficha mais nova a caminho
+      await OBR.player.setMetadata({[KEY_Z]:{...o,t:Date.now()}});return true;
+    },
+    async remove(){lastLite="";lastImg=null;lastZ=null;await OBR.player.setMetadata({[KEY]:undefined,[KEY_IMG]:undefined,[KEY_Z]:undefined})}
+  };
+}
+/* o cartão completo de um jogador (junta as 3 partes; também lê o formato antigo, tudo dentro de KEY) */
+export function entryOf(p){
+  const m=p&&p.metadata;if(!m||typeof m!=="object")return null;
+  const e=m[KEY];if(!e||typeof e!=="object")return null;
+  const i=m[KEY_IMG],z=m[KEY_Z];
+  if(!i&&!z)return e;
+  const o={...e};
+  if(i&&i.th)o.th=i.th;
+  if(z){if(z.z)o.z=z.z;if(z.big)o.big=1}
+  return o;
 }
 
 /* PV/PD do jogador direto do menu: grava na mesma ficha que a janela da ficha usa (ela se atualiza sozinha) */
@@ -75,10 +125,11 @@ export function setMine(key,val){                   // key: "pv" | "pd"
 
 /* ---- publicar / retirar a minha ficha da sala (usado pela tela da Mesa, pela ficha e pelo segundo plano) ---- */
 export async function publishMine(OBR,name){
-  let nm=name;if(nm==null){try{nm=await OBR.player.getName()}catch(e){nm=""}}
-  await OBR.player.setMetadata({[KEY]:await buildEntry(nm)});
+  const pub=makePublisher(OBR);
+  await pub.lite(true);                                      // aparece para todos na hora
+  pub.img(true).then(()=>pub.z(true)).catch(e=>console.warn("[mesa] foto/ficha completa",e));   // o resto vai logo depois
 }
-export async function unpublishMine(OBR){await OBR.player.setMetadata({[KEY]:undefined})}
+export async function unpublishMine(OBR){await makePublisher(OBR).remove()}
 /* "estou na mesa?": vale a marca salva OU já existir a minha ficha publicada na sala */
 export async function amJoined(OBR){
   if(g(LS.joined)==="1")return true;
@@ -115,22 +166,28 @@ export function npcAdjust(id,key,delta){            // key: "pv" | "pd"
   const d=npcSheet(id),max=num(d[key+"max"],10),cur=num(d[key],10);
   d[key]=Math.max(0,Math.min(max,cur+delta));setNpcSheet(id,d);
 }
-export async function buildNpcs(){
+export function buildNpcs(){                      // texto e números dos NPCs mostrados (leve, sem foto)
   const out=[];
   for(const n of npcs()){
     if(!n.shown)continue;const i=npcInfo(n.id);
-    out.push({id:n.id,nome:i.nome,pv:i.pv,pvmax:i.pvmax,pd:i.pd,pdmax:i.pdmax,th:await thumb(npcImg(n.id),72,.5)});
+    out.push({id:n.id,nome:i.nome,pv:i.pv,pvmax:i.pvmax,pd:i.pd,pdmax:i.pdmax});
   }
-  if(JSON.stringify(out).length>MAX)out.forEach(o=>{delete o.th});
   return out;
 }
-export const sigNpcs=()=>npcs().map(n=>n.id+(n.shown?"1":"0")+(g("npc:"+n.id)||"")+((g("npc:"+n.id+":img")||"").length)).join("|");
+export async function buildNpcImgs(){             // fotos pequenas dos NPCs mostrados
+  const o={};
+  for(const n of npcs()){if(!n.shown)continue;const t=await thumb(npcImg(n.id),72,.5);if(t)o[n.id]=t}
+  return JSON.stringify(o).length>MAX?{}:o;
+}
+export const sigNpcs=()=>npcs().map(n=>n.id+(n.shown?"1":"0")+(g("npc:"+n.id)||"")).join("|");
+export const sigNpcImgs=()=>npcs().filter(n=>n.shown).map(n=>n.id+":"+((g("npc:"+n.id+":img")||"").length)).join("|");
 /* NPCs mostrados por qualquer jogador (o mestre), no mesmo formato de um jogador */
 export function npcsOf(players){
   const out=[];
   for(const p of players){
     const a=p&&p.metadata&&p.metadata[KEY_NPC];if(!Array.isArray(a))continue;
-    for(const n of a)out.push({id:"npc:"+n.id,npc:n.id,name:n.nome,color:"#c9b27a",isNpc:true,metadata:{[KEY]:n}});
+    const im=(p.metadata[KEY_NIMG]&&typeof p.metadata[KEY_NIMG]==="object")?p.metadata[KEY_NIMG]:{};
+    for(const n of a){const e=im[n.id]?{...n,th:im[n.id]}:n;out.push({id:"npc:"+n.id,npc:n.id,name:n.nome,color:"#c9b27a",isNpc:true,metadata:{[KEY]:e}})}
   }
   return out;
 }

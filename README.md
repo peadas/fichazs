@@ -100,3 +100,31 @@ Embaixo dos atributos há um cartão com a habilidade do **Perfil** escolhido no
 - **Regras**: *Rolar 2d10* (os dados caem na mesa de todos, sem somar). Iguais ou com 1 de diferença: equilibrou (próxima rodada). Senão, está **caindo**: role um **dado de equilíbrio** (d4) e some a um dos d10 à sua escolha (botões *Somar +N no X* ou toque no dado). Dados de equilíbrio = metade da Acrobacia da ficha (d4 → 2, d6 → 3, d8 → 4…), gastos até o fim da travessia. Caindo e sem dados (ou *Deixar cair*): cai. *Tentar de novo* / *Atravessar de novo* recomeça com os dados cheios.
 - **Embaixo**: **Perícias** (Acrobacia, Atletismo e *Outra perícia…*) rolam perícia + atributo da ficha na mesa de todos, e o resultado fica na janela (o mestre também vê); ao lado, os **dados de equilíbrio** (d4 apagado = gasto; clicar num d4 aceso rola esse dado quando está caindo).
 - Estado: mestre em `ordem.bal/g`, jogador em `ordem.bal/p` (metadados do Owlbear). Expulsão é a mensagem `ordem.bal/kick`, que o segundo plano do jogador só aceita se vier do mestre.
+
+## v2.13.0: mega otimização
+**Dados antigos caindo tarde (corrigido)**
+- Toda rolagem agora leva o horário de quem rolou. Se ela chega presa (aba em segundo plano, internet caindo) com mais de 15 s de atraso, **não anima mais**; o relógio de cada jogador é medido separado, então um PC com hora errada não atrapalha.
+- Rolagens repetidas (a mesma chegando duas vezes) são ignoradas; a camada dos dados que parou de responder é **fechada antes** de abrir outra (antes ficavam duas e os dados caíam em dobro).
+- Fila cheia: as rolagens mais antigas só mostram o resultado, sem animar; com rolagem esperando, a física anda mais rápido (o resultado é o mesmo). Voltar para a aba mostra o que ficou para trás só como resultado.
+
+**Online mais rápido**
+- O que cada jogador publica foi dividido em 3 partes: **nome/PV/PD** (centenas de bytes, sai em ~150 ms), **foto** (só quando muda) e **ficha completa comprimida** (só depois de parar de mexer). Antes tudo (até 12 kB) ia junto a cada letra digitada.
+- A ficha e o segundo plano não publicam mais em dobro; a ficha só avisa e o segundo plano publica o que mudou.
+- Os jogadores da sala e os metadados vêm uma vez e depois dos **eventos** do Owlbear (menos consultas a cada 3-4 s). Sondagens de garantia caíram para 15 s.
+- Novo ajuste **Dados prontos** (Menu > Tela e dados): mantém a camada dos dados aberta, então a rolagem dos outros aparece na hora.
+
+**Menos travadas**
+- O cálculo dos dados roda em fatias de ~6 ms: a ficha não congela mais ao rolar vários dados (o resultado é idêntico).
+- A ficha grava com 80 ms de calma (digitar numa caixa de texto não regrava tudo a cada letra), atualiza só as barras que mudaram e carrega o three.js sem travar a abertura.
+- Névoa mais leve (sem *blend mode*, pausa com a janela escondida, uma camada só em PCs fracos). `nevoa.png` incluída.
+
+**Abas e janelas**
+- Menu: cabeçalho fixo, abas com ícone, ajustes agrupados em "Tela e dados", visual mais legível.
+- Janelas da **escalada** e da **balança**: alça de arrastar, botão **minimizar** (ou duplo clique no título), fechar em vermelho; mover não engarrafa mais.
+- Painéis da ficha (Habilidades/Equipamento, Settings, Relações, Rolagem personalizada): **arraste pelo título**, duplo clique no título volta ao centro, soltar o mouse fora não fecha.
+
+## v2.13.1: jogador entrando (extensão travando / dado invisível)
+- **Causa:** se o SDK do Owlbear falhasse ao carregar **uma vez** (internet instável justo quando o jogador entra), a página ficava morta até o F5 (a aba mostrava "Abra dentro do Owlbear" e o segundo plano parava de vez, então os dados nunca apareciam).
+- **Agora:** o SDK tenta 3 endereços, com limite de tempo, em várias rodadas (e o navegador não reaproveita a falha anterior). O segundo plano insiste até conectar; a aba mostra "Conectando ao Owlbear…" e tenta sozinha.
+- A camada dos dados tem 12 s (antes 6) para carregar e tenta até 3 vezes, também quando está só "pronta" sem rolagem. Antes, em conexão lenta, ela era fechada enquanto ainda carregava, em ciclo.
+- Rolagem que chega com 15 a 60 s de atraso aparece só como resultado (antes sumia); acima de 60 s é descartada. Se a hora do computador de alguém for ajustada, o relógio é recalibrado em 20 s em vez de silenciar as rolagens dele.

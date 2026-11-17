@@ -16,6 +16,17 @@ button:disabled{opacity:.45;cursor:default}
 #win{position:absolute;inset:0;display:flex;flex-direction:column;background:linear-gradient(180deg,#12181af2,#0a0d0ef5);border:1px solid #7b8688;box-shadow:0 8px 30px #000a,inset 0 0 0 3px #0a0d0e,inset 0 0 0 4px #3a4344}
 header{cursor:grab;touch-action:none;display:flex;align-items:center;gap:8px;padding:8px 10px 6px;border-bottom:1px solid var(--line)}
 header.drag{cursor:grabbing}
+header{background:linear-gradient(180deg,#1b2325,#131a1c)}
+.grip{width:10px;height:18px;flex:none;opacity:.5;background:radial-gradient(circle,#c9d1cf 1.3px,#0000 1.8px) 0 0/5px 6px;transition:opacity .15s}
+header:hover .grip,header.drag .grip{opacity:1}
+header .tools button{border-color:#4a5557}
+header .tools button:hover:not(:disabled){background:#222c2e}
+#b-x:hover{border-color:#e0524f!important;color:#ff9a97!important;background:#2a1717!important}
+#b-fold svg{transition:transform .2s}
+body.mini #b-fold svg{transform:rotate(180deg)}
+body.mini #win>:not(header){display:none!important}
+body.mini header{border-bottom:0}
+
 header .ttl{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
 header b{font:800 1.05rem Cinzel,serif;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rd{font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.12em;color:var(--gold2);border:1px solid var(--line);padding:0 6px;white-space:nowrap}
@@ -83,8 +94,10 @@ header .tools button{padding:0;width:24px;height:22px;line-height:1;font-size:.9
 <body>
 <div id="win">
   <header>
+    <span class="grip" aria-hidden="true"></span>
     <div class="ttl"><b id="nm">Equilíbrio</b><span class="rd" id="rd" hidden></span></div>
     <div class="tools">
+      <button id="b-fold" title="Minimizar / expandir (duplo clique no título)" aria-label="Minimizar ou expandir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
       <button id="b-min" title="Diminuir" aria-label="Diminuir">−</button>
       <button id="b-max" title="Aumentar" aria-label="Aumentar">+</button>
       <button id="b-x" title="Fechar a janela" aria-label="Fechar a janela">✕</button>
@@ -112,10 +125,10 @@ header .tools button{padding:0;width:24px;height:22px;line-height:1;font-size:.9
   <div id="ctl"></div>
 </div>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.12.0";
-import {KEY,store} from "./mesa-lib.js?v=2.12.0";
-import {SK,testDice} from "./alcancar-lib.js?v=2.12.0";
-import {K_B,K_BP,normB,normBP,occupant,diceCount,balOK,afterTest,afterSpend,afterAdd,RESET} from "./equilibrio-lib.js?v=2.12.0";
+import {loadOBR,ready} from "./obr.js?v=2.13.1";
+import {KEY,entryOf,store} from "./mesa-lib.js?v=2.13.1";
+import {SK,testDice} from "./alcancar-lib.js?v=2.13.1";
+import {K_B,K_BP,normB,normBP,occupant,diceCount,balOK,afterTest,afterSpend,afterAdd,RESET} from "./equilibrio-lib.js?v=2.13.1";
 const $=s=>document.querySelector(s);
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 const NS="http://www.w3.org/2000/svg";
@@ -159,6 +172,13 @@ $("#b-max").onclick=()=>setScale(sc()+.15);
   });
   const end=e=>{if(!d)return;store.set("bal-xy",JSON.stringify({x:d.x+e.screenX-d.sx,y:d.y+e.screenY-d.sy}));d=null;h.classList.remove("drag");bcast("ordem.bal/move")};
   h.addEventListener("pointerup",end);h.addEventListener("pointercancel",end);
+}
+/* minimizar: a janela do Owlbear encolhe para só o cabeçalho (o segundo plano lê "bal-min") */
+{
+  const apply=()=>document.body.classList.toggle("mini",store.get("bal-min")==="1");apply();
+  const fold=()=>{store.set("bal-min",store.get("bal-min")==="1"?"0":"1");apply();bcast("ordem.bal/place");};
+  $("#b-fold").onclick=fold;
+  $("header").addEventListener("dblclick",e=>{if(!e.target.closest("button"))fold()});
 }
 $("#b-x").onclick=()=>bcast("ordem.bal/close");
 addEventListener("wheel",e=>{e.preventDefault();setScale(sc()+(e.deltaY<0?.1:-.1))},{passive:false});
@@ -270,7 +290,7 @@ function render(){
   if(who._k!==wk){
     who._k=wk;who.replaceChildren();
     if(o){
-      const m=o.p.metadata&&o.p.metadata[KEY],th=m&&m.th,ic=el("i",null,th?"":nick(o.p).charAt(0).toUpperCase());
+      const m=entryOf(o.p),th=m&&m.th,ic=el("i",null,th?"":nick(o.p).charAt(0).toUpperCase());
       ic.style.setProperty("--c",o.p.color||"#e9ece7");if(th)ic.style.backgroundImage="url("+th+")";
       who.append(ic,el("span",null,nick(o.p)));
       if(isGm){const b=el("button",null,"Expulsar");b.title="Tira "+nick(o.p)+" da balança";b.onclick=()=>OBR.broadcast.sendMessage("ordem.bal/kick",{to:String(o.p.id)},{destination:"ALL"}).catch(()=>{});who.append(b)}
