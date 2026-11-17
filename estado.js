@@ -3,7 +3,7 @@
    carrega ficha, foto e NPCs (perto do limite de tamanho do Owlbear). Resultado antigo: o painel/janela sumia ou nem chegava
    nos jogadores até todo mundo dar F5. Na sala o estado fica de pé, é pequeno, e quem entra/recarrega recebe na hora.
    Se a sala não aceitar a gravação (API ausente ou sem permissão), cai no jeito antigo (metadados do jogador). */
-const KEYS=["ordem.esc/g","ordem.cl/g","ordem.bal/g"];
+const KEYS=["ordem.esc/g","ordem.cl/g","ordem.bal/g","ordem.fech/g"];
 
 export function makeState(OBR){
   const ok=!!(OBR&&OBR.room&&typeof OBR.room.getMetadata==="function"&&typeof OBR.room.setMetadata==="function");

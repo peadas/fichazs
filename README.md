@@ -1,5 +1,14 @@
 # Ficha Ordem Paranormal — extensão para Owlbear Rodeo
 
+## v2.16.0 — Nova aba: Fechadura
+- **Aba Fechadura no menu** (mesmo molde do Equilibrar: sem janela própria, por isso não laga). A fechadura é desenhada em branco, como na referência: pinos com mola, gazua, trava deslizante e engrenagens. **Cada pino é um dado.**
+- **Mestre cria a fechadura:** Porta ou Baú (no baú dá para listar itens), PA e DT do arrombamento, tentativas máximas, de **3 a 10 dados**, passo de **d4 a d20**, e o botão **Girar dados** rola a senha (só o mestre vê). Ao ativar, a aba ganha uma bolinha para os jogadores.
+- **Só 1 jogador por vez.** Quem quiser tentar precisa esperar o outro **Sair da fechadura** (ou o mestre **Expulsar**). Quem entra depois herda os pinos já abertos.
+- **Destrancar (técnica):** o jogador escolhe os números dos dados e aperta **Tentar abrir**. Pino certo **abre, sobe e o dado fica verde**; a gazua anda de pino em pino. Errados mostram **alto/baixo** (ou só **som**: *trunk* agudo = alto, *trink* = baixo, *click* = certo, quando o mestre liga "Dicas só por som"). Tentativas por rodada pelo dado de **Crime** (d4=1, d6=2, d8=3, d10=4, d12=5). Acabou? Espera o mestre apertar **Nova rodada**.
+- **Arrombar (força bruta):** gasta 1 PV, teste de Atletismo (ou outra perícia) contra a DT; se passar soma o dado alto ao total até a **PA**.
+- **Mestre:** Nova rodada, **Abrir com chave**, **Quebrar fechadura** (animação de trincas; ninguém mais destranca, só arromba), **Destruir 1 item** (sorteia um item do baú depois de arrombado), **Trancar de novo** (nova senha, zera tudo) e Encerrar.
+- Arquivos novos: `fechadura-lib.js`, `fechadura-cena.js`, `fechadura-som.js` (sons sintetizados na hora, sem arquivo de áudio). Versão dos arquivos: `?v=2.16.0`.
+
 ## v2.15.1 — Alcançar refeito (sem janela que laga)
 - **Mesma ideia do Equilibrar:** o Alcançar (escalada) não abre mais janela própria (`alcancar.html`, que carregava o SDK, fontes e a sala do zero para cada jogador). Agora a **parede com as fotinhas subindo fica na aba Equilíbrio > Alcançar do menu**, e também na **camada da tela do Owlbear** (a mesma dos dados, que já está aberta).
 - **Quem vê na tela:** mestre e quem está na parede, automaticamente. Qualquer outro jogador liga **"Mostrar a parede na tela do Owlbear"** na aba (e desliga quando quiser). A aba mostra a parede para todos de qualquer jeito.

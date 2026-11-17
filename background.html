@@ -5,20 +5,21 @@
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@3.1.0/+esm" crossorigin>
 <meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
 <body>
-<script src="engine.js?v=2.15.1"></script>
-<script src="dice-style.js?v=2.15.1"></script>
+<script src="engine.js?v=2.16.0"></script>
+<script src="dice-style.js?v=2.16.0"></script>
 <script type="module">
 /* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
    2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
    3) recebe as edições que o mestre faz na ficha do jogador. */
-import {loadOBR,ready} from "./obr.js?v=2.15.1";
-import {VER,KEY,KEY_NPC,KEY_NIMG,KEY_IMG,KEY_Z,LS,store,makePublisher,sigNpcs,sigNpcImgs,buildNpcs,buildNpcImgs,unpack} from "./mesa-lib.js?v=2.15.1";
-import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.15.1";
-import {K_C,K_CP,normC,normCP,afterClimb,climbersOf,clWants} from "./alcancar-lib.js?v=2.15.1";
-import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET,afterTest,afterSpend,balWants} from "./equilibrio-lib.js?v=2.15.1";
-import {makeState,pickGm} from "./estado.js?v=2.15.1";
-import {localChannel} from "./canal.js?v=2.15.1";
+import {loadOBR,ready} from "./obr.js?v=2.16.0";
+import {VER,KEY,KEY_NPC,KEY_NIMG,KEY_IMG,KEY_Z,LS,store,makePublisher,sigNpcs,sigNpcImgs,buildNpcs,buildNpcImgs,unpack} from "./mesa-lib.js?v=2.16.0";
+import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.16.0";
+import {K_C,K_CP,normC,normCP,afterClimb,climbersOf,clWants} from "./alcancar-lib.js?v=2.16.0";
+import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET,afterTest,afterSpend,balWants} from "./equilibrio-lib.js?v=2.16.0";
+import {K_F,K_FP,normF,normFP,occupant as occupantF,afterForce} from "./fechadura-lib.js?v=2.16.0";
+import {makeState,pickGm} from "./estado.js?v=2.16.0";
+import {localChannel} from "./canal.js?v=2.16.0";
 (async()=>{
   /* o SDK pode falhar ao carregar (internet instável quando o jogador entra): tenta de novo até conseguir, em vez de ficar morto até o F5 */
   let OBR=null;
@@ -43,13 +44,14 @@ const trayOn=()=>store.get("tray-always")==="1";      // setting "mesa de dados 
 const warmOn=()=>store.get("warm")!=="0";             // camada dos dados já aberta e pronta (rolagem aparece na hora); padrão: ligado
 let escRemote=false,amGM=false,myId="";               // Esconder: o mestre mostrou o painel para todos / eu sou o mestre
 let clRemote=false;                                    // Equilíbrio > Alcançar: a parede precisa aparecer na minha tela (mestre, quem está nela, ou quem ligou "Mostrar a parede")
+let fechLocal=false;                                   // Fechadura: estou na fechadura (a camada dos dados precisa ficar aberta para o teste de arrombar)
 let balLocal=false;                                    // Equilíbrio > Equilibrar: a balança precisa aparecer na minha tela (mestre, quem está nela, ou quem ligou "Mostrar a balança")
-const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||balLocal;   // a camada dos dados fica aberta durante a escalada (os testes rolam nela)
+const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||balLocal||fechLocal;   // a camada dos dados fica aberta durante a escalada (os testes rolam nela)
   const feed=e=>OBR.broadcast.sendMessage(CH.feed,e,{destination:"LOCAL"}).catch(()=>{});
   async function openOverlay(e,tries=0){
     const id="ordem.ficha/overlay/"+Date.now();
     open=true;hello=false;mid=id;lastAct=Date.now();lastTry=Date.now();
-    const q="?v=2.15.1&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&warm="+(warmOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&cl="+((clRemote||balLocal)?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
+    const q="?v=2.16.0&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&warm="+(warmOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&cl="+((clRemote||balLocal||fechLocal)?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
     try{
       await OBR.modal.open({id,url:abs("overlay.html")+q,
         fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:!arrange});
@@ -65,7 +67,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   /* zonas de arrastar: um popover transparente do tamanho de cada foto (a camada dos cartões não recebe cliques) */
   const grabs=new Map(),gid=id=>"ordem.hud/grab/"+id;
   let lastRects=[];
-  const covered=()=>false;       // v2.15.1: não há mais janelas de jogo por cima das zonas de arrastar (a parede e a balança ficam no menu e na camada dos dados)
+  const covered=()=>false;       // v2.16.0: não há mais janelas de jogo por cima das zonas de arrastar (a parede e a balança ficam no menu e na camada dos dados)
   async function openGrab(r){
     const pid=gid(r.id),g={...r,alive:Date.now(),tried:Date.now()};grabs.set(r.id,g);
     try{await OBR.popover.close(pid)}catch(e){}
@@ -153,7 +155,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   OBR.broadcast.onMessage("ordem.hud/cfg",()=>cfg());
   OBR.broadcast.onMessage("ordem.hud/arrange",ev=>setArrange(!!(ev.data&&ev.data.on)));
   addEventListener("storage",ev=>{if(ev.key==="hud-on"||ev.key==="tray-always"||ev.key==="esc-on"||ev.key==="warm")cfg();if(ev.key==="bal-view"||ev.key==="cl-view")readEsc()});
-  /* v2.15.1: ao voltar para a aba do Owlbear, dá um tempo de graça (os sinais de vida atrasaram só porque a aba estava escondida) */
+  /* v2.16.0: ao voltar para a aba do Owlbear, dá um tempo de graça (os sinais de vida atrasaram só porque a aba estava escondida) */
   document.addEventListener("visibilitychange",()=>{
     if(document.hidden)return;
     const n=Date.now();lastTry=n;for(const [,g] of grabs){g.alive=n;g.tried=n}
@@ -161,7 +163,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   /* garantia: se a camada parou de responder, reabre (no máximo uma vez a cada 20 s) */
   setInterval(()=>{
     if(!keepOn())return;
-    if(document.hidden)return;           // v2.15.1: aba em segundo plano: o navegador atrasa os relógios, então "sem sinal" não quer dizer "janela morta"
+    if(document.hidden)return;           // v2.16.0: aba em segundo plano: o navegador atrasa os relógios, então "sem sinal" não quer dizer "janela morta"
     dropStale();
     if(!open&&Date.now()-lastTry>20000)ensure();
     for(const [,g] of grabs)if(!g.hid&&Date.now()-g.alive>20000&&Date.now()-g.tried>20000)openGrab(g);   // a zona sumiu (ex.: outra janela fechou): reabre
@@ -226,7 +228,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   try{cMeta=(await OBR.player.getMetadata())||{};cParty=await OBR.party.getPlayers()}catch(e){}
   /* O Owlbear APAGA os metadados de um jogador quando ele recarrega ou reconecta. Antes isso fazia o jogador sumir da parede (ou da balança)
      no meio da escalada. Agora cada navegador guarda a sua última subida/balança e, se ela sumir da sala durante a MESMA escalada/balança, republica. */
-  const KEEPMINE=[[K_CP,"cl-cp"],[K_BP,"bal-bp"]];const lastRestore={};
+  const KEEPMINE=[[K_CP,"cl-cp"],[K_BP,"bal-bp"],[K_FP,"fech-fp"]];const lastRestore={};
   function mineKeep(gm){
     if(isGM)return;
     for(const [k,sk] of KEEPMINE){
@@ -234,7 +236,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
       if(cur&&typeof cur==="object"){const s=JSON.stringify(cur);if(store.get(sk)!==s)store.set(sk,s);continue}
       const raw=store.get(sk);if(!raw)continue;
       let v=null;try{v=JSON.parse(raw)}catch(e){}
-      const live=k===K_CP?normC(pickGm(ST,gm,K_C)):normB(pickGm(ST,gm,K_B));
+      const live=k===K_CP?normC(pickGm(ST,gm,K_C)):k===K_FP?normF(pickGm(ST,gm,K_F)):normB(pickGm(ST,gm,K_B));
       if(!v||!v.id||!live.on||live.id!==v.id){store.set(sk,null);continue}      // acabou ou é outra: descarta a cópia
       if(Date.now()-(lastRestore[k]||0)<4000)continue;lastRestore[k]=Date.now();
       OBR.player.setMetadata({[k]:v}).catch(e=>console.warn("[sala] não consegui restaurar",k,e));
@@ -247,6 +249,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
     if(g.on!==escRemote){escRemote=g.on;keepSync()}
     clSync(gm,[me,...ps]);
     balSync(gm,[me,...ps]);
+    fechSync(gm,[me,...ps]);
     mineKeep(gm);
     if(isGM)return;
     if(store.get(LSCT)==null)store.set(LSCT,String(g.ct));        // primeira leitura: não reaplica chamadas antigas
@@ -262,7 +265,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
     }
   }
 
-  /* ===== Equilíbrio > Alcançar (v2.15.1): SEM janela própria =====
+  /* ===== Equilíbrio > Alcançar (v2.16.0): SEM janela própria =====
      A parede com as fotos subindo é desenhada no menu (aba) e na camada dos dados, que já estão abertas e conectadas; antes ela abria uma
      janela separada que carregava o SDK do zero para cada pessoa (lag e "Conectando…"). Aqui ficam só: manter a camada aberta quando a
      parede precisa aparecer, e APLICAR o resultado dos dados (assim não depende da aba do menu continuar aberta). */
@@ -306,7 +309,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
       await OBR.player.setMetadata({[K_CP]:{...cp,in:0,p:0,top:0,fell:1}});
     }catch(e){console.warn("[alcançar] queda ignorada",e)}
   });
-  /* ===== Equilíbrio > Equilibrar (v2.15.1): SEM janela própria =====
+  /* ===== Equilíbrio > Equilibrar (v2.16.0): SEM janela própria =====
      A cena da balança é desenhada no menu (aba) e na camada dos dados, que já estão abertos e conectados; antes ela abria uma janela
      separada que carregava o SDK do zero (era ela que "não conectava" e travava). Aqui ficam só: manter a camada aberta quando a balança
      precisa aparecer, e APLICAR o resultado dos dados (assim não depende da aba do menu continuar aberta). */
@@ -362,6 +365,52 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
       await OBR.player.setMetadata({[K_BP]:{...bp,in:0,...BRESET}});
     }catch(e){console.warn("[balança] expulsão ignorada",e)}
   });
+
+  /* ===== Fechadura (v2.16.0): SEM janela própria =====
+     A cena é desenhada na aba do menu. Aqui ficam só: manter a camada dos dados aberta enquanto estou na fechadura (o teste de arrombar rola
+     nela), tirar quem entrou junto com outro, e APLICAR o resultado dos dados do arrombamento (não depende da aba continuar aberta). */
+  function fechSync(gm,all){
+    const g=normF(pickGm(ST,gm,K_F));
+    const occ=g.on?occupantF(g,all):null,me=all.find(p=>String(p.id)===myId),mine=normFP(me&&me.metadata&&me.metadata[K_FP]);
+    if(!isGM&&g.on&&mine.in&&mine.id===g.id&&occ&&String(occ.p.id)!==myId)OBR.player.setMetadata({[K_FP]:{...mine,in:0}}).catch(()=>{});
+    const need=!!(g.on&&!isGM&&occ&&String(occ.p.id)===myId);
+    if(need!==fechLocal){fechLocal=need;keepSync()}
+  }
+  const fechSeen=[];let fechChain=Promise.resolve();
+  function fechApply(d){
+    const rid=String((d&&d.rid)||"");
+    if(!rid||isGM||fechSeen.includes(rid))return;
+    fechSeen.push(rid);if(fechSeen.length>40)fechSeen.shift();
+    fechChain=fechChain.then(()=>fechDo(d)).catch(e=>console.warn("[fechadura] resultado não aplicado",e));
+  }
+  async function fechDo(d){
+    const m=(await OBR.player.getMetadata())||{};cMeta=m;
+    const c=normFP(m[K_FP]);
+    const all=[{id:OBR.player.id,role:"PLAYER",metadata:m},...cParty],gm=all.find(p=>p.role==="GM"),g=normF(pickGm(ST,gm,K_F));
+    if(!g.on||!c.in||c.id!==g.id)return;
+    const occ=occupantF(g,all);if(!occ||String(occ.p.id)!==myId)return;      // só quem está na fechadura
+    const patch=afterForce(g,c,{cid:+d.cid||0,sk:String(d.sk||"Atletismo").slice(0,24)},Array.isArray(d.dice)?d.dice:[]);
+    if(!patch)return;
+    const next={...c,...patch};
+    store.set("fech-fp",JSON.stringify(next));                                // cópia local (restaura se a reconexão apagar a sala)
+    for(let i=0;;i++){
+      try{await OBR.player.setMetadata({[K_FP]:next});cMeta={...cMeta,[K_FP]:next};return}
+      catch(e){if(i>=2)throw e;await new Promise(r=>setTimeout(r,700*(i+1)))}
+    }
+  }
+  OBR.broadcast.onMessage("ordem.fech/result",ev=>fechApply(ev&&ev.data));    // vem da camada dos dados quando o dado para de girar
+  LC.on("ordem.fech/auto",d=>fechApply(d));                                   // o menu rolou no automático porque os dados não responderam
+  /* o mestre expulsou este jogador da fechadura: só vale se quem mandou for mesmo o mestre */
+  OBR.broadcast.onMessage("ordem.fech/kick",async ev=>{
+    try{
+      const d=ev.data||{};if(String(d.to)!==myId||isGM)return;
+      const from=(await OBR.party.getPlayers()).find(p=>p.connectionId===ev.connectionId);
+      if(!from||from.role!=="GM")return;
+      const m=await OBR.player.getMetadata(),fp=normFP(m&&m[K_FP]);
+      if(!fp.in)return;
+      await OBR.player.setMetadata({[K_FP]:{...fp,in:0,u:Date.now()}});
+    }catch(e){console.warn("[fechadura] expulsão ignorada",e)}
+  });
   /* alguém me deu um dado de esconderijo (Distrair / Chamar atenção) */
   OBR.broadcast.onMessage("ordem.esc/give",async ev=>{
     try{
@@ -378,7 +427,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   readEsc();
   setInterval(async()=>{try{cMeta=(await OBR.player.getMetadata())||{};cParty=await OBR.party.getPlayers()}catch(e){}readEsc()},15000);   // garantia
 
-  /* ===== v2.15.1: CENTRAL DE RESSINCRONIZAÇÃO (o que antes só o F5 resolvia) =====
+  /* ===== v2.16.0: CENTRAL DE RESSINCRONIZAÇÃO (o que antes só o F5 resolvia) =====
      Por que o jogador "some" ou recebe a informação atrasada sem F5:
      1) o Owlbear APAGA os metadados de quem reconecta (internet que oscila, notebook que dorme) e o publicador achava que já tinha enviado -> agora confere a sala e republica;
      2) aba escondida/em segundo plano: eventos e relógios chegam atrasados -> ao voltar (ou ao ganhar foco / a internet voltar) relê tudo na hora;

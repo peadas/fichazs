@@ -1,5 +1,5 @@
 /* Carrega o SDK oficial do Owlbear Rodeo direto de uma CDN (sem precisar de npm).
-   v2.15.1: antes, se as CDNs falhassem UMA vez (internet instável na hora que o jogador entra), a página ficava morta até dar F5.
+   v2.16.0: antes, se as CDNs falhassem UMA vez (internet instável na hora que o jogador entra), a página ficava morta até dar F5.
    Agora cada tentativa tem limite de tempo, repete em várias rodadas e muda o endereço (#rN) para o navegador não reaproveitar a falha. */
 const URLS=[
   "https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@3.1.0/+esm",
@@ -10,7 +10,7 @@ const pick=m=>{for(const c of [m&&m.default,m&&m.default&&m.default.default,m&&m
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const timeout=(p,ms)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error("tempo esgotado")),ms))]);
 let cached=null;
-/* v2.15.1: se o Owlbear recusar uma gravação por TAMANHO (ficha+foto+jogo passando do limite), o jogo não pode simplesmente falhar:
+/* v2.16.0: se o Owlbear recusar uma gravação por TAMANHO (ficha+foto+jogo passando do limite), o jogo não pode simplesmente falhar:
    tira as peças pesadas (ficha completa e foto, que só servem para o mestre/cartão), tenta de novo e avisa o publicador para não reenviar por uns minutos. */
 const SIZE_ERR=/large|size|limit|exceed|too big|byte|payload|413/i;
 function guard(O){
