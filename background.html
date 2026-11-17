@@ -2,17 +2,18 @@
 <html lang="pt-BR">
 <head><meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
 <body>
-<script src="engine.js?v=2.11.1"></script>
-<script src="dice-style.js?v=2.11.1"></script>
+<script src="engine.js?v=2.12.0"></script>
+<script src="dice-style.js?v=2.12.0"></script>
 <script type="module">
 /* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
    2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
    3) recebe as edições que o mestre faz na ficha do jogador. */
-import {loadOBR,ready} from "./obr.js?v=2.11.1";
-import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.11.1";
-import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.11.1";
-import {K_C,K_CP,normC,normCP} from "./alcancar-lib.js?v=2.11.1";
+import {loadOBR,ready} from "./obr.js?v=2.12.0";
+import {VER,KEY,KEY_NPC,LS,store,sig,buildEntry,sigNpcs,buildNpcs,unpack} from "./mesa-lib.js?v=2.12.0";
+import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.12.0";
+import {K_C,K_CP,normC,normCP} from "./alcancar-lib.js?v=2.12.0";
+import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET} from "./equilibrio-lib.js?v=2.12.0";
 (async()=>{
   const OBR=await loadOBR();
   if(!OBR||!(await ready(OBR)))return;
@@ -27,12 +28,13 @@ import {K_C,K_CP,normC,normCP} from "./alcancar-lib.js?v=2.11.1";
 const trayOn=()=>store.get("tray-always")==="1";      // setting "mesa de dados sempre visível"
 let escRemote=false,amGM=false,myId="";               // Esconder: o mestre mostrou o painel para todos / eu sou o mestre
 let clRemote=false,clShown=0;                         // Equilíbrio > Alcançar: o mestre ativou uma escalada / id da escalada cuja janela já foi aberta
-const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote||clRemote;   // a camada dos dados fica aberta durante a escalada (os testes rolam nela)
+let balLocal=false;                                    // Equilíbrio > Equilibrar: tenho a janela da balança (mestre com balança ativa, ou o jogador que está nela)
+const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote||clRemote||balLocal;   // a camada dos dados fica aberta durante a escalada (os testes rolam nela)
   const feed=e=>OBR.broadcast.sendMessage(CH.feed,e,{destination:"LOCAL"}).catch(()=>{});
   async function openOverlay(e){
     const id="ordem.ficha/overlay/"+Date.now();
     open=true;hello=false;mid=id;lastAct=Date.now();lastTry=Date.now();
-    const q="?v=2.11.1&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&cl="+(clRemote?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
+    const q="?v=2.12.0&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&cl="+((clRemote||balLocal)?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
     try{
       await OBR.modal.open({id,url:abs("overlay.html")+q,
         fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:!arrange});
@@ -121,7 +123,8 @@ const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote||clRemote;   // a cama
     if(!keepOn())return;
     if(open&&Date.now()-lastAct>45000)open=false;
     if(!open&&Date.now()-lastTry>20000)ensure();
-    if(clShown&&store.get("cl-closed")!==String(clShown)&&Date.now()-clAlive>15000&&Date.now()-clTry>15000)openCl();   // a janela da escalada não deu sinal: reabre
+    if(clShown&&store.get("cl-closed")!==String(clShown)&&Date.now()-clAlive>15000&&Date.now()-clTry>15000)openCl();
+    if(balKey&&store.get("bal-closed")!==balKey&&Date.now()-balAlive>15000&&Date.now()-balTry>15000)openBal();   // a janela da balança não deu sinal: reabre   // a janela da escalada não deu sinal: reabre
     for(const [,g] of grabs)if(Date.now()-g.alive>20000&&Date.now()-g.tried>20000)openGrab(g);   // a zona sumiu (ex.: outra janela fechou): reabre
   },5000);
 
@@ -177,6 +180,7 @@ const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote||clRemote;   // a cama
     const gm=[me,...ps].find(p=>p.role==="GM"),g=normG(gm&&gm.metadata&&gm.metadata[K_G]);
     if(g.on!==escRemote){escRemote=g.on;cfg()}
     clSync(gm);
+    balSync(gm,[me,...ps]);
     if(isGM)return;
     if(store.get(LSCT)==null)store.set(LSCT,String(g.ct));        // primeira leitura: não reaplica chamadas antigas
     if(g.ct>(+store.get(LSCT)||0)){
@@ -230,6 +234,53 @@ const keepOn=()=>hudOn()||trayOn()||escLocal()||escRemote||clRemote;   // a cama
       if(!cp.in)return;
       await OBR.player.setMetadata({[K_CP]:{...cp,in:0,p:0,top:0,fell:1}});
     }catch(e){console.warn("[alcançar] queda ignorada",e)}
+  });
+  /* ===== Equilíbrio > Equilibrar: só o mestre e o jogador que está na balança recebem a janela (nunca os outros) ===== */
+  const BW="ordem.bal/win";
+  let balKey="",balAlive=0,balTry=0;
+  async function openBal(fresh=true){
+    let vw=1280,vh=800;try{vw=await OBR.viewport.getWidth();vh=await OBR.viewport.getHeight()}catch(e){}
+    const sc=Math.min(1.7,Math.max(.7,parseFloat(store.get("bal-scale"))||1));
+    const W=Math.round(Math.min(vw-16,440*sc)),H=Math.round(Math.min(vh-16,640*sc));
+    let xy=null;try{xy=JSON.parse(store.get("bal-xy")||"null")}catch(e){}
+    if(!xy||!Number.isFinite(xy.x)||!Number.isFinite(xy.y))xy={x:Math.round((vw-W)/2),y:Math.round((vh-H)/2)};
+    xy={x:Math.round(Math.max(0,Math.min(vw-W,xy.x))),y:Math.round(Math.max(0,Math.min(vh-H,xy.y)))};
+    store.set("bal-xy",JSON.stringify(xy));balTry=Date.now();
+    if(fresh)try{await OBR.popover.close(BW)}catch(e){}
+    try{await OBR.popover.open({id:BW,url:abs("balanca.html")+"?v="+VER+"&pop="+encodeURIComponent(BW),width:W,height:H,
+      anchorReference:"POSITION",anchorPosition:{left:xy.x,top:xy.y},
+      anchorOrigin:{horizontal:"LEFT",vertical:"TOP"},transformOrigin:{horizontal:"LEFT",vertical:"TOP"},hidePaper:true,disableClickAway:true,marginThreshold:0});
+    }catch(e){console.warn("[balança] não consegui abrir a janela",e)}
+  }
+  const closeBal=()=>OBR.popover.close(BW).catch(()=>{});
+  function balSync(gm,all){                      // chamada a cada leitura do estado da sala
+    const g=normB(gm&&gm.metadata&&gm.metadata[K_B]),players=all.filter(p=>p&&p.role!=="GM");
+    const occ=g.on?occupant(g,all):null,me=all.find(p=>String(p.id)===myId),mine=normBP(me&&me.metadata&&me.metadata[K_BP]);
+    /* dois subiram ao mesmo tempo: fica quem subiu primeiro, o outro é tirado */
+    if(!isGM&&g.on&&mine.in&&mine.id===g.id&&occ&&String(occ.p.id)!==myId)OBR.player.setMetadata({[K_BP]:{...mine,in:0,...BRESET}}).catch(()=>{});
+    let key="";
+    if(g.on){if(isGM)key="g"+g.id;else if(occ&&String(occ.p.id)===myId)key="p"+g.id+":"+mine.t}
+    if((key!=="")!==balLocal){balLocal=key!=="";cfg()}
+    if(key!==balKey){
+      balKey=key;
+      if(key){if(store.get("bal-closed")!==key)openBal()}else closeBal();
+    }
+  }
+  OBR.broadcast.onMessage("ordem.bal/place",()=>{if(balKey)openBal(false)});
+  OBR.broadcast.onMessage("ordem.bal/move",()=>{if(balKey)openBal(false)});
+  OBR.broadcast.onMessage("ordem.bal/alive",()=>{balAlive=Date.now()});
+  OBR.broadcast.onMessage("ordem.bal/close",()=>{if(balKey)store.set("bal-closed",balKey);closeBal()});
+  OBR.broadcast.onMessage("ordem.bal/show",()=>{if(!balKey)return;store.set("bal-closed",null);openBal()});
+  /* o mestre expulsou este jogador da balança: só vale se quem mandou for mesmo o mestre */
+  OBR.broadcast.onMessage("ordem.bal/kick",async ev=>{
+    try{
+      const d=ev.data||{};if(String(d.to)!==myId||isGM)return;
+      const from=(await OBR.party.getPlayers()).find(p=>p.connectionId===ev.connectionId);
+      if(!from||from.role!=="GM")return;
+      const m=await OBR.player.getMetadata(),bp=normBP(m&&m[K_BP]);
+      if(!bp.in)return;
+      await OBR.player.setMetadata({[K_BP]:{...bp,in:0,...BRESET}});
+    }catch(e){console.warn("[balança] expulsão ignorada",e)}
   });
   /* alguém me deu um dado de esconderijo (Distrair / Chamar atenção) */
   OBR.broadcast.onMessage("ordem.esc/give",async ev=>{

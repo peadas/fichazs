@@ -72,7 +72,7 @@ Embaixo dos atributos há um cartão com a habilidade do **Perfil** escolhido no
 - O que a Mesa mostra é publicado nos metadados do jogador no Owlbear (some quando o jogador sai da sala).
 
 ## Arquivos
-`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `mesa.webp` + `mesa2x.webp` (mesa de dados) · `gm.html` (ficha do jogador aberta pelo mestre) · `efeitos.js` · `nevoa.png` · `moldura-menu.jpg` · `quick.html` (ícone e caixa de rolagem rápida) · `alcancar.html` + `alcancar-lib.js` (Equilíbrio > Alcançar) · `mesa-lib.js` · `obr.js` · `icon.svg`
+`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `mesa.webp` + `mesa2x.webp` (mesa de dados) · `gm.html` (ficha do jogador aberta pelo mestre) · `efeitos.js` · `nevoa.png` · `moldura-menu.jpg` · `quick.html` (ícone e caixa de rolagem rápida) · `alcancar.html` + `alcancar-lib.js` (Equilíbrio > Alcançar) · `balanca.html` + `equilibrio-lib.js` (Equilíbrio > Equilibrar) · `mesa-lib.js` · `obr.js` · `icon.svg`
 
 ## v2.10.0: Esconder
 - Nova aba **Esconder** no menu (jogador e mestre). Ela controla o painel **Esconda-se** que aparece na tela do Owlbear (título, subtítulo editável como "Caçando", e um quadro por jogador com foto e dados de esconderijo). Arraste o título para mover; a roda do mouse sobre o título (ou − / + na aba) muda o tamanho.
@@ -91,3 +91,12 @@ Embaixo dos atributos há um cartão com a habilidade do **Perfil** escolhido no
   - Teste = soma dos 2 dados ≥ DT. **Sucesso**: sobe o valor do dado escolhido. **Falha**: não sobe e leva esse valor de dano (botão *Aplicar −X PV* desconta da ficha).
   - Chegou à altura total: TOPO. Se a altura está oculta, a foto sobe sem nunca chegar ao topo até o jogador realmente chegar.
 - Estado: mestre em `ordem.cl/g`, jogadores em `ordem.cl/p` (metadados do Owlbear); a queda é uma mensagem `ordem.cl/drop` que o segundo plano do jogador só aceita se vier do mestre.
+
+## v2.12.0: Equilíbrio > Equilibrar (a balança)
+- **Mestre** (Equilíbrio > Equilibrar): nome (opcional, ex.: Tronco) e **Rodadas** (quantos testes de equilíbrio o jogador precisa vencer para atravessar). **Ativar balança** abre a janela só para o mestre; a aba **Equilíbrio** ganha uma bolinha verde para os jogadores avisando que há balança. **Encerrar balança** fecha tudo. A lista **Na balança** mostra quem subiu e o botão **Expulsar**.
+- **Jogador**: **Subir na balança** (aba ou janela). **Só um jogador por vez** (vale quem subiu primeiro; se dois clicarem juntos, o segundo é tirado sozinho). Os outros veem *Balança ocupada*. Para outro subir, quem está nela usa **Sair da balança** ou o mestre usa **Expulsar**.
+- **Quem vê a janela**: só o mestre e o jogador que está na balança. Ela se arrasta pelo cabeçalho, **− / +** (ou a roda do mouse) muda o tamanho, ✕ fecha (reabre em *Abrir janela* na aba). Posição e tamanho ficam salvos por navegador (`bal-xy`, `bal-scale`).
+- **A balança** (animada, com mola): cada d10 fica num prato; o lado mais pesado desce e o outro sobe, balançando até assentar. Equilibrada = balanço manso; caindo = tremida; ao cair a viga tomba e aparece **CAIU**; ao atravessar, **ATRAVESSOU**.
+- **Regras**: *Rolar 2d10* (os dados caem na mesa de todos, sem somar). Iguais ou com 1 de diferença: equilibrou (próxima rodada). Senão, está **caindo**: role um **dado de equilíbrio** (d4) e some a um dos d10 à sua escolha (botões *Somar +N no X* ou toque no dado). Dados de equilíbrio = metade da Acrobacia da ficha (d4 → 2, d6 → 3, d8 → 4…), gastos até o fim da travessia. Caindo e sem dados (ou *Deixar cair*): cai. *Tentar de novo* / *Atravessar de novo* recomeça com os dados cheios.
+- **Embaixo**: **Perícias** (Acrobacia, Atletismo e *Outra perícia…*) rolam perícia + atributo da ficha na mesa de todos, e o resultado fica na janela (o mestre também vê); ao lado, os **dados de equilíbrio** (d4 apagado = gasto; clicar num d4 aceso rola esse dado quando está caindo).
+- Estado: mestre em `ordem.bal/g`, jogador em `ordem.bal/p` (metadados do Owlbear). Expulsão é a mensagem `ordem.bal/kick`, que o segundo plano do jogador só aceita se vier do mestre.

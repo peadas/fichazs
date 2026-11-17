@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Balança</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;600&family=Cinzel:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#eef0ee;--muted:#8f9a99;--line:#3a4344;--gold:#e9ece7;--gold2:#a9b3b1;--ok:#5fd38a;--bad:#e0524f;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;overflow:hidden;background:transparent;color:var(--ink);font:14px/1.35 Barlow,system-ui,sans-serif;user-select:none;-webkit-user-select:none}
+button{font:600 .85rem Barlow,sans-serif;color:var(--ink);background:transparent;border:1px solid var(--line);padding:6px 10px;cursor:pointer;transition:.15s}
+button:hover:not(:disabled){border-color:var(--gold2);color:var(--gold)}
+button:disabled{opacity:.45;cursor:default}
+#win{position:absolute;inset:0;display:flex;flex-direction:column;background:linear-gradient(180deg,#12181af2,#0a0d0ef5);border:1px solid #7b8688;box-shadow:0 8px 30px #000a,inset 0 0 0 3px #0a0d0e,inset 0 0 0 4px #3a4344}
+header{cursor:grab;touch-action:none;display:flex;align-items:center;gap:8px;padding:8px 10px 6px;border-bottom:1px solid var(--line)}
+header.drag{cursor:grabbing}
+header .ttl{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+header b{font:800 1.05rem Cinzel,serif;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rd{font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.12em;color:var(--gold2);border:1px solid var(--line);padding:0 6px;white-space:nowrap}
+header .tools{display:flex;gap:3px}
+header .tools button{padding:0;width:24px;height:22px;line-height:1;font-size:.9rem;display:grid;place-items:center}
+#who{display:flex;align-items:center;gap:8px;padding:6px 12px 0;font:700 1rem/1.2 "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;min-height:30px}
+#who i{width:24px;height:24px;border-radius:50%;border:2px solid var(--c,#e9ece7);background:#0e1213 center/cover no-repeat;flex:none;display:grid;place-items:center;font:800 .75rem Cinzel,serif;font-style:normal;color:var(--c,#e9ece7)}
+#who span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#who em{font-style:normal;color:var(--muted);font-size:.85rem;letter-spacing:.08em}
+#who button{padding:0 8px;height:20px;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-color:var(--bad);color:#ff8f8c}
+#scene{flex:1;min-height:120px;position:relative;margin:2px 6px 0}
+#sc{position:absolute;inset:0;width:100%;height:100%}
+#say{padding:0 12px 6px;min-height:40px;font:600 .88rem/1.3 Barlow,sans-serif;color:var(--gold2);text-align:center}
+#say.good{color:#9be3b4}#say.bad{color:#ff8f8c}
+#ctl{padding:6px 10px 10px;border-top:1px solid var(--line)}
+.big{width:100%;padding:11px;font:800 1rem "Barlow Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#15191a;border:0;background:linear-gradient(180deg,#f3f5f1,#a9b3b1)}
+.big:hover:not(:disabled){filter:brightness(1.08);color:#15191a}
+.big.red{background:linear-gradient(180deg,#f0b3b0,#c5524f)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.two .big{padding:9px 6px;font-size:.9rem;letter-spacing:.1em}
+.say2{margin:0 0 6px;color:var(--gold2);font-size:.88rem}
+.bot{display:grid;grid-template-columns:1fr 150px;gap:10px;margin-top:8px}
+.box h5{margin:0 0 5px;font:700 .72rem "Barlow Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.tests{display:flex;flex-wrap:wrap;gap:6px}
+.tests button.t{flex:1 1 70px;display:flex;flex-direction:column;align-items:center;padding:6px 4px;font:700 .9rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;border-color:var(--gold2);color:var(--gold);background:#141a1b}
+.tests button.t small{font:600 .66rem Barlow,sans-serif;letter-spacing:0;text-transform:none;color:var(--muted)}
+.tests button.t:hover:not(:disabled){background:var(--gold2);color:#15191a}
+.tests button.t:hover:not(:disabled) small{color:#2d3638}
+.tests select{flex:1 1 100%;background:#0e1213;color:var(--ink);border:1px solid var(--line);padding:5px 6px;font:600 .8rem Barlow,sans-serif}
+.skr{margin:6px 0 0;padding:4px 8px;border-left:3px solid var(--gold2);background:#141a1b;font-size:.8rem}
+.d4s{display:flex;flex-wrap:wrap;gap:5px}
+.d4{width:38px;height:36px;padding:0;border-color:#4b5658;background:#0e1213;display:grid;place-items:center}
+.d4 svg{width:30px;height:28px}
+.d4 path{fill:#1a2123;stroke:var(--gold);stroke-width:1.6;stroke-linejoin:round}
+.d4 text{font:800 11px Cinzel,serif;fill:var(--gold);text-anchor:middle}
+.d4.spent{opacity:.35}
+.d4.spent path{stroke:var(--muted)}
+.d4.can{border-color:var(--gold);animation:pulse 1.2s infinite}
+.d4.can:hover{background:#202829}
+@keyframes pulse{50%{box-shadow:0 0 0 3px #e9ece733}}
+.cnt{margin-top:4px;font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.08em;color:var(--gold2)}
+/* cena */
+#sc .die polygon,#sc .die polyline{fill:#1b2325;stroke:#d8ddd9;stroke-width:2;stroke-linejoin:round}
+#sc .die polyline{fill:none;stroke-width:1.2;opacity:.45}
+#sc .die text{font:800 17px Cinzel,serif;fill:#f3f5f1;text-anchor:middle;dominant-baseline:central}
+#sc .die.ok polygon{stroke:#5fd38a;fill:#18301f}
+#sc .die.bad polygon{stroke:#e0524f;fill:#35191a}
+#sc .die.pick{cursor:pointer}
+#sc .die.pick polygon{stroke:#ecc962;animation:pk .9s infinite}
+@keyframes pk{50%{stroke-width:4}}
+#sc .die .in{transform-box:fill-box;transform-origin:center}
+#sc .die.roll .in{animation:tumble .5s linear infinite}
+#sc .die.pop .in{animation:pop .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes tumble{to{transform:rotate(360deg)}}
+@keyframes pop{from{transform:scale(1.7)}}
+#sc .tag{font:800 13px "Barlow Condensed",sans-serif;letter-spacing:.06em;text-anchor:middle;fill:#ecc962}
+#pend text{font:800 15px Cinzel,serif;fill:#15191a;text-anchor:middle;dominant-baseline:central}
+#pend path{fill:#ecc962;stroke:#fff8;stroke-width:1.2;stroke-linejoin:round}
+#sc.fell #beam path{fill:#c5524f}
+#msg{position:absolute;left:0;right:0;top:44%;text-align:center;font:800 2rem Cinzel,serif;letter-spacing:.1em;pointer-events:none;opacity:0;transition:opacity .4s;text-shadow:0 2px 12px #000}
+#msg.on{opacity:1}
+#msg.bad{color:#ff8f8c}#msg.good{color:#9be3b4}
+</style>
+</head>
+<body>
+<div id="win">
+  <header>
+    <div class="ttl"><b id="nm">Equilíbrio</b><span class="rd" id="rd" hidden></span></div>
+    <div class="tools">
+      <button id="b-min" title="Diminuir" aria-label="Diminuir">−</button>
+      <button id="b-max" title="Aumentar" aria-label="Aumentar">+</button>
+      <button id="b-x" title="Fechar a janela" aria-label="Fechar a janela">✕</button>
+    </div>
+  </header>
+  <div id="who"></div>
+  <div id="scene">
+    <svg id="sc" viewBox="0 0 400 290" preserveAspectRatio="xMidYMid meet" aria-label="Balança da justiça">
+      <defs>
+        <linearGradient id="gm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3f5f1"/><stop offset="1" stop-color="#6f7a78"/></linearGradient>
+        <linearGradient id="gp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9ece7"/><stop offset="1" stop-color="#8b9694"/></linearGradient>
+        <radialGradient id="gg" cx=".5" cy=".4"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#a9b3b1"/></radialGradient>
+      </defs>
+      <ellipse cx="200" cy="277" rx="100" ry="8" fill="#0007"/>
+      <path d="M116 276 Q130 256 200 252 Q270 256 284 276 Z" fill="url(#gm)" stroke="#3a4344"/>
+      <path d="M192 256 L196 80 L204 80 L208 256 Z" fill="url(#gm)" stroke="#3a4344" stroke-width=".8"/>
+      <g id="beam"><path d="M-142 0 Q0 -10 142 0 Q0 6 -142 0Z" fill="url(#gm)" stroke="#3a4344" stroke-width=".8"/><circle cx="-142" cy="0" r="4.5" fill="url(#gg)"/><circle cx="142" cy="0" r="4.5" fill="url(#gg)"/></g>
+      <g id="pL"></g><g id="pR"></g>
+      <circle cx="200" cy="70" r="8.5" fill="url(#gg)" stroke="#3a4344"/>
+      <g id="pend" hidden transform="translate(200 24)"><path d="M0 -16 L17 12 L-17 12Z"/><text y="4"></text></g>
+    </svg>
+    <div id="msg"></div>
+  </div>
+  <div id="say"></div>
+  <div id="ctl"></div>
+</div>
+<script type="module">
+import {loadOBR,ready} from "./obr.js?v=2.12.0";
+import {KEY,store} from "./mesa-lib.js?v=2.12.0";
+import {SK,testDice} from "./alcancar-lib.js?v=2.12.0";
+import {K_B,K_BP,normB,normBP,occupant,diceCount,balOK,afterTest,afterSpend,afterAdd,RESET} from "./equilibrio-lib.js?v=2.12.0";
+const $=s=>document.querySelector(s);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+const NS="http://www.w3.org/2000/svg";
+const sv=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e};
+let OBR=null,self=null,party=[],role="PLAYER",myId="";
+const gm=()=>role==="GM";
+const MAINB=["Acrobacia","Atletismo"];
+let other=store.get("bal-other")||"",rolling=null,msg="",kCtl="",kSay="";
+
+const players=()=>[...(gm()?[]:[self]),...party.filter(x=>x.role!=="GM")].filter(Boolean);
+const curG=()=>{const p=gm()?self:party.find(x=>x.role==="GM");return normB(p&&p.metadata&&p.metadata[K_B])};
+const mineBP=()=>normBP(self&&self.metadata&&self.metadata[K_BP]);
+const occ=()=>occupant(curG(),players());
+const iAm=o=>!!(o&&String(o.p.id)===myId);
+const nick=p=>{const e=p.metadata&&p.metadata[KEY];return String((e&&e.nome)||p.name||"Jogador").trim().slice(0,22)||"Jogador"};
+const bcast=(n)=>OBR&&OBR.broadcast.sendMessage(n,{},{destination:"LOCAL"}).catch(()=>{});
+const setBP=async patch=>{
+  if(!OBR)return;
+  const next={...mineBP(),...patch};
+  if(self)self.metadata={...(self.metadata||{}),[K_BP]:next};      // já mostra antes do Owlbear devolver
+  await OBR.player.setMetadata({[K_BP]:next});
+};
+
+/* ---------- janela: tamanho e posição (arrastar pelo cabeçalho) ---------- */
+const sc=()=>Math.min(1.7,Math.max(.7,parseFloat(store.get("bal-scale"))||1));
+let wt=0;
+const setScale=v=>{store.set("bal-scale",String(Math.round(Math.min(1.7,Math.max(.7,v))*100)/100));clearTimeout(wt);wt=setTimeout(()=>bcast("ordem.bal/place"),220)};
+$("#b-min").onclick=()=>setScale(sc()-.15);
+$("#b-max").onclick=()=>setScale(sc()+.15);
+{
+  const h=$("header");let d=null,t=0;
+  h.addEventListener("pointerdown",e=>{
+    if(e.button>0||e.target.closest("button"))return;
+    let xy=null;try{xy=JSON.parse(store.get("bal-xy")||"null")}catch(_){}
+    if(!xy)return;d={sx:e.screenX,sy:e.screenY,x:xy.x,y:xy.y};h.classList.add("drag");
+    try{h.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();
+  });
+  h.addEventListener("pointermove",e=>{
+    if(!d||Date.now()-t<45)return;t=Date.now();
+    store.set("bal-xy",JSON.stringify({x:d.x+e.screenX-d.sx,y:d.y+e.screenY-d.sy}));bcast("ordem.bal/move");
+  });
+  const end=e=>{if(!d)return;store.set("bal-xy",JSON.stringify({x:d.x+e.screenX-d.sx,y:d.y+e.screenY-d.sy}));d=null;h.classList.remove("drag");bcast("ordem.bal/move")};
+  h.addEventListener("pointerup",end);h.addEventListener("pointercancel",end);
+}
+$("#b-x").onclick=()=>bcast("ordem.bal/close");
+addEventListener("wheel",e=>{e.preventDefault();setScale(sc()+(e.deltaY<0?.1:-.1))},{passive:false});
+
+/* ---------- a balança (SVG) ---------- */
+const L=142,CX=200,CY=70,H=92;          // meia viga, pivô, comprimento das correntes
+const pans={};
+function mkDie(){
+  const g=sv("g",{class:"die"}),i=sv("g",{class:"in"});
+  i.append(sv("polygon",{points:"0,-27 24,-4 0,27 -24,-4"}),sv("polyline",{points:"-24,-4 0,5 24,-4"}),sv("polyline",{points:"0,5 0,27"}));
+  const tx=sv("text",{x:0,y:-6});g.append(i,tx);g._t=tx;return g;
+}
+function mkPan(id){
+  const g=$(id);
+  g.append(sv("line",{x1:0,y1:0,x2:-52,y2:H,stroke:"#8b9694","stroke-width":1.2}),sv("line",{x1:0,y1:0,x2:52,y2:H,stroke:"#8b9694","stroke-width":1.2}));
+  const d=mkDie();d.setAttribute("transform","translate(0 "+(H-34)+")");
+  g.append(d,sv("path",{d:"M-58 "+H+" Q0 "+(H+42)+" 58 "+H+" Z",fill:"url(#gp)",stroke:"#3a4344","stroke-width":1}),sv("circle",{cx:0,cy:0,r:3.5,fill:"#e9ece7"}));
+  const tag=sv("text",{x:0,y:H+24,class:"tag"});g.append(tag);
+  return {g,d,tag};
+}
+pans.a=mkPan("#pL");pans.b=mkPan("#pR");
+let view={a:0,b:0,st:"idle",rolling:false,pick:false,pend:0,mine:false};
+let ang=0,vel=0,last=performance.now(),shown={a:-1,b:-1};
+function target(t){
+  if(view.rolling)return Math.sin(t/130)*15+Math.sin(t/47)*4;
+  if(!view.a&&!view.b)return Math.sin(t/1100)*.8;
+  const d=view.a-view.b,m=Math.abs(d),s=d>0?-1:1;
+  if(view.st==="fell")return s*(m?34:30);
+  const deg=m<=1?m*1.8:Math.min(30,7+(m-1)*3.2);
+  const sway=view.st==="fall"?Math.sin(t/170)*1.6:Math.sin(t/1000)*.9;      // caindo: tremida; equilibrada: balanço manso
+  return s*deg+sway;
+}
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  const tg=target(now),K=75,C=6.2;
+  vel+=(-K*(ang-tg)-C*vel)*dt;ang+=vel*dt;
+  const r=ang*Math.PI/180,sw=Math.max(-9,Math.min(9,-vel*.05));
+  $("#beam").setAttribute("transform","translate("+CX+" "+CY+") rotate("+ang.toFixed(2)+")");
+  $("#pL").setAttribute("transform","translate("+(CX-L*Math.cos(r)).toFixed(1)+" "+(CY-L*Math.sin(r)).toFixed(1)+") rotate("+sw.toFixed(2)+")");
+  $("#pR").setAttribute("transform","translate("+(CX+L*Math.cos(r)).toFixed(1)+" "+(CY+L*Math.sin(r)).toFixed(1)+") rotate("+sw.toFixed(2)+")");
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+function paintDice(){
+  const bal=view.a&&view.b&&balOK(view.a,view.b);
+  [["a",view.a],["b",view.b]].forEach(([k,v])=>{
+    const p=pans[k],c=p.d.classList;
+    c.toggle("roll",view.rolling);
+    p.d._t.textContent=view.rolling?"?":(v?String(v):"");
+    c.toggle("ok",!view.rolling&&!!v&&!!bal);
+    c.toggle("bad",!view.rolling&&!!v&&!bal&&view.st!=="idle");
+    c.toggle("pick",view.pick);
+    p.d.onclick=view.pick?()=>pickSide(k):null;
+    if(!view.rolling&&v&&shown[k]!==v){c.remove("pop");void p.d.getBoundingClientRect();c.add("pop");setTimeout(()=>c.remove("pop"),520)}
+    shown[k]=view.rolling?-1:v;
+    p.tag.textContent=view.pick&&view.pend?"toque: +"+view.pend:"";
+  });
+  const pe=$("#pend");pe.toggleAttribute("hidden",!view.pend);pe.querySelector("text").textContent=view.pend?"+"+view.pend:"";
+  $("#sc").classList.toggle("fell",view.st==="fell");
+}
+
+/* ---------- textos ---------- */
+function status(g,o){
+  if(!g.on)return["Nenhuma balança ativa.",""];
+  if(!o)return[gm()?"Balança livre. Nenhum jogador subiu ainda.":"A balança está livre.",""];
+  const c=o.c,who=iAm(o)?"Você":nick(o.p),diff=Math.abs(c.a-c.b);
+  if(c.st==="done")return[who==="Você"?"Você atravessou!":nick(o.p)+" atravessou!","good"];
+  if(c.st==="fell")return[who==="Você"?"Você caiu! Tomara que saiba nadar…":nick(o.p)+" caiu!","bad"];
+  if(c.pend)return[(who==="Você"?"Dado de equilíbrio: +"+c.pend+". Toque no dado em que quer somar.":nick(o.p)+" rolou +"+c.pend+" e escolhe onde somar."),""];
+  if(c.st==="fall")return[(who==="Você"?"Você está caindo! ":nick(o.p)+" está caindo! ")+c.a+" e "+c.b+" (diferença "+diff+"). "+(c.n-c.sp>0?"Gaste um dado de equilíbrio ou deixe cair.":"Sem dados de equilíbrio."),"bad"];
+  if(c.a||c.b)return[(who==="Você"?"Equilibrou! ":nick(o.p)+" equilibrou! ")+c.a+" e "+c.b+(c.st==="idle"?(who==="Você"?" Role a próxima rodada.":""):""),"good"];
+  return[who==="Você"?"Role 2d10: números iguais ou com 1 de diferença equilibram.":nick(o.p)+" está na balança.",""];
+}
+
+/* ---------- rolar (os dados caem na mesa de todos; o resultado volta pela camada dos dados) ---------- */
+const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+function doRoll(kind,dice,names,title,extra){
+  if(!OBR||rolling)return;
+  const id=rid();rolling={rid:id,kind};msg="";
+  OBR.broadcast.sendMessage("ordem.hud/quickroll",{dice,names,title,exp:title,esc:{k:"bal",kind,rid:id,...(extra||{})},qid:"bal"+id},{destination:"LOCAL"}).catch(()=>{});
+  const mine=rolling;
+  setTimeout(()=>{if(rolling===mine){rolling=null;msg="Os dados não responderam. Tente de novo.";render()}},15000);
+  render();
+}
+const g0=()=>curG();
+const rollTest=()=>{const c=mineBP(),g=g0();doRoll("t",[[1,10],[1,10]],["Equilíbrio","Equilíbrio"],"Equilíbrio · rodada "+(c.rd+1)+"/"+g.rounds)};
+const rollD4=()=>doRoll("d",[[1,4]],["Dado de equilíbrio"],"Equilíbrio · dado de equilíbrio");
+const rollSk=sk=>{const dd=testDice(sk);doRoll("s",dd.map(x=>[1,x.f]),dd.map(x=>x.n),"Equilíbrio · "+sk,{sk})};
+const pickSide=side=>{const c=mineBP();if(!c.pend||c.st!=="fall")return;setBP(afterAdd(c,side,g0().rounds)).then(render)};
+function onResult(d){
+  if(!rolling||d.rid!==rolling.rid)return;
+  const R=rolling;rolling=null;
+  const o=occ();if(!o||!iAm(o)){render();return}
+  const c=o.c,dice=Array.isArray(d.dice)?d.dice:[];
+  if(R.kind==="t"&&dice.length>=2&&c.st==="idle")setBP(afterTest(c,+dice[0][1]||1,+dice[1][1]||1,g0().rounds)).then(render);
+  else if(R.kind==="d"&&dice.length>=1&&c.st==="fall"&&!c.pend)setBP(afterSpend(c,+dice[0][1]||1)).then(render);
+  else if(R.kind==="s"&&dice.length>=2)setBP({sk:{n:String(d.sk||"Perícia").slice(0,24),a:+dice[0][1]||0,b:+dice[1][1]||0,t:Date.now()}}).then(render);
+  else render();
+}
+
+/* ---------- desenho ---------- */
+function render(){
+  const g=curG(),o=occ(),mine=o&&iAm(o),isGm=gm(),c=o?o.c:null;
+  $("#nm").textContent=g.name||"Equilíbrio";
+  const rd=$("#rd");rd.hidden=!(g.on&&c);if(c)rd.textContent=c.st==="done"?"Fim":"Rodada "+Math.min(c.rd+1,g.rounds)+"/"+g.rounds;
+  /* quem está na balança */
+  const who=$("#who");
+  const wk=JSON.stringify([isGm,g.on,o&&[o.p.id,o.p.name,o.p.color]]);
+  if(who._k!==wk){
+    who._k=wk;who.replaceChildren();
+    if(o){
+      const m=o.p.metadata&&o.p.metadata[KEY],th=m&&m.th,ic=el("i",null,th?"":nick(o.p).charAt(0).toUpperCase());
+      ic.style.setProperty("--c",o.p.color||"#e9ece7");if(th)ic.style.backgroundImage="url("+th+")";
+      who.append(ic,el("span",null,nick(o.p)));
+      if(isGm){const b=el("button",null,"Expulsar");b.title="Tira "+nick(o.p)+" da balança";b.onclick=()=>OBR.broadcast.sendMessage("ordem.bal/kick",{to:String(o.p.id)},{destination:"ALL"}).catch(()=>{});who.append(b)}
+    }else who.append(el("em",null,g.on?"Balança livre":"Sem balança ativa"));
+  }
+  /* cena */
+  view={a:c?c.a:0,b:c?c.b:0,st:c?c.st:"idle",rolling:!!(rolling&&mine&&rolling.kind==="t"),pend:c?c.pend:0,pick:!!(mine&&c&&c.pend&&c.st==="fall"),mine};
+  paintDice();
+  const [t,cl]=status(g,o);
+  const sy=$("#say"),sk=JSON.stringify([t,cl,msg,!!rolling]);
+  if(sk!==kSay){kSay=sk;sy.className=cl;sy.textContent=rolling?(rolling.kind==="t"?"Rolando os dados…":"Rolando…"):(msg||t)}
+  const big=$("#msg"),fin=c&&(c.st==="done"||c.st==="fell");big.className=fin?"on "+(c.st==="done"?"good":"bad"):"";big.textContent=fin?(c.st==="done"?"ATRAVESSOU":"CAIU"):"";
+  controls(g,o,mine);
+}
+function d4icon(spent,can,i){
+  const b=el("button","d4"+(spent?" spent":"")+(can?" can":""));b.type="button";b.disabled=!can;
+  b.title=spent?"Dado já gasto":"Dado de equilíbrio (d4)";
+  b.innerHTML='<svg viewBox="0 0 30 28"><path d="M15 2 28 25H2Z"/><text x="15" y="21">4</text></svg>';
+  if(can)b.onclick=rollD4;return b;
+}
+function controls(g,o,mine){
+  const c=o?o.c:null,isGm=gm();
+  const key=JSON.stringify([isGm,g.on,g.id,g.rounds,o&&[o.p.id,o.c],mine,other,!!rolling,msg,store.get("bal-scale")]);
+  if(key===kCtl)return;kCtl=key;
+  const box=$("#ctl");box.replaceChildren();
+  if(!g.on){box.append(el("p","say2","O mestre ainda não ativou a balança."));return}
+  if(isGm){
+    box.append(el("p","say2",o?"Só você e "+nick(o.p)+" veem esta janela. Use Expulsar para liberar a balança.":"Só você e o jogador que subir veem esta janela."));
+    if(o&&o.c.sk&&o.c.sk.t)box.append(el("p","skr",nick(o.p)+" · "+o.c.sk.n+": "+o.c.sk.a+" + "+o.c.sk.b+" = "+(o.c.sk.a+o.c.sk.b)));
+    return;
+  }
+  if(!mine){
+    box.append(el("p","say2",o?"A balança está com "+nick(o.p)+".":"Você não está na balança."));
+    if(!o){const b=el("button","big","Subir na balança");b.onclick=()=>setBP({id:g.id,in:1,t:Date.now(),...RESET,n:diceCount(),sk:null}).then(render);box.append(b)}
+    return;
+  }
+  /* ações principais */
+  const left=c.n-c.sp;
+  if(c.st==="idle"){
+    const b=el("button","big","Rolar 2d10 · rodada "+(c.rd+1)+"/"+g.rounds);b.disabled=!!rolling;b.onclick=rollTest;box.append(b);
+  }else if(c.st==="fall"){
+    if(c.pend){
+      const r=el("div","two"),a=el("button","big","Somar +"+c.pend+" no "+c.a),b=el("button","big","Somar +"+c.pend+" no "+c.b);
+      a.onclick=()=>pickSide("a");b.onclick=()=>pickSide("b");r.append(a,b);box.append(r);
+    }else{
+      const r=el("div","two"),a=el("button","big","Dado de equilíbrio ("+left+")"),b=el("button","big red","Deixar cair");
+      a.disabled=!!rolling||left<=0;a.onclick=rollD4;b.disabled=!!rolling;
+      b.onclick=()=>setBP({st:"fell"}).then(render);r.append(a,b);box.append(r);
+    }
+  }else{
+    const r=el("div","two"),a=el("button","big",c.st==="done"?"Atravessar de novo":"Tentar de novo"),b=el("button","big red","Sair da balança");
+    a.onclick=()=>setBP({...RESET,n:diceCount()}).then(render);b.onclick=leave;r.append(a,b);box.append(r);
+  }
+  /* embaixo: perícias à esquerda, dados de equilíbrio ao lado */
+  const bot=el("div","bot"),l=el("div","box"),rt=el("div","box");
+  l.append(el("h5",null,"Perícias"));
+  const tests=el("div","tests"),sks=MAINB.concat(other&&!MAINB.includes(other)?[other]:[]);
+  sks.forEach(s=>{
+    const dd=testDice(s),b=el("button","t");b.disabled=!!rolling;
+    b.append(el("span",null,s),el("small",null,"d"+dd[0].f+" + d"+dd[1].f));b.onclick=()=>rollSk(s);tests.append(b);
+  });
+  const sel=el("select");sel.setAttribute("aria-label","Outra perícia");sel.append(new Option("Outra perícia…",""));
+  SK.filter(x=>!MAINB.includes(x[0])).forEach(([n])=>{const o2=new Option(n,n);if(n===other)o2.selected=true;sel.append(o2)});
+  sel.onchange=()=>{other=sel.value;store.set("bal-other",other);kCtl="";render()};
+  tests.append(sel);l.append(tests);
+  if(c.sk&&c.sk.t)l.append(el("p","skr",c.sk.n+": "+c.sk.a+" + "+c.sk.b+" = "+(c.sk.a+c.sk.b)));
+  rt.append(el("h5",null,"Dados de equilíbrio"));
+  const ds=el("div","d4s"),can=c.st==="fall"&&!c.pend&&!rolling;
+  for(let i=0;i<c.n;i++)ds.append(d4icon(i<c.sp,can&&i>=c.sp,i));
+  rt.append(ds,el("div","cnt",left+" de "+c.n+" restantes"));
+  bot.append(l,rt);box.append(bot);
+  if(c.st==="idle"||c.st==="fall")box.append(Object.assign(el("button",null,"Sair da balança"),{type:"button",onclick:leave,style:"margin-top:8px;width:100%"}));
+}
+const leave=()=>setBP({in:0,...RESET}).then(()=>{kCtl="";render()});
+
+(async()=>{
+  OBR=await loadOBR();
+  if(!OBR||!(await ready(OBR))){OBR=null;$("#say").textContent="Abra esta página dentro do Owlbear Rodeo.";return}
+  myId=String(OBR.player.id||"");
+  role=await OBR.player.getRole();
+  const me=async()=>({id:OBR.player.id,name:await OBR.player.getName(),color:await OBR.player.getColor(),metadata:await OBR.player.getMetadata()});
+  const refresh=async()=>{try{role=await OBR.player.getRole();self=await me();party=await OBR.party.getPlayers();render()}catch(e){}};
+  await refresh();
+  OBR.player.onChange(p=>{self={id:p.id||self.id,name:p.name,color:p.color,metadata:p.metadata};role=p.role||role;render()});
+  OBR.party.onChange(ps=>{party=ps;render()});
+  OBR.broadcast.onMessage("ordem.bal/result",ev=>onResult(ev.data||{}));
+  const alive=()=>bcast("ordem.bal/alive");
+  alive();setInterval(alive,4000);
+  setInterval(refresh,4000);
+})();
+</script>
+</body>
+</html>

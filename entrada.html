@@ -164,6 +164,8 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
 #v-eq .lbl{font:700 .72rem "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 #v-eq .cl{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
 #v-eq .cl b{flex:1;font:700 1.02rem "Barlow Condensed",sans-serif;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#t-eq{position:relative}
+#t-eq.live::after{content:"";position:absolute;top:5px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--ok,#5fd38a);box-shadow:0 0 6px #5fd38a}
 #v-eq .cl em{font-style:normal;font:700 1rem "Barlow Condensed",sans-serif;color:var(--gold)}
 </style>
 </head>
@@ -203,12 +205,13 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js?v=2.11.1"></script>
+<script src="efeitos.js?v=2.12.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.11.1";
-import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.11.1";
-import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI} from "./alcancar-lib.js?v=2.11.1";
-import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.11.1";
+import {loadOBR,ready} from "./obr.js?v=2.12.0";
+import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.12.0";
+import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI} from "./alcancar-lib.js?v=2.12.0";
+import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET} from "./equilibrio-lib.js?v=2.12.0";
+import {KEY,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.12.0";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";
@@ -348,6 +351,7 @@ function render(){
   document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===tab));
   if(gm)$("#nc").textContent=npcs().length,$("#nc").hidden=!npcs().length;
   renderMesa();if(gm&&tab==="npc")renderNpcs();if(tab==="esc")renderEsc();if(tab==="eq")renderEq();
+  $("#t-eq").classList.toggle("live",tab!=="eq"&&(cgSt().on||cbSt().on));
   if(anim)setTimeout(()=>{anim=false;document.body.classList.remove("anim")},700);
 }
 /* cartões na tela: liga/desliga (cada jogador decide para a própria tela) */
@@ -557,7 +561,7 @@ function renderGm(box,g){
   box.append(pl);
 }
 
-/* ================= aba Equilíbrio (balança): Equilibrar (em breve) e Alcançar ================= */
+/* ================= aba Equilíbrio (balança): Equilibrar e Alcançar ================= */
 const Q={sub:""};
 const gmP=()=>role==="GM"?self:party.find(x=>x.role==="GM");
 const cgSt=()=>{const p=gmP();return normC(p&&p.metadata&&p.metadata[K_C])};
@@ -565,24 +569,37 @@ const cpSt=x=>normCP(x&&x.metadata&&x.metadata[K_CP]);
 const setC=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_C]:{...cgSt(),...patch}});await refresh()};
 const setCP=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_CP]:{...cpSt(self),...patch}});await refresh()};
 const clShow=()=>OBR&&OBR.broadcast.sendMessage("ordem.cl/show",{},{destination:"LOCAL"}).catch(()=>{});
+/* Equilibrar: estado do mestre (K_B) e de cada jogador (K_BP) */
+const cbSt=()=>{const p=gmP();return normB(p&&p.metadata&&p.metadata[K_B])};
+const bpSt=x=>normBP(x&&x.metadata&&x.metadata[K_BP]);
+const setB=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_B]:{...cbSt(),...patch}});await refresh()};
+const setBP=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_BP]:{...bpSt(self),...patch}});await refresh()};
+const balShow=()=>OBR&&OBR.broadcast.sendMessage("ordem.bal/show",{},{destination:"LOCAL"}).catch(()=>{});
+const balPlayers=()=>[...(role==="GM"?[]:[self]),...party.filter(x=>x.role!=="GM")].filter(Boolean);
 const nick=p=>{const e=p.metadata&&p.metadata[KEY];return String((e&&e.nome)||p.name||"Jogador").trim().slice(0,24)||"Jogador"};
-let kQl="";
+let kQl="",kBl="";
 function renderEq(){
   const g=cgSt(),gm=role==="GM",mine=cpSt(self);
   const ps=[...(gm?[]:[self]),...party.filter(x=>x.role!=="GM")].filter(Boolean).map(p=>({p,c:cpSt(p)})).filter(x=>g.id&&x.c.in&&x.c.id===g.id);
   /* o formulário do mestre só é refeito quando a escalada liga/desliga (senão apagaria o que ele digita e engoliria cliques) */
-  const key=JSON.stringify(gm?[role,Q.sub,g.on,g.id]:[role,Q.sub,g,mine]);
+  const gb=cbSt(),ob=occupant(gb,balPlayers()),mb=bpSt(self);
+  const key=JSON.stringify(gm?[role,Q.sub,g.on,g.id,gb.on,gb.id]:[role,Q.sub,g,mine,gb,ob&&[ob.p.id,nick(ob.p)],mb.in,mb.t]);
   if(key!==kQ){
-    kQ=key;kQl="";
+    kQ=key;kQl="";kBl="";
     const box=$("#v-eq");box.replaceChildren();
     if(!OBR)box.append(el("div","tip","Abra esta página dentro do Owlbear Rodeo."));
     const tiles=el("div","acts two");
-    const b1=mk("button","ab",null,null,"Em breve");b1.disabled=true;b1.innerHTML=CI.scale;b1.append(el("span",null,"Equilibrar"),el("small",null,"em breve"));
+    const b1=mk("button","ab"+(Q.sub==="bal"?" on":""),null,()=>{Q.sub=Q.sub==="bal"?"":"bal";kQ="";renderEq()},"Equilibrar");b1.innerHTML=CI.scale;b1.append(el("span",null,"Equilibrar"));
     const b2=mk("button","ab"+(Q.sub==="alc"?" on":""),null,()=>{Q.sub=Q.sub==="alc"?"":"alc";kQ="";renderEq()},"Alcançar");b2.innerHTML=CI.reach;b2.append(el("span",null,"Alcançar"));
     tiles.append(b1,b2);box.append(tiles);
-    if(Q.sub!=="alc")box.append(el("p","hint","Escolha uma mecânica. Equilibrar (testes de equilíbrio com 2d10 e dados de equilíbrio) chega em breve."));
+    if(Q.sub==="bal"){if(gm)renderBalGm(box,gb);else renderBalPlayer(box,gb,ob,mb)}
+    else if(Q.sub!=="alc")box.append(el("p","hint","Escolha uma mecânica: Equilibrar (travessia com 2d10 e dados de equilíbrio) ou Alcançar (escalada)."));
     else if(gm)renderAlcGm(box,g);
     else renderAlcPlayer(box,g,mine,ps);
+  }
+  if(gm&&Q.sub==="bal"){                         // quem está na balança: refeito à parte
+    const bk=JSON.stringify([gb.on,gb.rounds,ob&&[ob.p.id,nick(ob.p),ob.c.rd,ob.c.st,ob.c.a,ob.c.b,ob.c.sp,ob.c.n]]);
+    if(bk!==kBl){kBl=bk;fillBalList($("#eq-bal"),gb,ob)}
   }
   if(gm&&Q.sub==="alc"){                         // lista "Na parede" do mestre: refeita à parte
     const lk=JSON.stringify([g.on,g.total,ps.map(x=>[x.p.id,x.p.name,x.c.p,x.c.top])]);
@@ -598,6 +615,43 @@ function fillAlcList(l,g,ps){
     r.append(mk("button","small","Derrubar",()=>OBR.broadcast.sendMessage("ordem.cl/drop",{to:String(p.id)},{destination:"ALL"}).catch(()=>{}),"Faz o jogador cair e sair da parede"));
     l.append(r);
   });
+}
+const ST_TXT={idle:"pronto para rolar",fall:"caindo",done:"atravessou",fell:"caiu"};
+function fillBalList(l,g,o){
+  if(!l)return;l.replaceChildren();l.append(el("h4",null,"Na balança"));
+  if(!g.on){l.append(el("p","hint","Ative a balança para os jogadores poderem subir."));return}
+  if(!o){l.append(el("p","hint","Livre. Nenhum jogador subiu ainda."));return}
+  const c=o.c,r=el("div","cl");
+  r.append(el("b",null,nick(o.p)),el("em",null,c.st==="done"?"FIM":(Math.min(c.rd+1,g.rounds)+"/"+g.rounds)));
+  r.append(mk("button","small","Expulsar",()=>OBR.broadcast.sendMessage("ordem.bal/kick",{to:String(o.p.id)},{destination:"ALL"}).catch(()=>{}),"Tira o jogador da balança e libera para outro"));
+  l.append(r,el("p","hint",ST_TXT[c.st]+(c.a||c.b?" · dados "+c.a+" e "+c.b:"")+" · dados de equilíbrio "+(c.n-c.sp)+"/"+c.n));
+}
+function renderBalGm(box,g){
+  const c=el("div","pnl");c.append(el("h4",null,g.on?"Balança ativa":"Criar balança"));
+  const f=(lbl,input)=>{const r=el("div","row2");r.append(el("span","lbl",lbl),input);return r};
+  const nm=el("input","t");nm.value=g.name;nm.maxLength=30;nm.placeholder="Tronco";nm.setAttribute("aria-label","Nome");
+  const rd=el("input","t");rd.type="number";rd.min=1;rd.max=30;rd.value=g.rounds;rd.style.width="70px";rd.setAttribute("aria-label","Rodadas da travessia");
+  const vals=()=>({name:nm.value.trim().slice(0,30),rounds:Math.max(1,Math.min(30,parseInt(rd.value,10)||3))});
+  [nm,rd].forEach(i=>i.onchange=()=>setB(vals()));
+  c.append(f("Nome",nm),f("Rodadas",rd));
+  c.append(el("p","hint","Rodadas = quantos testes de equilíbrio o jogador precisa vencer para atravessar. Role 2d10: iguais ou com 1 de diferença equilibram; senão está caindo e pode gastar dados de equilíbrio (d4, metade da Acrobacia) somando a um dos d10. Só um jogador por vez; só você e ele veem a janela."));
+  const row=el("div","row2");
+  if(!g.on)row.append(mk("button","go","Ativar balança",async()=>{await setB({...vals(),on:true,id:Date.now()});setTimeout(balShow,1200)}));
+  else row.append(mk("button","small","Encerrar balança",()=>setB({on:false})),mk("button","small","Abrir janela",balShow));
+  c.append(row);box.append(c);
+  const l=el("div","pnl");l.id="eq-bal";box.append(l);
+}
+function renderBalPlayer(box,g,o,mine){
+  const c=el("div","pnl");c.append(el("h4",null,"Equilibrar"));
+  if(!g.on){c.append(el("p","hint","O mestre ainda não ativou uma balança."));box.append(c);return}
+  const me=o&&String(o.p.id)===String(OBR&&OBR.player.id);
+  c.append(el("p","hint",(g.name?g.name+" · ":"")+g.rounds+" rodada"+(g.rounds>1?"s":"")+" · "+(me?"você está na balança":o?"ocupada por "+nick(o.p):"livre")));
+  const row=el("div","row2");
+  if(me)row.append(mk("button","small","Sair da balança",()=>setBP({in:0,...BRESET})),mk("button","small","Abrir janela",balShow));
+  else if(o)row.append(mk("button","go","Balança ocupada",null)),row.lastChild.disabled=true;
+  else row.append(mk("button","go","Subir na balança",async()=>{await setBP({id:g.id,in:1,t:Date.now(),...BRESET,n:diceCount(),sk:null});setTimeout(balShow,900)}));
+  c.append(row,el("p","hint","Só quem está na balança (e o mestre) vê a janela dela. Para outro jogador subir, quem está nela precisa sair ou ser expulso pelo mestre."));
+  box.append(c);
 }
 function renderAlcGm(box,g){
   const c=el("div","pnl");c.append(el("h4",null,g.on?"Escalada ativa":"Criar escalada"));

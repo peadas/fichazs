@@ -27,7 +27,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:transparent;font:16px/
 /* Dois modos, na mesma página:
    - ?mode=icon: o dadinho sutil do lado da mesa (um popover pequeno). Clicar pede ao segundo plano para abrir a caixa;
    - ?mode=in: a caixa de digitar. Enter rola: o pedido vai para a camada de dados, que sorteia e manda para todos. */
-import {loadOBR,ready} from "./obr.js?v=2.11.1";
+import {loadOBR,ready} from "./obr.js?v=2.12.0";
 const qs=new URLSearchParams(location.search),mode=qs.get("mode")==="in"?"in":qs.get("mode")==="cfg"?"cfg":"icon",id=qs.get("id")||"quick",pop=qs.get("pop")||"";
 const $=s=>document.querySelector(s);
 let OBR=null;
