@@ -1,5 +1,20 @@
 # Ficha Ordem Paranormal — extensão para Owlbear Rodeo
 
+## v2.16.3 — Tela da bolsa de fechaduras e sons reais de gazua
+- **Bolsa em tela própria (mestre):** na aba Fechadura, o botão **🎒 Abrir bolsa** leva a uma tela que mostra **só as fechaduras salvas**, cada uma com o **nome que o mestre deu** em destaque, o tipo (Porta/Baú) e um resumo (dados, PA, DT, tentativas, itens). Em cada cartão: **Preparar**, **Mostrar** e **✕ Remover** (pede confirmação). **← Voltar** volta para a fechadura. Com mais de 5 salvas aparece um campo para procurar pelo nome. Dê o nome no campo **Nome** antes de **Salvar esta na bolsa**; salvar de novo com o mesmo nome atualiza a que já existe.
+- **Sons de alto e baixo agora vêm do áudio real da gazua** (`tic-alto.mp3`: clique mais agudo; `toc-baixo.mp3`: clique mais grave e abafado). Se o arquivo não carregar, volta o som sintetizado de antes. Os outros sons (certo, abriu, quebrou) continuam sintetizados.
+- Arquivos novos: `tic-alto.mp3`, `toc-baixo.mp3`. Versão dos arquivos: `?v=2.16.3`.
+
+## v2.16.2 — Fechadura sem F5, sons de metal e "Ouvir de novo"
+- **Sem precisar de F5:** a cada mudança o mestre avisa todos (jogadores, tela do Owlbear e segundo plano), que releem a sala na hora. Com fechadura ativa o menu também confere a cada 3 s, a tela a cada 4 s e o segundo plano a cada 5 s.
+- **Sons novos, de metal:** alto = **tic** agudo e seco; baixo = **toc** grave e abafado; certo = **clic-clac** do tambor encaixando; abriu = chave girando (catraca) e a trava deslizando; quebrou = metal estalando. Tudo sintetizado, sem arquivo de áudio.
+- **Ouvir de novo (modo "sem guia"):** depois de uma tentativa o jogador repete os sons dela. Limite por rodada pelo dado de Crime: d4 = 2, d6 = 3, d8 = 4, d10 = 5, d12 = 6. A "Nova rodada" do mestre devolve as ouvidas.
+
+## v2.16.1 — Fechadura na tela e bolsa de fechaduras
+- **Fechadura na tela do Owlbear** (camada dos dados, como o Equilibrar): ao ativar, ela aparece para **todos** os jogadores e o mestre, com quem está nela, rodada e situação. Arraste pelo título (roda do mouse muda o tamanho; também no modo Organizar). Cada um pode desligar em **"Mostrar a fechadura na tela do Owlbear"** na aba. Corrige a fechadura que não aparecia para os jogadores.
+- **Bolsa de fechaduras (mestre):** monte a fechadura antes da sessão e aperte **Salvar esta na bolsa**. Cada item tem **Preparar** (carrega no formulário sem mostrar) e **Mostrar** (coloca na tela agora) e ✕ para remover. Guarda tipo, nome, dados, passo, PA, DT, tentativas, itens e senha. Fica salva neste navegador.
+- Versão dos arquivos: `?v=2.16.1` (força o navegador a baixar tudo de novo).
+
 ## v2.16.0 — Nova aba: Fechadura
 - **Aba Fechadura no menu** (mesmo molde do Equilibrar: sem janela própria, por isso não laga). A fechadura é desenhada em branco, como na referência: pinos com mola, gazua, trava deslizante e engrenagens. **Cada pino é um dado.**
 - **Mestre cria a fechadura:** Porta ou Baú (no baú dá para listar itens), PA e DT do arrombamento, tentativas máximas, de **3 a 10 dados**, passo de **d4 a d20**, e o botão **Girar dados** rola a senha (só o mestre vê). Ao ativar, a aba ganha uma bolinha para os jogadores.

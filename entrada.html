@@ -293,6 +293,16 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
 #v-fech .bagh{display:flex;align-items:center;gap:8px;margin:10px 0 4px;padding-top:8px;border-top:1px solid var(--line)}
 #v-fech .bagh h5{flex:1;margin:0;font:700 .72rem "Barlow Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 #v-fech .bagi{gap:6px}
+#v-fech .bagtop{display:flex;align-items:center;gap:8px;margin:0 0 8px}
+#v-fech .bagtop h4{flex:1;margin:0}
+#v-fech .bagfind{width:100%;margin:0 0 8px}
+#v-fech .bagcard{display:grid;gap:6px;padding:10px;margin:0 0 8px;border:1px solid var(--line);background:#0e1213}
+#v-fech .bagcard .bn{font:800 1.05rem/1.2 Cinzel,serif;color:var(--gold);word-break:break-word}
+#v-fech .bagcard .bk{display:inline-block;margin-right:6px;padding:1px 6px;border:1px solid var(--gold2);font:700 .7rem "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);vertical-align:middle}
+#v-fech .bagcard .bd{font-size:.82rem;color:var(--muted)}
+#v-fech .bagcard .ba{display:flex;gap:6px;flex-wrap:wrap}
+#v-fech .bagcard .ba button{flex:1;min-width:84px}
+#v-fech .bagok{margin:4px 0 0;font-size:.82rem;color:#9be3b4}
 
 /* ===== v2.13: visual mais limpo e legível ===== */
 :root{--muted:#a4afad;--line:#37414a}
@@ -385,20 +395,20 @@ h3.sec{margin:16px 0 10px;font-size:.92rem;color:var(--muted)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js?v=2.16.2"></script>
+<script src="efeitos.js?v=2.16.3"></script>
 <script type="module">
-import {localChannel} from "./canal.js?v=2.16.2";
-import {loadOBR,ready} from "./obr.js?v=2.16.2";
-import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.16.2";
-import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI,SK,testDice,climbersOf,clWants} from "./alcancar-lib.js?v=2.16.2";
-import {mountWall} from "./alcancar-cena.js?v=2.16.2";
-import {mountScale,d4Icon} from "./balanca-cena.js?v=2.16.2";
-import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET,afterAdd,afterFall,balWants,statusText} from "./equilibrio-lib.js?v=2.16.2";
-import {K_F,K_FP,NMIN,NMAX,FACES as FACESF,normF,normFP,crimeFace,triesPerRound,triesLeft as triesLeftF,replaysLeft as replaysLeftF,replaysPerRound,occupant as occupantF,lockState as lockStateF,status as statusF,enterPatch as enterPatchF,setDie as setDieF,tryOpen as tryOpenF,rollSecret as rollSecretF,kindName as kindNameF,statusText as statusTextF,fechWants,sceneView,bagItem,bagLoad} from "./fechadura-lib.js?v=2.16.2";
-import {mountLock} from "./fechadura-cena.js?v=2.16.2";
-import {sfx} from "./fechadura-som.js?v=2.16.2";
-import {makeState,pickGm} from "./estado.js?v=2.16.2";
-import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.16.2";
+import {localChannel} from "./canal.js?v=2.16.3";
+import {loadOBR,ready} from "./obr.js?v=2.16.3";
+import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.16.3";
+import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI,SK,testDice,climbersOf,clWants} from "./alcancar-lib.js?v=2.16.3";
+import {mountWall} from "./alcancar-cena.js?v=2.16.3";
+import {mountScale,d4Icon} from "./balanca-cena.js?v=2.16.3";
+import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET,afterAdd,afterFall,balWants,statusText} from "./equilibrio-lib.js?v=2.16.3";
+import {K_F,K_FP,NMIN,NMAX,FACES as FACESF,normF,normFP,crimeFace,triesPerRound,triesLeft as triesLeftF,replaysLeft as replaysLeftF,replaysPerRound,occupant as occupantF,lockState as lockStateF,status as statusF,enterPatch as enterPatchF,setDie as setDieF,tryOpen as tryOpenF,rollSecret as rollSecretF,kindName as kindNameF,statusText as statusTextF,fechWants,sceneView,bagItem,bagLoad} from "./fechadura-lib.js?v=2.16.3";
+import {mountLock} from "./fechadura-cena.js?v=2.16.3";
+import {sfx} from "./fechadura-som.js?v=2.16.3";
+import {makeState,pickGm} from "./estado.js?v=2.16.3";
+import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.16.3";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";
@@ -1123,11 +1133,48 @@ function fechWrap(){
   if(FW)return FW.root;
   const root=el("div","fech"),form=el("div","pnl"),card=el("div","pnl bcard"),who=el("div","bwho"),host=el("div","fhost"),say=el("p","bsay"),ctl=el("div","bctl"),gmb=el("div","fgm"),lg=el("div","blog"),vis=el("div");
   form.hidden=true;card.append(who,host,say,ctl,gmb,lg);root.append(form,card,vis);
-  FW={root,form,who,host,say,ctl,gmb,lg,vis,k:{},scene:mountLock(host,{sfx})};
+  FW={root,form,card,who,host,say,ctl,gmb,lg,vis,k:{},bagOpen:0,bagMsg:"",bagQ:"",scene:mountLock(host,{sfx})};
   return root;
 }
 const fechChips=(arr)=>{const r=el("div","fchips");arr.forEach(x=>r.append(el("b",null,String(x))));return r};
+/* tela da bolsa: só as fechaduras salvas, cada uma com o nome que o mestre colocou */
+function buildBagScreen(box,g){
+  const bag=bagLoad(store.get("fech-bolsa")),close=()=>{FW.bagOpen=0;FW.k.form="";renderFech()};
+  const saveBag=l=>{store.set("fech-bolsa",JSON.stringify(l));FW.k.form="";renderFech()};
+  const cfgOf=b=>({kind:b.kind,name:b.name,n:b.n,faces:b.faces,pa:b.pa,dt:b.dt,max:b.max,snd:b.snd,items:b.items,s:b.s.length===b.n?b.s:rollSecretF(b.n,b.faces)});
+  const top=el("div","bagtop");top.append(mk("button","small","← Voltar",close,"Voltar para a fechadura"),el("h4",null,"🎒 Bolsa de fechaduras ("+bag.length+")"));
+  box.replaceChildren(top);
+  if(g.on)box.append(el("p","hint","Há uma fechadura ativa agora. Mostrar troca a ativa pela escolhida; para só preparar outra, encerre a ativa primeiro."));
+  if(!bag.length){box.append(el("p","hint","Vazia. Monte uma fechadura, dê um nome a ela e aperte Salvar esta na bolsa."));return}
+  const q=(FW.bagQ||"").trim().toLowerCase();
+  if(bag.length>5){
+    const f=el("input","t bagfind");f.type="search";f.placeholder="Procurar pelo nome…";f.value=FW.bagQ||"";f.setAttribute("aria-label","Procurar fechadura");
+    f.oninput=()=>{FW.bagQ=f.value;const pos=f.selectionStart;FW.k.form="";renderFech();const n=FW.form.querySelector(".bagfind");if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}};
+    box.append(f);
+  }
+  const list=bag.map((b,i)=>[b,i]).filter(([b])=>!q||b.name.toLowerCase().includes(q));
+  if(!list.length)box.append(el("p","hint","Nenhuma fechadura com esse nome."));
+  list.forEach(([b,i])=>{
+    const card=el("div","bagcard"),nm=el("div","bn");
+    nm.append(el("span","bk",b.kind==="bau"?"Baú":"Porta"),document.createTextNode(b.name));
+    const det=[b.n+" dados d"+b.faces,"PA "+b.pa+" · DT "+b.dt,b.max+" tentativas"];
+    if(b.kind==="bau")det.push(b.items.length?b.items.length+(b.items.length===1?" item":" itens"):"sem itens");
+    if(b.snd)det.push("só por som");
+    const acts=el("div","ba");
+    acts.append(
+      mk("button","small","Preparar",()=>{if(cfSt().on){fGmMsg="Encerre a fechadura ativa para preparar outra.";FW.k.form="";renderFech();return}FW.bagOpen=0;setF({...cfgOf(b),on:false,dead:[]})},"Carrega no formulário sem mostrar para os jogadores"),
+      mk("button","small go","Mostrar",()=>{FW.bagOpen=0;setF({...cfgOf(b),on:true,id:Date.now(),br:0,bt:0,ko:0,rd:0,dead:[]})},"Carrega e coloca na tela dos dados agora"));
+    const del=mk("button","small","✕ Remover",()=>{
+      if(!del.dataset.sure){del.dataset.sure=1;del.textContent="Confirmar?";del.classList.add("bad");setTimeout(()=>{if(del.isConnected){delete del.dataset.sure;del.textContent="✕ Remover";del.classList.remove("bad")}},3000);return}
+      saveBag(bag.filter((_,k)=>k!==i));
+    },"Tirar da bolsa");
+    acts.append(del);
+    card.append(nm,el("div","bd",det.join(" · ")),acts);box.append(card);
+  });
+  if(fGmMsg)box.append(el("p","skr",fGmMsg));
+}
 function buildFechForm(box,g){
+  if(FW.bagOpen){buildBagScreen(box,g);return}
   box.replaceChildren(el("h4",null,g.on?"Fechadura ativa":"Criar fechadura"));
   const f=(lbl,input)=>{const r=el("div","row2");r.append(el("span","lbl",lbl),input);return r};
   const kinds=el("div","mode");
@@ -1163,24 +1210,19 @@ function buildFechForm(box,g){
     g.items.forEach((x,i)=>{const row=el("div","fitem");row.append(el("span",null,x),mk("button","small","✕",()=>setF({items:g.items.filter((_,k)=>k!==i)}),"Remover"));l.append(row)});
     box.append(l);
   }
-  /* bolsa: salvar esta fechadura para usar de novo; "Mostrar" coloca na tela dos dados na hora */
+  /* bolsa: a lista fica numa tela própria (só as fechaduras salvas, com o nome que o mestre deu) */
   const bag=bagLoad(store.get("fech-bolsa")),saveBag=l=>{store.set("fech-bolsa",JSON.stringify(l));FW.k.form="";renderFech()};
-  const cfgOf=b=>({kind:b.kind,name:b.name,n:b.n,faces:b.faces,pa:b.pa,dt:b.dt,max:b.max,snd:b.snd,items:b.items,s:b.s.length===b.n?b.s:rollSecretF(b.n,b.faces)});
   const bh=el("div","bagh");
-  bh.append(el("h5",null,"Bolsa de fechaduras ("+bag.length+")"),mk("button","small","Salvar esta na bolsa",()=>{
-    const cur={...cfSt(),...vals()},it=bagItem(cur);
-    saveBag([it,...bag.filter(x=>!(x.name===it.name&&x.kind===it.kind))].slice(0,40));
-  },"Guarda a fechadura que está montada aqui"));
+  bh.append(el("h5",null,"Bolsa de fechaduras ("+bag.length+")"),
+    mk("button","small","Salvar esta na bolsa",()=>{
+      const cur={...cfSt(),...vals()},it=bagItem(cur),had=bag.some(x=>x.name===it.name&&x.kind===it.kind);
+      FW.bagMsg=(had?"Atualizada na bolsa: ":"Guardada na bolsa: ")+it.name;
+      clearTimeout(FW.bagT);FW.bagT=setTimeout(()=>{FW.bagMsg="";FW.k.form="";renderFech()},4000);
+      saveBag([it,...bag.filter(x=>!(x.name===it.name&&x.kind===it.kind))].slice(0,40));
+    },"Guarda a fechadura que está montada aqui, com o nome acima"),
+    mk("button","small go","🎒 Abrir bolsa",()=>{FW.bagOpen=1;FW.bagMsg="";FW.bagQ="";FW.k.form="";renderFech()},"Abre a tela só com as fechaduras salvas"));
   box.append(bh);
-  if(!bag.length)box.append(el("p","hint","Vazia. Monte uma fechadura, aperte Salvar e ela fica aqui para usar de novo quando quiser."));
-  bag.forEach((b,i)=>{
-    const r=el("div","fitem bagi");
-    r.append(el("span",null,(b.kind==="bau"?"Baú · ":"Porta · ")+b.name+" — "+b.n+"d"+b.faces+(b.kind==="bau"&&b.items.length?" · "+b.items.length+" itens":"")));
-    r.append(mk("button","small","Preparar",()=>{if(cfSt().on){fGmMsg="Encerre a fechadura ativa para preparar outra.";FW.k.gmb="";renderFech();return}setF({...cfgOf(b),on:false,dead:[]})},"Carrega no formulário sem mostrar para os jogadores"));
-    r.append(mk("button","small go","Mostrar",()=>setF({...cfgOf(b),on:true,id:Date.now(),br:0,bt:0,ko:0,rd:0,dead:[]}),"Carrega e coloca na tela dos dados agora"));
-    r.append(mk("button","small","✕",()=>saveBag(bag.filter((_,k)=>k!==i)),"Tirar da bolsa"));
-    box.append(r);
-  });
+  if(FW.bagMsg)box.append(el("p","bagok",FW.bagMsg));
   const row=el("div","row2");
   row.append(g.on?mk("button","small","Encerrar fechadura",()=>setF({on:false})):mk("button","go","Ativar fechadura",()=>{
     const v=vals(),s=g.s.length===g.n?g.s:rollSecretF(g.n,g.faces);
@@ -1287,7 +1329,8 @@ function renderFech(){
   const g=cfSt(),pl=balPlayers(),o=occupantF(g,pl),gm=role==="GM",me=iAmOcc(o),ls=lockStateF(g,pl),S=statusF(g,ls),c=o?o.c:null,K=FW.k;
   const part=(slot,key,fn)=>{const k=JSON.stringify(key);if(K[slot]===k)return;K[slot]=k;fn()};
   FW.form.hidden=!gm;
-  if(gm&&!fSpin)part("form",[g.on,g.id,g.kind,g.n,g.faces,g.name,g.pa,g.dt,g.max,g.snd,g.s,g.items,store.get("fech-bolsa")],()=>buildFechForm(FW.form,g));
+  const bagScr=gm&&!!FW.bagOpen;FW.card.hidden=bagScr;FW.vis.hidden=bagScr;
+  if(gm&&!fSpin)part("form",[g.on,g.id,g.kind,g.n,g.faces,g.name,g.pa,g.dt,g.max,g.snd,g.s,g.items,store.get("fech-bolsa"),FW.bagOpen,FW.bagMsg,bagScr&&fGmMsg],()=>buildFechForm(FW.form,g));
   part("who",[g.on,g.kind,g.name,gm,g.rd,o&&[o.p.id,fnick(o.p),o.p.color,(entryOf(o.p)||{}).th&&1]],()=>{
     FW.who.replaceChildren();
     const head=(g.name?g.name:kindNameF(g.kind));

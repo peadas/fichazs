@@ -26,17 +26,31 @@ function tone(c,t,type,f0,f1,dur,peak,lp){
   let n=o;if(lp){const f=c.createBiquadFilter();f.type="lowpass";f.frequency.value=lp;o.connect(f);n=f}
   n.connect(out(c,peak,0.004,dur,t));o.start(t);o.stop(t+dur+0.05);
 }
+/* v2.16.3: alto/baixo agora usam o áudio real da gazua (tic-alto.mp3 mais agudo, toc-baixo.mp3 mais grave).
+   Se o arquivo não carregar, cai no som sintetizado de antes. */
+const SAMP={alto:{f:"tic-alto.mp3",g:0.8},baixo:{f:"toc-baixo.mp3",g:0.9}};
+function loadSamples(c){
+  Object.keys(SAMP).forEach(k=>{
+    const x=SAMP[k];if(x.b||x.l)return;x.l=1;
+    fetch(new URL(x.f,import.meta.url).href+"?v=2.16.3").then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(a=>new Promise((ok,no)=>c.decodeAudioData(a,ok,no))).then(b=>{x.b=b}).catch(()=>{x.l=0});
+  });
+}
+function sample(k){
+  const x=SAMP[k],c=ac();if(!c||!x)return false;
+  loadSamples(c);if(!x.b)return false;
+  try{const s=c.createBufferSource(),g=c.createGain();s.buffer=x.b;g.gain.value=x.g;s.connect(g);g.connect(c.destination);s.start();return true}catch(e){return false}
+}
 const play=fn=>{if(!soundOn())return;const c=ac();if(!c)return;try{fn(c,c.currentTime+0.01)}catch(e){}};
 /* metal de verdade: vários tons "desafinados" entre si (como uma barra de aço) que somem rápido */
 const metal=(c,t,f,parts,dur,peak)=>parts.forEach(([r,g,d])=>tone(c,t,"sine",f*r,f*r,dur*d,peak*g));
 const TIC=[[1,1,1],[2.76,.55,.6],[5.4,.3,.35],[8.9,.15,.2]];
 const TOC=[[1,1,1],[2.32,.6,.7],[4.1,.3,.45]];
 export const sfx={
-  unlock:()=>{ac()},
+  unlock:()=>{const c=ac();if(c)loadSamples(c)},
   /* número ALTO: "tic" agudo, seco, de pino de aço */
-  alto:()=>play((c,t)=>{metal(c,t,2350,TIC,0.17,0.2);burst(c,t,6500,1.5,0.012,0.32,"highpass")}),
+  alto:()=>{if(soundOn()&&sample("alto"))return;play((c,t)=>{metal(c,t,2350,TIC,0.17,0.2);burst(c,t,6500,1.5,0.012,0.32,"highpass")})},
   /* número BAIXO: "toc" grave e abafado, de peça pesada de latão */
-  baixo:()=>play((c,t)=>{metal(c,t,520,TOC,0.24,0.34);tone(c,t,"sine",170,95,0.1,0.34);burst(c,t,800,1,0.03,0.3)}),
+  baixo:()=>{if(soundOn()&&sample("baixo"))return;play((c,t)=>{metal(c,t,520,TOC,0.24,0.34);tone(c,t,"sine",170,95,0.1,0.34);burst(c,t,800,1,0.03,0.3)})},
   /* pino certo: o tambor encaixa (clic-clac) */
   click:()=>play((c,t)=>{burst(c,t,3300,3,0.02,0.4);metal(c,t,1450,TIC,0.08,0.2);tone(c,t+0.055,"sine",240,150,0.07,0.32);burst(c,t+0.055,1800,2,0.025,0.3);metal(c,t+0.06,1900,TIC,0.1,0.14)}),
   /* abriu: chave girando (catraca) e a trava deslizando com um baque */

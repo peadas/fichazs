@@ -5,21 +5,21 @@
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@3.1.0/+esm" crossorigin>
 <meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
 <body>
-<script src="engine.js?v=2.16.2"></script>
-<script src="dice-style.js?v=2.16.2"></script>
+<script src="engine.js?v=2.16.3"></script>
+<script src="dice-style.js?v=2.16.3"></script>
 <script type="module">
 /* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
    2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
    3) recebe as edições que o mestre faz na ficha do jogador. */
-import {loadOBR,ready} from "./obr.js?v=2.16.2";
-import {VER,KEY,KEY_NPC,KEY_NIMG,KEY_IMG,KEY_Z,LS,store,makePublisher,sigNpcs,sigNpcImgs,buildNpcs,buildNpcImgs,unpack} from "./mesa-lib.js?v=2.16.2";
-import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.16.2";
-import {K_C,K_CP,normC,normCP,afterClimb,climbersOf,clWants} from "./alcancar-lib.js?v=2.16.2";
-import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET,afterTest,afterSpend,balWants} from "./equilibrio-lib.js?v=2.16.2";
-import {K_F,K_FP,normF,normFP,occupant as occupantF,afterForce,fechWants} from "./fechadura-lib.js?v=2.16.2";
-import {makeState,pickGm} from "./estado.js?v=2.16.2";
-import {localChannel} from "./canal.js?v=2.16.2";
+import {loadOBR,ready} from "./obr.js?v=2.16.3";
+import {VER,KEY,KEY_NPC,KEY_NIMG,KEY_IMG,KEY_Z,LS,store,makePublisher,sigNpcs,sigNpcImgs,buildNpcs,buildNpcImgs,unpack} from "./mesa-lib.js?v=2.16.3";
+import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.16.3";
+import {K_C,K_CP,normC,normCP,afterClimb,climbersOf,clWants} from "./alcancar-lib.js?v=2.16.3";
+import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET,afterTest,afterSpend,balWants} from "./equilibrio-lib.js?v=2.16.3";
+import {K_F,K_FP,normF,normFP,occupant as occupantF,afterForce,fechWants} from "./fechadura-lib.js?v=2.16.3";
+import {makeState,pickGm} from "./estado.js?v=2.16.3";
+import {localChannel} from "./canal.js?v=2.16.3";
 (async()=>{
   /* o SDK pode falhar ao carregar (internet instável quando o jogador entra): tenta de novo até conseguir, em vez de ficar morto até o F5 */
   let OBR=null;
@@ -51,7 +51,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   async function openOverlay(e,tries=0){
     const id="ordem.ficha/overlay/"+Date.now();
     open=true;hello=false;mid=id;lastAct=Date.now();lastTry=Date.now();
-    const q="?v=2.16.2&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&warm="+(warmOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&cl="+((clRemote||balLocal||fechLocal)?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
+    const q="?v=2.16.3&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&warm="+(warmOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&cl="+((clRemote||balLocal||fechLocal)?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
     try{
       await OBR.modal.open({id,url:abs("overlay.html")+q,
         fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:!arrange});
