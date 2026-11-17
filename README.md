@@ -1,5 +1,14 @@
 # Ficha Ordem Paranormal — extensão para Owlbear Rodeo
 
+## v2.15.0 — Equilibrar refeito (sem janela que travava)
+- **Causa do travamento:** a balança abria uma janela própria (`balanca.html`) que carregava o SDK, fontes e a sala do zero para cada pessoa; quando não conectava, ficava "Conectando…" e nem os botões funcionavam.
+- **Agora não existe essa janela.** Os controles ficam na **aba Equilíbrio > Equilibrar** do menu (com a cena da balança animada ali mesmo), e a cena também aparece na **camada da tela do Owlbear** (a mesma dos dados, já aberta), com título, jogador, balança, frase de situação, d4 restantes e **diário** das últimas jogadas.
+- **Quem vê na tela:** mestre e quem está na balança, automaticamente. Qualquer outro jogador liga **"Mostrar a balança na tela do Owlbear"** na aba (e desliga quando quiser). A aba mostra a cena para todos de qualquer jeito.
+- **Resultado dos dados** é aplicado pelo segundo plano (não depende da aba continuar aberta). Se os dados não responderem em 10 s, o menu rola no automático.
+- Arrastar o painel na tela: pelo título (roda do mouse muda o tamanho); também no modo Organizar.
+- Menu: eventos internos de sincronização não redesenham mais a aba toda.
+- Arquivos novos: `balanca-cena.js`. Removido: `balanca.html`. Alcançar continua como antes.
+
 Ficha de personagem com dados 3D que caem na mesa de todos, mais a **Mesa** (foto, PV e PD de quem entrou; só o mestre abre as fichas).
 Tudo estático: **sem Netlify, sem banco, sem servidor**. Funciona direto no GitHub Pages.
 
@@ -92,7 +101,7 @@ Embaixo dos atributos há um cartão com a habilidade do **Perfil** escolhido no
 - O que a Mesa mostra é publicado nos metadados do jogador no Owlbear (some quando o jogador sai da sala).
 
 ## Arquivos
-`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `mesa.webp` + `mesa2x.webp` (mesa de dados) · `gm.html` (ficha do jogador aberta pelo mestre) · `efeitos.js` · `nevoa.png` · `moldura-menu.jpg` · `quick.html` (ícone e caixa de rolagem rápida) · `alcancar.html` + `alcancar-lib.js` (Equilíbrio > Alcançar) · `balanca.html` + `equilibrio-lib.js` (Equilíbrio > Equilibrar) · `mesa-lib.js` · `estado.js` · `obr.js` · `icon.svg`
+`manifest.json` · `entrada.html` (tela inicial: mesa e NPCs) · `ficha.html` (ficha) · `background.html` (dados + publicação da mesa + edições do mestre) · `overlay.html` + `engine.js` (dados 3D) · `mesa.webp` + `mesa2x.webp` (mesa de dados) · `gm.html` (ficha do jogador aberta pelo mestre) · `efeitos.js` · `nevoa.png` · `moldura-menu.jpg` · `quick.html` (ícone e caixa de rolagem rápida) · `alcancar.html` + `alcancar-lib.js` (Equilíbrio > Alcançar) · `balanca-cena.js` + `equilibrio-lib.js` (Equilíbrio > Equilibrar) · `mesa-lib.js` · `estado.js` · `obr.js` · `icon.svg`
 
 ## v2.10.0: Esconder
 - Nova aba **Esconder** no menu (jogador e mestre). Ela controla o painel **Esconda-se** que aparece na tela do Owlbear (título, subtítulo editável como "Caçando", e um quadro por jogador com foto e dados de esconderijo). Arraste o título para mover; a roda do mouse sobre o título (ou − / + na aba) muda o tamanho.

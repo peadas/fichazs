@@ -1,5 +1,5 @@
 /* Canal LOCAL entre as páginas da extensão (janela da escalada/balança, menu, segundo plano).
-   v2.14.4: antes tudo dependia de OBR.broadcast com destination:"LOCAL". Se o Owlbear atrasasse ou perdesse essa mensagem,
+   v2.15.0: antes tudo dependia de OBR.broadcast com destination:"LOCAL". Se o Owlbear atrasasse ou perdesse essa mensagem,
    a janela não mexia, não fechava e o segundo plano achava que ela tinha morrido. Agora cada aviso sai por TRÊS caminhos:
    BroadcastChannel e evento do localStorage (diretos entre as páginas, sem passar pelo Owlbear) e o LOCAL do Owlbear.
    Quem recebe ignora a cópia repetida (mesmo id). */

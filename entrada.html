@@ -172,6 +172,43 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
 #t-eq.live::after{content:"";position:absolute;top:5px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--ok,#5fd38a);box-shadow:0 0 6px #5fd38a}
 #v-eq .cl em{font-style:normal;font:700 1rem "Barlow Condensed",sans-serif;color:var(--gold)}
 
+
+/* ===== Equilibrar (v2.15.0): cena dentro da aba ===== */
+#v-eq .bcard{padding:10px 12px 12px}
+#v-eq .bwho{display:flex;align-items:center;gap:8px;min-height:30px;font:700 1rem/1.2 "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase}
+#v-eq .bwho i{width:26px;height:26px;border-radius:50%;border:2px solid var(--c,#e9ece7);background:#0e1213 center/cover no-repeat;flex:none;display:grid;place-items:center;font:800 .75rem Cinzel,serif;font-style:normal;color:var(--c,#e9ece7)}
+#v-eq .bwho span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-eq .bwho em{font-style:normal;color:var(--muted);font-size:.85rem;letter-spacing:.08em}
+#v-eq .bwho button.bad{border-color:#e0524f;color:#ff8f8c}
+#v-eq .bhost{max-width:400px;margin:0 auto}
+#v-eq .bsay{margin:4px 0 8px;min-height:38px;text-align:center;font:600 .92rem/1.3 Barlow,sans-serif;color:var(--gold2)}
+#v-eq .bsay.good{color:#9be3b4}#v-eq .bsay.bad{color:#ff8f8c}
+#v-eq .bctl{display:grid;gap:6px}
+#v-eq .bbig{width:100%;padding:11px;font:800 1rem "Barlow Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#15191a;border:0;background:linear-gradient(180deg,#f3f5f1,#a9b3b1)}
+#v-eq .bbig:hover:not(:disabled){filter:brightness(1.08);color:#15191a}
+#v-eq .bbig.red{background:linear-gradient(180deg,#f0b3b0,#c5524f)}
+#v-eq .bbig:disabled{opacity:.45;cursor:default}
+#v-eq .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#v-eq .two .bbig{padding:9px 6px;font-size:.9rem;letter-spacing:.1em}
+#v-eq .wide{width:100%}
+#v-eq .bot{display:grid;grid-template-columns:1fr 140px;gap:10px;margin-top:4px}
+#v-eq .box h5,#v-eq .blog h5{margin:0 0 5px;font:700 .72rem "Barlow Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+#v-eq .tests{display:flex;flex-wrap:wrap;gap:6px}
+#v-eq .tests button.t{flex:1 1 70px;display:flex;flex-direction:column;align-items:center;padding:6px 4px;font:700 .9rem "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;border-color:var(--gold2);color:var(--gold);background:#141a1b}
+#v-eq .tests button.t small{font:600 .66rem Barlow,sans-serif;letter-spacing:0;text-transform:none;color:var(--muted)}
+#v-eq .tests button.t:hover:not(:disabled){background:var(--gold2);color:#15191a}
+#v-eq .tests select{flex:1 1 100%;background:#0e1213;color:var(--ink);border:1px solid var(--line);padding:5px 6px;font:600 .8rem Barlow,sans-serif}
+#v-eq .skr{margin:6px 0 0;padding:4px 8px;border-left:3px solid var(--gold2);background:#141a1b;font-size:.82rem}
+#v-eq .d4s{display:flex;flex-wrap:wrap;gap:5px}
+#v-eq .d4{width:38px;height:36px;padding:0;border-color:#4b5658;background:#0e1213;display:grid;place-items:center}
+#v-eq .d4.can{border-color:var(--gold);animation:bpulse 1.2s infinite}
+#v-eq .d4:disabled{cursor:default}
+@keyframes bpulse{50%{box-shadow:0 0 0 3px #e9ece733}}
+#v-eq .cnt{margin-top:4px;font:700 .8rem "Barlow Condensed",sans-serif;letter-spacing:.08em;color:var(--gold2)}
+#v-eq .blog{margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
+#v-eq .blog p{margin:2px 0;padding-left:8px;border-left:2px solid var(--line);font-size:.84rem;color:var(--ink)}
+#v-eq .blog p.sm{border-color:transparent;padding-left:10px;color:var(--muted);font-size:.78rem}
+
 /* ===== v2.13: visual mais limpo e legível ===== */
 :root{--muted:#a4afad;--line:#37414a}
 :focus-visible{outline:2px solid #f0d28a;outline-offset:2px}
@@ -261,15 +298,16 @@ h3.sec{margin:16px 0 10px;font-size:.92rem;color:var(--muted)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js?v=2.14.4"></script>
+<script src="efeitos.js?v=2.15.0"></script>
 <script type="module">
-import {localChannel} from "./canal.js?v=2.14.4";
-import {loadOBR,ready} from "./obr.js?v=2.14.4";
-import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.14.4";
-import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI} from "./alcancar-lib.js?v=2.14.4";
-import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET} from "./equilibrio-lib.js?v=2.14.4";
-import {makeState,pickGm} from "./estado.js?v=2.14.4";
-import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.14.4";
+import {localChannel} from "./canal.js?v=2.15.0";
+import {loadOBR,ready} from "./obr.js?v=2.15.0";
+import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.15.0";
+import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI,SK,testDice} from "./alcancar-lib.js?v=2.15.0";
+import {mountScale,d4Icon} from "./balanca-cena.js?v=2.15.0";
+import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET,afterAdd,afterFall,balWants,statusText} from "./equilibrio-lib.js?v=2.15.0";
+import {makeState,pickGm} from "./estado.js?v=2.15.0";
+import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.15.0";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";
@@ -434,7 +472,7 @@ $("#tray-sw").onclick=()=>{store.set("tray-always",trayOn()?"0":"1");drawTray();
 drawTray();
 drawHud();
 document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;kM=kN=kE=kQ="";anim=true;render()});
-addEventListener("storage",()=>{if(role==="GM"&&tab==="npc")renderNpcs();else if(tab==="mesa")renderMesa();else if(tab==="esc")renderEsc();else if(tab==="eq")renderEq()});
+addEventListener("storage",ev=>{if(ev&&(ev.key==="ordem.evt"||ev.key==="bal-bp"||ev.key==="cl-cp"))return;if(role==="GM"&&tab==="npc")renderNpcs();else if(tab==="mesa")renderMesa();else if(tab==="esc")renderEsc();else if(tab==="eq")renderEq()});
 
 /* ================= aba Esconder ================= */
 const E={act:"",way:0,skill:"Furtividade",custom:false,face:8,qty:1,addFace:6,discard:false,msg:"",evOpen:false,dex:-1,dsk:"Enganação",dcustom:false,pick:-1,a1:-1,a2:-1};
@@ -647,21 +685,157 @@ const cpSt=x=>normCP(x&&x.metadata&&x.metadata[K_CP]);
 const setC=async patch=>{await setGM(K_C,{...cgSt(),...patch})};
 const setCP=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_CP]:{...cpSt(self),...patch}});await refresh()};
 const clShow=()=>LC.send("ordem.cl/show");
-/* Equilibrar: estado do mestre (K_B) e de cada jogador (K_BP) */
+/* ---------- Equilibrar (v2.15.0: sem janela própria; a cena é desenhada aqui e na tela do Owlbear) ----------
+   Quem rolou os dados: a camada dos dados devolve o resultado e o SEGUNDO PLANO aplica (não depende desta aba continuar aberta). */
 const cbSt=()=>{const p=gmP();return normB(ST?pickGm(ST,p,K_B):(p&&p.metadata&&p.metadata[K_B]))};
 const bpSt=x=>normBP(x&&x.metadata&&x.metadata[K_BP]);
 const setB=async patch=>{await setGM(K_B,{...cbSt(),...patch})};
-const setBP=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_BP]:{...bpSt(self),...patch}});await refresh()};
-const balShow=()=>LC.send("ordem.bal/show");
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const setBP=async patch=>{
+  if(!OBR)return;
+  const next={...bpSt(self),...patch};
+  if(self)self.metadata={...(self.metadata||{}),[K_BP]:next};      // já mostra antes do Owlbear devolver
+  store.set("bal-bp",JSON.stringify(next));                         // cópia local: restaura se a reconexão apagar a sala
+  renderEq();
+  for(let i=0;;i++){
+    try{await OBR.player.setMetadata({[K_BP]:next});break}
+    catch(e){if(i>=2){console.warn("[balança] não consegui salvar",e);break}await sleep(700*(i+1))}
+  }
+};
 const balPlayers=()=>[...(role==="GM"?[]:[self]),...party.filter(x=>x.role!=="GM")].filter(Boolean);
 const nick=p=>{const e=p.metadata&&p.metadata[KEY];return String((e&&e.nome)||p.name||"Jogador").trim().slice(0,24)||"Jogador"};
+const iAmOcc=o=>!!(o&&OBR&&String(o.p.id)===String(OBR.player.id));
+const balViewOn=o=>balWants(store.get("bal-view"),role==="GM",iAmOcc(o));
+let bRoll=null,bMsg="",bOther=store.get("bal-other")||"";
+const MAINB=["Acrobacia","Atletismo"];
+const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+/* manda rolar (os dados caem na mesa de todos). Se em 10 s a camada dos dados não responder, rola no automático e o segundo plano aplica igual. */
+function balRoll(kind,dice,names,title,extra){
+  if(!OBR||bRoll)return;
+  const id=rid(),me={rid:id,kind,dice,sk:extra&&extra.sk||""};bRoll=me;bMsg="";
+  OBR.broadcast.sendMessage("ordem.hud/quickroll",{dice,names,title,exp:title,esc:{k:"bal",kind,rid:id,...(extra||{})},qid:"bal"+id},{destination:"LOCAL"}).catch(()=>{});
+  setTimeout(()=>{
+    if(bRoll!==me)return;bRoll=null;
+    LC.send("ordem.bal/auto",{rid:me.rid,kind:me.kind,sk:me.sk,dice:me.dice.map(([,f])=>[f,1+Math.floor(Math.random()*f)])});
+    bMsg="Os dados não responderam; rolei no automático.";setTimeout(()=>{bMsg="";renderEq()},4000);renderEq();
+  },10000);
+  renderEq();
+}
+const pickSide=side=>{const c=bpSt(self),g=cbSt();if(!c.pend||c.st!=="fall")return;setBP(afterAdd(c,side,g.rounds))};
+const STX={idle:"pronto para rolar",fall:"caindo",done:"atravessou",fell:"caiu"};
+
+let BW=null;
+function balWrap(){
+  if(BW)return BW.root;
+  const root=el("div","bal"),form=el("div","pnl"),card=el("div","pnl bcard"),who=el("div","bwho"),host=el("div","bhost"),say=el("p","bsay"),ctl=el("div","bctl"),lg=el("div","blog"),vis=el("div");
+  form.hidden=true;card.append(who,host,say,ctl,lg);root.append(form,card,vis);
+  BW={root,form,who,host,say,ctl,lg,vis,k:{},scale:mountScale(host,{onPick:pickSide})};
+  return root;
+}
+function buildBalForm(box,g){
+  box.replaceChildren(el("h4",null,g.on?"Balança ativa":"Criar balança"));
+  const f=(lbl,input)=>{const r=el("div","row2");r.append(el("span","lbl",lbl),input);return r};
+  const nm=el("input","t");nm.value=g.name;nm.maxLength=30;nm.placeholder="Tronco";nm.setAttribute("aria-label","Nome");
+  const rd=el("input","t");rd.type="number";rd.min=1;rd.max=30;rd.value=g.rounds;rd.style.width="70px";rd.setAttribute("aria-label","Rodadas da travessia");
+  const vals=()=>({name:nm.value.trim().slice(0,30),rounds:Math.max(1,Math.min(30,parseInt(rd.value,10)||3))});
+  [nm,rd].forEach(i=>i.onchange=()=>setB(vals()));
+  box.append(f("Nome",nm),f("Rodadas",rd));
+  box.append(el("p","hint","Rodadas = quantos testes de equilíbrio o jogador precisa vencer para atravessar. 2d10: iguais ou com 1 de diferença equilibram; senão está caindo e pode gastar dados de equilíbrio (d4, metade da Acrobacia) somando a um dos d10. Só um jogador por vez."));
+  const row=el("div","row2");
+  row.append(g.on?mk("button","small","Encerrar balança",()=>setB({on:false})):mk("button","go","Ativar balança",()=>setB({...vals(),on:true,id:Date.now()})));
+  box.append(row);
+}
+function buildBalCtl(g,o,me){
+  const box=BW.ctl,gm=role==="GM";box.replaceChildren();
+  if(!g.on){box.append(el("p","hint",gm?"Ative a balança acima para os jogadores poderem subir.":"O mestre ainda não ativou uma balança."));return}
+  if(gm){
+    box.append(el("p","hint",o?nick(o.p)+" rola pelo menu dele; você acompanha aqui e na tela. Use Expulsar para liberar a balança.":"Livre. Nenhum jogador subiu ainda."));
+    if(o&&o.c.sk&&o.c.sk.t)box.append(el("p","skr",nick(o.p)+" · "+o.c.sk.n+": "+o.c.sk.a+" + "+o.c.sk.b+" = "+(o.c.sk.a+o.c.sk.b)));
+    return;
+  }
+  if(!me){
+    if(o)box.append(el("p","hint","A balança está com "+nick(o.p)+". Você acompanha a cena aqui."));
+    else box.append(mk("button","bbig","Subir na balança",()=>{bMsg="";setBP({id:g.id,in:1,t:Date.now(),...BRESET,n:diceCount(),sk:null})}));
+    return;
+  }
+  const c=o.c,left=c.n-c.sp,cur=()=>bpSt(self);
+  const two=(a,b)=>{const r=el("div","two");r.append(a,b);box.append(r)};
+  if(c.st==="idle"){
+    const b=mk("button","bbig","Rolar 2d10 · rodada "+(c.rd+1)+"/"+g.rounds,()=>balRoll("t",[[1,10],[1,10]],["Equilíbrio","Equilíbrio"],"Equilíbrio · rodada "+(cur().rd+1)+"/"+g.rounds));
+    b.disabled=!!bRoll;box.append(b);
+  }else if(c.st==="fall"){
+    if(c.pend)two(mk("button","bbig","Somar +"+c.pend+" no "+c.a,()=>pickSide("a")),mk("button","bbig","Somar +"+c.pend+" no "+c.b,()=>pickSide("b")));
+    else{
+      const a=mk("button","bbig","Dado de equilíbrio ("+left+")",()=>balRoll("d",[[1,4]],["Dado de equilíbrio"],"Equilíbrio · dado de equilíbrio")),d=mk("button","bbig red","Deixar cair",()=>setBP(afterFall(cur())));
+      a.disabled=!!bRoll||left<=0;d.disabled=!!bRoll;two(a,d);
+    }
+  }else two(mk("button","bbig",c.st==="done"?"Atravessar de novo":"Tentar de novo",()=>setBP({...BRESET,n:diceCount()})),mk("button","bbig red","Sair da balança",()=>setBP({in:0,...BRESET})));
+  /* perícias à esquerda, dados de equilíbrio ao lado */
+  const bot=el("div","bot"),l=el("div","box"),rt=el("div","box");
+  l.append(el("h5",null,"Perícias"));
+  const tests=el("div","tests");
+  MAINB.concat(bOther&&!MAINB.includes(bOther)?[bOther]:[]).forEach(s=>{
+    const dd=testDice(s),b=mk("button","t",null,()=>balRoll("s",dd.map(x=>[1,x.f]),dd.map(x=>x.n),"Equilíbrio · "+s,{sk:s}));b.disabled=!!bRoll;
+    b.append(el("span",null,s),el("small",null,"d"+dd[0].f+" + d"+dd[1].f));tests.append(b);
+  });
+  const sel=el("select");sel.setAttribute("aria-label","Outra perícia");sel.append(new Option("Outra perícia…",""));
+  SK.filter(x=>!MAINB.includes(x[0])).forEach(([n])=>{const op=new Option(n,n);if(n===bOther)op.selected=true;sel.append(op)});
+  sel.onchange=()=>{bOther=sel.value;store.set("bal-other",bOther);BW.k.ctl="";renderEq()};
+  tests.append(sel);l.append(tests);
+  if(c.sk&&c.sk.t)l.append(el("p","skr",c.sk.n+": "+c.sk.a+" + "+c.sk.b+" = "+(c.sk.a+c.sk.b)));
+  rt.append(el("h5",null,"Dados de equilíbrio"));
+  const ds=el("div","d4s"),can=c.st==="fall"&&!c.pend&&!bRoll;
+  for(let i=0;i<c.n;i++){
+    const b=mk("button","d4"+(i<c.sp?" spent":"")+(can&&i>=c.sp?" can":""),null,can&&i>=c.sp?()=>balRoll("d",[[1,4]],["Dado de equilíbrio"],"Equilíbrio · dado de equilíbrio"):null,i<c.sp?"Dado já gasto":"Dado de equilíbrio (d4)");
+    b.disabled=!(can&&i>=c.sp);b.append(d4Icon(i<c.sp));ds.append(b);
+  }
+  rt.append(ds,el("div","cnt",left+" de "+c.n+" restantes"));
+  bot.append(l,rt);box.append(bot);
+  if(c.st==="idle"||c.st==="fall")box.append(mk("button","small wide","Sair da balança",()=>setBP({in:0,...BRESET})));
+}
+function renderBal(g,o){
+  if(!BW)return;
+  const gm=role==="GM",me=iAmOcc(o),c=o?o.c:null,K=BW.k;
+  const part=(slot,key,fn)=>{const k=JSON.stringify(key);if(K[slot]===k)return;K[slot]=k;fn()};
+  BW.form.hidden=!gm;
+  if(gm)part("form",[g.on,g.id,g.rounds,g.name],()=>buildBalForm(BW.form,g));
+  part("who",[g.on,gm,o&&[o.p.id,nick(o.p),o.p.color,(entryOf(o.p)||{}).th&&1]],()=>{
+    BW.who.replaceChildren();
+    if(!o){BW.who.append(el("em",null,g.on?(g.name?g.name+" · ":"")+"Balança livre":"Sem balança ativa"));return}
+    const th=(entryOf(o.p)||{}).th,ic=el("i",null,th?"":nick(o.p).charAt(0).toUpperCase());
+    ic.style.setProperty("--c",o.p.color||"#e9ece7");if(th)ic.style.backgroundImage="url("+th+")";
+    BW.who.append(ic,el("span",null,(g.name?g.name+" · ":"")+nick(o.p)),el("em",null,c.st==="done"?"Fim":"Rodada "+Math.min(c.rd+1,g.rounds)+"/"+g.rounds));
+    if(gm)BW.who.append(mk("button","small bad","Expulsar",()=>OBR.broadcast.sendMessage("ordem.bal/kick",{to:String(o.p.id)},{destination:"ALL"}).catch(()=>{}),"Tira o jogador da balança e libera para outro"));
+  });
+  BW.scale.update({a:c?c.a:0,b:c?c.b:0,st:c?c.st:"idle",rolling:!!(bRoll&&me&&bRoll.kind==="t"),pend:c?c.pend:0,pick:!!(me&&c&&c.pend&&c.st==="fall")});
+  const [t,cl]=statusText(g,o,me,nick);
+  BW.say.className="bsay "+(bRoll?"":cl);BW.say.textContent=bRoll?(bRoll.kind==="t"?"Rolando os dados…":"Rolando…"):(bMsg||t);
+  part("ctl",[gm,g.on,g.id,g.rounds,me,o&&[o.p.id,o.c],!!bRoll,bOther],()=>buildBalCtl(g,o,me));
+  part("lg",[c&&c.lg,c&&c.st],()=>{
+    BW.lg.replaceChildren();
+    if(!c||!c.lg.length)return;
+    BW.lg.append(el("h5",null,"Diário"));
+    c.lg.slice().reverse().forEach(x=>BW.lg.append(el("p",null,x)));
+    BW.lg.append(el("p","sm",STX[c.st]+" · dados de equilíbrio "+(c.n-c.sp)+"/"+c.n));
+  });
+  part("vis",[balViewOn(o),g.on],()=>{
+    BW.vis.replaceChildren();
+    const on=balViewOn(o),r=sw("Mostrar a balança na tela do Owlbear",on,()=>{
+      store.set("bal-view",balViewOn(cbOcc())?"0":"1");BW.k.vis="";
+      LC.send("ordem.bal/view");OBR&&OBR.broadcast.sendMessage("ordem.bal/view",{},{destination:"LOCAL"}).catch(()=>{});renderEq();
+    });
+    r.querySelector(".t").append(el("small",null,gm?"Ligado por padrão para você e para quem está na balança.":"Ligue para acompanhar a travessia na tela. O mestre e quem está na balança já veem."));
+    BW.vis.append(r);
+  });
+}
+const cbOcc=()=>occupant(cbSt(),balPlayers());
 let kQl="",kBl="";
 function renderEq(){
   const g=cgSt(),gm=role==="GM",mine=cpSt(self);
   const ps=[...(gm?[]:[self]),...party.filter(x=>x.role!=="GM")].filter(Boolean).map(p=>({p,c:cpSt(p)})).filter(x=>g.id&&x.c.in&&x.c.id===g.id);
   /* o formulário do mestre só é refeito quando a escalada liga/desliga (senão apagaria o que ele digita e engoliria cliques) */
-  const gb=cbSt(),ob=occupant(gb,balPlayers()),mb=bpSt(self);
-  const key=JSON.stringify(gm?[role,Q.sub,g.on,g.id,gb.on,gb.id]:[role,Q.sub,g,mine,gb,ob&&[ob.p.id,nick(ob.p)],mb.in,mb.t]);
+  const gb=cbSt(),ob=occupant(gb,balPlayers());
+  const key=Q.sub==="bal"?JSON.stringify([role,"bal",!!OBR]):JSON.stringify(gm?[role,Q.sub,g.on,g.id]:[role,Q.sub,g,mine]);
   if(key!==kQ){
     kQ=key;kQl="";kBl="";
     const box=$("#v-eq");box.replaceChildren();
@@ -670,15 +844,12 @@ function renderEq(){
     const b1=mk("button","ab"+(Q.sub==="bal"?" on":""),null,()=>{Q.sub=Q.sub==="bal"?"":"bal";kQ="";renderEq()},"Equilibrar");b1.innerHTML=CI.scale;b1.append(el("span",null,"Equilibrar"));
     const b2=mk("button","ab"+(Q.sub==="alc"?" on":""),null,()=>{Q.sub=Q.sub==="alc"?"":"alc";kQ="";renderEq()},"Alcançar");b2.innerHTML=CI.reach;b2.append(el("span",null,"Alcançar"));
     tiles.append(b1,b2);box.append(tiles);
-    if(Q.sub==="bal"){if(gm)renderBalGm(box,gb);else renderBalPlayer(box,gb,ob,mb)}
+    if(Q.sub==="bal")box.append(balWrap());
     else if(Q.sub!=="alc")box.append(el("p","hint","Escolha uma mecânica: Equilibrar (travessia com 2d10 e dados de equilíbrio) ou Alcançar (escalada)."));
     else if(gm)renderAlcGm(box,g);
     else renderAlcPlayer(box,g,mine,ps);
   }
-  if(gm&&Q.sub==="bal"){                         // quem está na balança: refeito à parte
-    const bk=JSON.stringify([gb.on,gb.rounds,ob&&[ob.p.id,nick(ob.p),ob.c.rd,ob.c.st,ob.c.a,ob.c.b,ob.c.sp,ob.c.n]]);
-    if(bk!==kBl){kBl=bk;fillBalList($("#eq-bal"),gb,ob)}
-  }
+  if(Q.sub==="bal")renderBal(gb,ob);
   if(gm&&Q.sub==="alc"){                         // lista "Na parede" do mestre: refeita à parte
     const lk=JSON.stringify([g.on,g.total,ps.map(x=>[x.p.id,x.p.name,x.c.p,x.c.top])]);
     if(lk!==kQl){kQl=lk;fillAlcList($("#eq-list"),g,ps)}
@@ -693,43 +864,6 @@ function fillAlcList(l,g,ps){
     r.append(mk("button","small","Derrubar",()=>OBR.broadcast.sendMessage("ordem.cl/drop",{to:String(p.id)},{destination:"ALL"}).catch(()=>{}),"Faz o jogador cair e sair da parede"));
     l.append(r);
   });
-}
-const ST_TXT={idle:"pronto para rolar",fall:"caindo",done:"atravessou",fell:"caiu"};
-function fillBalList(l,g,o){
-  if(!l)return;l.replaceChildren();l.append(el("h4",null,"Na balança"));
-  if(!g.on){l.append(el("p","hint","Ative a balança para os jogadores poderem subir."));return}
-  if(!o){l.append(el("p","hint","Livre. Nenhum jogador subiu ainda."));return}
-  const c=o.c,r=el("div","cl");
-  r.append(el("b",null,nick(o.p)),el("em",null,c.st==="done"?"FIM":(Math.min(c.rd+1,g.rounds)+"/"+g.rounds)));
-  r.append(mk("button","small","Expulsar",()=>OBR.broadcast.sendMessage("ordem.bal/kick",{to:String(o.p.id)},{destination:"ALL"}).catch(()=>{}),"Tira o jogador da balança e libera para outro"));
-  l.append(r,el("p","hint",ST_TXT[c.st]+(c.a||c.b?" · dados "+c.a+" e "+c.b:"")+" · dados de equilíbrio "+(c.n-c.sp)+"/"+c.n));
-}
-function renderBalGm(box,g){
-  const c=el("div","pnl");c.append(el("h4",null,g.on?"Balança ativa":"Criar balança"));
-  const f=(lbl,input)=>{const r=el("div","row2");r.append(el("span","lbl",lbl),input);return r};
-  const nm=el("input","t");nm.value=g.name;nm.maxLength=30;nm.placeholder="Tronco";nm.setAttribute("aria-label","Nome");
-  const rd=el("input","t");rd.type="number";rd.min=1;rd.max=30;rd.value=g.rounds;rd.style.width="70px";rd.setAttribute("aria-label","Rodadas da travessia");
-  const vals=()=>({name:nm.value.trim().slice(0,30),rounds:Math.max(1,Math.min(30,parseInt(rd.value,10)||3))});
-  [nm,rd].forEach(i=>i.onchange=()=>setB(vals()));
-  c.append(f("Nome",nm),f("Rodadas",rd));
-  c.append(el("p","hint","Rodadas = quantos testes de equilíbrio o jogador precisa vencer para atravessar. Role 2d10: iguais ou com 1 de diferença equilibram; senão está caindo e pode gastar dados de equilíbrio (d4, metade da Acrobacia) somando a um dos d10. Só um jogador por vez; só você e ele veem a janela."));
-  const row=el("div","row2");
-  if(!g.on)row.append(mk("button","go","Ativar balança",async()=>{await setB({...vals(),on:true,id:Date.now()});setTimeout(balShow,1200)}));
-  else row.append(mk("button","small","Encerrar balança",()=>setB({on:false})),mk("button","small","Abrir janela",balShow));
-  c.append(row);box.append(c);
-  const l=el("div","pnl");l.id="eq-bal";box.append(l);
-}
-function renderBalPlayer(box,g,o,mine){
-  const c=el("div","pnl");c.append(el("h4",null,"Equilibrar"));
-  if(!g.on){c.append(el("p","hint","O mestre ainda não ativou uma balança."));box.append(c);return}
-  const me=o&&String(o.p.id)===String(OBR&&OBR.player.id);
-  c.append(el("p","hint",(g.name?g.name+" · ":"")+g.rounds+" rodada"+(g.rounds>1?"s":"")+" · "+(me?"você está na balança":o?"ocupada por "+nick(o.p):"livre")));
-  const row=el("div","row2");
-  if(me)row.append(mk("button","small","Sair da balança",()=>setBP({in:0,...BRESET})),mk("button","small","Abrir janela",balShow));
-  else if(o)row.append(mk("button","go","Balança ocupada",null)),row.lastChild.disabled=true;
-  else row.append(mk("button","go","Subir na balança",async()=>{await setBP({id:g.id,in:1,t:Date.now(),...BRESET,n:diceCount(),sk:null});setTimeout(balShow,900)}));
-  c.append(row,el("p","hint","Só quem está na balança (e o mestre) vê a janela dela. Para outro jogador subir, quem está nela precisa sair ou ser expulso pelo mestre."));
-  box.append(c);
 }
 function renderAlcGm(box,g){
   const c=el("div","pnl");c.append(el("h4",null,g.on?"Escalada ativa":"Criar escalada"));
@@ -788,11 +922,12 @@ function renderAlcPlayer(box,g,mine,ps){
   OBR.player.onChange(p=>{self={id:p.id||self.id,name:p.name,color:p.color,metadata:p.metadata};role=p.role||role;renderSoon()});
   OBR.party.onChange(ps=>{party=ps;renderSoon()});
   ST.subs.add(renderSoon);
+  OBR.broadcast.onMessage("ordem.bal/result",ev=>{const d=ev.data||{};if(bRoll&&d.rid===bRoll.rid){bRoll=null;bMsg="";renderEq()}});
   setInterval(()=>{if(!document.hidden)refresh()},15000);       // garantia: a lista sempre se corrige sozinha (os eventos já atualizam na hora)
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
 })();
 
-/* v2.14.4: botão de sincronização (no lugar do F5). Mostra há quanto tempo o segundo plano conferiu a sala; clicar força tudo de novo. */
+/* v2.15.0: botão de sincronização (no lugar do F5). Mostra há quanto tempo o segundo plano conferiu a sala; clicar força tudo de novo. */
 {
   let last=0,askT=0;const b=$("#b-sync"),tx=$("#sync-t");
   const draw=()=>{const s=last?Math.round((Date.now()-last)/1000):-1;

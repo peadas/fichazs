@@ -1,7 +1,7 @@
 /* Equilíbrio > Alcançar: peças compartilhadas (menu, janela da escalada e segundo plano).
    Estado nos metadados do Owlbear: o mestre em K_C (a escalada: DT, altura, se a altura está revelada),
    cada jogador em K_CP (se entrou, quanto já subiu, último teste). O mestre derruba um jogador por mensagem (ordem.cl/drop). */
-import {sheet,ATTR} from "./esconder-lib.js?v=2.14.4";
+import {sheet,ATTR} from "./esconder-lib.js?v=2.15.0";
 export const K_C="ordem.cl/g", K_CP="ordem.cl/p";
 export const RISK_DT=3;                         // modo arriscado: DT +3
 export const FACES=[4,6,8,10,12,14,16,18,20];

@@ -105,11 +105,11 @@ header .tools svg{width:14px;height:14px}
   <div id="ctl"></div>
 </div>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.14.4";
-import {KEY,entryOf,store,mineLive,setMine} from "./mesa-lib.js?v=2.14.4";
-import {K_C,K_CP,RISK_DT,SK,MAIN,normC,normCP,testDice,ICON} from "./alcancar-lib.js?v=2.14.4";
-import {makeState,pickGm} from "./estado.js?v=2.14.4";
-import {localChannel} from "./canal.js?v=2.14.4";
+import {loadOBR,ready} from "./obr.js?v=2.15.0";
+import {KEY,entryOf,store,mineLive,setMine} from "./mesa-lib.js?v=2.15.0";
+import {K_C,K_CP,RISK_DT,SK,MAIN,normC,normCP,testDice,ICON} from "./alcancar-lib.js?v=2.15.0";
+import {makeState,pickGm} from "./estado.js?v=2.15.0";
+import {localChannel} from "./canal.js?v=2.15.0";
 const $=s=>document.querySelector(s);
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",myId="";
@@ -132,7 +132,7 @@ const setCP=patch=>{
   if(!OBR)return Promise.resolve();
   const next={...mineCP(),...patch};
   if(self)self.metadata={...(self.metadata||{}),[K_CP]:next};
-  store.set("cl-cp",JSON.stringify(next));          // v2.14.4: cópia na hora (se a reconexão apagar a sala antes do segundo plano copiar, ainda dá para restaurar)
+  store.set("cl-cp",JSON.stringify(next));          // v2.15.0: cópia na hora (se a reconexão apagar a sala antes do segundo plano copiar, ainda dá para restaurar)
   cpQ=cpQ.then(async()=>{
     for(let i=0;i<3;i++){
       try{await OBR.player.setMetadata({[K_CP]:next});return}
@@ -150,7 +150,7 @@ const setScale=v=>{store.set("cl-scale",String(Math.round(Math.min(1.7,Math.max(
 $("#b-min").onclick=()=>setScale(sc()-.15);
 $("#b-max").onclick=()=>setScale(sc()+.15);
 $("#b-pos").onclick=()=>{store.set("cl-pos",String(((+store.get("cl-pos")||0)+1)%4));store.set("cl-xy",null);place()};
-/* arrastar pelo cabeçalho: v2.14.4 — a janela NÃO é mexida enquanto o mouse anda (se o Owlbear recria a janela, o mouse ficava "preso").
+/* arrastar pelo cabeçalho: v2.15.0 — a janela NÃO é mexida enquanto o mouse anda (se o Owlbear recria a janela, o mouse ficava "preso").
    Em vez disso aparece um contorno fantasma que segue o mouse; ao soltar, a janela vai para lá de uma vez. */
 {
   const h=$("header");let d=null,t=0;
@@ -311,7 +311,7 @@ function onResult(d){
   setCP({p,top,fell:0,last:{sk:R.sk,a,b,s,dt,ok:ok?1:0,amt,m:md,t:Date.now()}}).then(()=>{kCtl="";render()}).catch(()=>{kCtl="";render()});
 }
 
-/* v2.14.4: se em 9 s a janela não conseguiu falar com o Owlbear, mostra aviso e pede para o segundo plano reabri-la (antes ficava "paradona") */
+/* v2.15.0: se em 9 s a janela não conseguiu falar com o Owlbear, mostra aviso e pede para o segundo plano reabri-la (antes ficava "paradona") */
 setTimeout(function chk(){
   if(window.__ready)return;
   const e=document.querySelector("#rows");if(e&&!e.textContent.trim())e.textContent="Conectando ao Owlbear… se não responder, a janela se reabre sozinha.";
@@ -322,7 +322,7 @@ setTimeout(function chk(){
   if(!OBR){$("#rows").textContent="Sem conexão com o Owlbear (internet?). A janela se reabre sozinha.";return}
   if(!(await ready(OBR))){OBR=null;$("#rows").textContent="Abra esta página dentro do Owlbear Rodeo.";return}
   myId=String(OBR.player.id||"");
-  const tmo=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(r,ms))]);    // v2.14.4: nenhuma espera do começo pode travar a janela para sempre
+  const tmo=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(r,ms))]);    // v2.15.0: nenhuma espera do começo pode travar a janela para sempre
   ST=makeState(OBR);await tmo(ST.load(),5000);
   try{role=await tmo(OBR.player.getRole(),5000)||role}catch(e){}
   const me=async()=>({id:OBR.player.id,name:await OBR.player.getName(),color:await OBR.player.getColor(),metadata:await OBR.player.getMetadata()});
@@ -346,7 +346,7 @@ setTimeout(function chk(){
   const alive=()=>LC.send("ordem.cl/alive");
   alive();setInterval(alive,4000);
   setInterval(refresh,4000);
-  /* v2.14.4: voltou para a aba / ganhou foco / a internet voltou: relê a sala e mostra que está viva na hora */
+  /* v2.15.0: voltou para a aba / ganhou foco / a internet voltou: relê a sala e mostra que está viva na hora */
   const wake=()=>{if(document.hidden)return;try{ST.load()}catch(e){}refresh();alive()};
   document.addEventListener("visibilitychange",wake);addEventListener("focus",wake);addEventListener("online",wake);
   addEventListener("resize",()=>render());

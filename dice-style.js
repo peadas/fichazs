@@ -2,7 +2,7 @@
    Usado pela ficha (painel em Settings) e pelo overlay (renderização 3D). Carregar depois do engine.js. */
 (function(){
 "use strict";
-const VER="2.14.4",LS="ordem.ficha/dice2",LS0="ordem.ficha/dice",LM="ordem.ficha/mesa";
+const VER="2.15.0",LS="ordem.ficha/dice2",LS0="ordem.ficha/dice",LM="ordem.ficha/mesa";
 const KINDS=[["","Normal"],["pv","Pavor"],["rel","Relação"]];
 const ORIG={"":{bg:"#d0a93f",fg:"#ecc962",face:"#08080a"},pv:{bg:"#14171c",fg:"#e9a23b",face:"#14171c"},rel:{bg:"#e9e3d3",fg:"#8c2f3a",face:"#e9e3d3"}};
 const ST=[["opaco","Opaco"],["transl","Translúcido"],["metal","Metálico"],["classico","Original"]];

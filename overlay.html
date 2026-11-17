@@ -145,23 +145,45 @@ body.arr #esc{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outli
 .bub svg{width:13px;height:13px}
 .em{padding:8px 14px;border-top:2px solid #b8c1bf;font:600 .9rem "Barlow Condensed",sans-serif;letter-spacing:.06em;color:#e8dfc0;text-align:center}
 .ev{padding:18px;text-align:center;color:#9aa4a3;font:600 .95rem "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;grid-column:1/-1}
+
+/* painel da Balança (Equilíbrio > Equilibrar): só mostra; uma zona transparente sobre o título faz o arrastar */
+#bal{position:fixed;left:0;top:0;width:400px;display:none;pointer-events:none;user-select:none;-webkit-user-select:none;transform:scale(var(--s,1));transform-origin:0 0;z-index:3;color:#eef0ee}
+#bal.on{display:block}
+body.arr #bal{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outline-offset:6px}
+#bal.drag{filter:brightness(1.12)}
+.bh{display:flex;align-items:center;gap:10px;padding:10px 14px 8px;border-bottom:2px solid #b8c1bf;background:linear-gradient(180deg,#232c2ef2,#141a1bf2)}
+.bh b{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:800 1.3rem/1 Cinzel,serif;letter-spacing:.12em;text-transform:uppercase}
+.bh em{font:700 .9rem "Barlow Condensed",sans-serif;font-style:normal;letter-spacing:.12em;color:#a9b3b1;border:1px solid #4a5456;padding:0 7px}
+.bw{display:flex;align-items:center;gap:8px;padding:8px 14px 0;font:700 1.05rem "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.bw i{width:28px;height:28px;border-radius:50%;border:2px solid var(--c,#e9ece7);background:#0e1213 center/cover no-repeat;flex:none;display:grid;place-items:center;font:800 .8rem Cinzel,serif;font-style:normal;color:var(--c,#e9ece7)}
+.bw span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bw u{text-decoration:none;display:flex;gap:3px}
+.bw u svg{display:block}
+.bsc2{padding:0 10px}
+.bs{padding:2px 14px 8px;text-align:center;font:600 .95rem/1.3 Barlow,sans-serif;color:#a9b3b1;min-height:44px}
+.bs.good{color:#9be3b4}.bs.bad{color:#ff8f8c}
+.bg{padding:6px 14px 10px;border-top:1px solid #4a5456}
+.bg p{margin:1px 0;padding-left:8px;border-left:2px solid #4a5456;font:600 .85rem "Barlow Condensed",sans-serif;letter-spacing:.04em;color:#e8dfc0}
 </style>
 </head>
 <body>
-<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.14.4" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.14.4" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
+<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.15.0" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.15.0" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
 <div id="hist" aria-hidden="true"></div>
 <div id="hud" aria-hidden="true"></div>
 <div id="esc" aria-hidden="true"></div>
+<div id="bal" aria-hidden="true"></div>
 <div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
 <div id="hbar"><span>Arraste os cartões e a mesa</span><button id="t-menos" title="Mesa menor" aria-label="Mesa menor">Mesa −</button><button id="t-mais" title="Mesa maior" aria-label="Mesa maior">Mesa +</button><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js?v=2.14.4"></script>
-<script src="dice-style.js?v=2.14.4"></script>
+<script src="engine.js?v=2.15.0"></script>
+<script src="dice-style.js?v=2.15.0"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.14.4";
-import {KEY,npcsOf,entryOf} from "./mesa-lib.js?v=2.14.4";
-import {K_P,K_G,normP,normG,MAXD,ICON} from "./esconder-lib.js?v=2.14.4";
-import {makeState,pickGm} from "./estado.js?v=2.14.4";
+import {loadOBR,ready} from "./obr.js?v=2.15.0";
+import {KEY,npcsOf,entryOf} from "./mesa-lib.js?v=2.15.0";
+import {K_P,K_G,normP,normG,MAXD,ICON} from "./esconder-lib.js?v=2.15.0";
+import {makeState,pickGm} from "./estado.js?v=2.15.0";
+import {K_B,normB,occupant,statusText,balWants} from "./equilibrio-lib.js?v=2.15.0";
+import {mountScale,d4Icon} from "./balanca-cena.js?v=2.15.0";
 const $=s=>document.querySelector(s);
 const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",ESC=qs.get("esc")==="1"&&!standalone,CL=qs.get("cl")==="1"&&!standalone;let KEEP=HUD||ESC||CL||qs.get("tray")==="1"||qs.get("warm")==="1";const KEEP0=KEEP;let ST=null;
 const CH=ENG.CH,HOLD=4000,CHIP_LIFE=9000,QMAX=12000;
@@ -563,7 +585,7 @@ function hideTray(){
 }
 function flashHit(){tray.classList.remove("hit");void tray.offsetWidth;tray.classList.add("hit")}
 /* o segundo plano põe uma zona de arrastar transparente por cima da mesa (e de cada foto): aqui só informamos onde elas estão */
-let rt=0,escRect=null;
+let rt=0,escRect=null,balRect=null;
 function reportAll(){
   clearTimeout(rt);
   rt=setTimeout(()=>{
@@ -581,6 +603,7 @@ function reportAll(){
       }
     }
     if(!ARR&&escRect)rects.push(escRect);
+    if(!ARR&&balRect)rects.push(balRect);
     OBR.broadcast.sendMessage("ordem.hud/layout",{rects},{destination:"LOCAL"}).catch(()=>{});
   },200);
 }
@@ -931,6 +954,88 @@ function startEsc(){
   pull();
 }
 
+/* ---------- painel da Balança (aparece para o mestre, para quem está nela e para quem ligou "Mostrar a balança na tela") ---------- */
+function startBal(){
+  const box=$("#bal");let scale=Math.min(2,Math.max(.5,parseFloat(lsg("balw-scale"))||1)),pos=null,base=null,scene=null,sg="";
+  try{pos=JSON.parse(lsg("balw-pos")||"null")}catch(e){pos=null}
+  if(!(pos&&Number.isFinite(pos.x)&&Number.isFinite(pos.y)))pos=null;
+  const E=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+  const okImg=u=>typeof u==="string"&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(u)&&u.length<20000;
+  const nick=p=>{const e=entryOf(p)||{};return String(e.nome||p.name||"Jogador").trim().slice(0,22)||"Jogador"};
+  function place(){
+    box.style.setProperty("--s",scale);
+    const w=box.offsetWidth*scale,h=box.offsetHeight*scale;
+    let x=pos?pos.x*innerWidth:12,y=pos?pos.y*innerHeight:Math.max(70,innerHeight*.12);
+    x=Math.max(0,Math.min(innerWidth-w,x));y=Math.max(0,Math.min(innerHeight-h,y));
+    box.style.left=x+"px";box.style.top=y+"px";
+  }
+  const save=()=>{pos={x:(parseFloat(box.style.left)||0)/innerWidth,y:(parseFloat(box.style.top)||0)/innerHeight};lss("balw-pos",JSON.stringify(pos))};
+  const setScale=v=>{scale=Math.min(2,Math.max(.5,Math.round(v*100)/100));lss("balw-scale",String(scale));place();report()};
+  let rt=0;
+  function report(){
+    clearTimeout(rt);rt=setTimeout(()=>{
+      if(ARR||!box.classList.contains("on")){balRect=null}
+      else{const r=box.querySelector(".bh").getBoundingClientRect();balRect={id:"bal",x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)}}
+      reportAll();
+    },120);
+  }
+  function hide(){if(scene){scene.destroy();scene=null}box.classList.remove("on");box.replaceChildren();sg="";report()}
+  function pull(){
+    try{
+      const me=PL.me,all=[me,...PL.party],gmP=all.find(p=>p.role==="GM");
+      const g=normB(ST?pickGm(ST,gmP,K_B):(gmP&&gmP.metadata&&gmP.metadata[K_B]));
+      const o=g.on?occupant(g,all):null,isGm=me.role==="GM",mine=!!(o&&String(o.p.id)===String(me.id));
+      if(!(g.on&&balWants(lsg("bal-view"),isGm,mine))){if(box.classList.contains("on"))hide();return}
+      if(!scene){
+        box.replaceChildren();
+        const b=E("div","eb"),h=E("div","bh"),w=E("div","bw"),sc=E("div","bsc2"),host=E("div"),s=E("div","bs"),lg=E("div","bg");
+        h.append(E("b"),E("em"));sc.append(host);b.append(h,w,sc,s,lg);box.append(b);
+        scene=mountScale(host);box.classList.add("on");
+      }
+      const c=o?o.c:null,[t,cl]=statusText(g,o,mine,nick);
+      const nsg=JSON.stringify([g.name,g.rounds,o&&[o.p.id,nick(o.p),o.p.color,(entryOf(o.p)||{}).th&&1],c]);
+      scene.update({a:c?c.a:0,b:c?c.b:0,st:c?c.st:"idle",pend:c?c.pend:0});
+      if(nsg===sg)return;sg=nsg;
+      box.querySelector(".bh b").textContent=g.name||"Balança";
+      const em=box.querySelector(".bh em");em.hidden=!c;if(c)em.textContent=c.st==="done"?"Fim":"Rodada "+Math.min(c.rd+1,g.rounds)+"/"+g.rounds;
+      const w=box.querySelector(".bw");w.replaceChildren();
+      if(o){
+        const th=(entryOf(o.p)||{}).th,ic=E("i",null,okImg(th)?"":nick(o.p).charAt(0).toUpperCase());
+        ic.style.setProperty("--c",/^#[0-9a-f]{6}$/i.test(o.p.color||"")?o.p.color:"#e9ece7");if(okImg(th))ic.style.backgroundImage="url("+th+")";
+        w.append(ic,E("span",null,nick(o.p)));
+        const d=E("u");for(let i=0;i<c.n;i++)d.append(d4Icon(i<c.sp));w.append(d);
+      }else w.append(E("span",null,"Balança livre"));
+      const s=box.querySelector(".bs");s.className="bs "+cl;s.textContent=t;
+      const lg=box.querySelector(".bg");lg.replaceChildren();lg.hidden=!(c&&c.lg.length);
+      if(c)c.lg.slice(-3).reverse().forEach(x=>lg.append(E("p",null,x)));
+      place();report();
+    }catch(e){console.warn("[balança] não consegui ler a sala",e)}
+  }
+  OBR.broadcast.onMessage("ordem.hud/drag",ev=>{
+    const m=ev.data||{};if(m.id!=="bal")return;
+    if(m.ph==="s"){base={x:parseFloat(box.style.left)||0,y:parseFloat(box.style.top)||0};box.classList.add("drag")}
+    else if(m.ph==="w")setScale(scale*((+m.dy||0)<0?1.08:1/1.08));
+    else if(!base)return;
+    else if(m.ph==="m"){
+      const w=box.offsetWidth*scale,h=box.offsetHeight*scale;
+      box.style.left=Math.max(0,Math.min(innerWidth-w,base.x+(+m.dx||0)))+"px";box.style.top=Math.max(0,Math.min(innerHeight-h,base.y+(+m.dy||0)))+"px";
+    }else if(m.ph==="e"){box.classList.remove("drag");save();base=null;report()}
+  });
+  OBR.broadcast.onMessage("ordem.bal/view",()=>pull());
+  addEventListener("storage",ev=>{if(ev.key==="bal-view")pull()});
+  if(ARR){
+    let dr=null;
+    box.addEventListener("pointerdown",e=>{if(e.button>0)return;const r=box.getBoundingClientRect();dr={dx:e.clientX-r.left,dy:e.clientY-r.top};box.classList.add("drag");try{box.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
+    box.addEventListener("pointermove",e=>{if(!dr)return;const w=box.offsetWidth*scale,h=box.offsetHeight*scale;box.style.left=Math.max(0,Math.min(innerWidth-w,e.clientX-dr.dx))+"px";box.style.top=Math.max(0,Math.min(innerHeight-h,e.clientY-dr.dy))+"px"});
+    const up=()=>{if(!dr)return;dr=null;box.classList.remove("drag");save()};
+    box.addEventListener("pointerup",up);box.addEventListener("pointercancel",up);
+    box.addEventListener("wheel",e=>{e.preventDefault();setScale(scale*(e.deltaY<0?1.08:1/1.08))},{passive:false});
+  }
+  PL.subs.add(pull);
+  addEventListener("resize",()=>{place();report()});
+  pull();
+}
+
 /* ---------- início ---------- */
 (async()=>{
   const s0=+qs.get("s")||0;
@@ -959,7 +1064,7 @@ function startEsc(){
     ST=makeState(OBR);ST.subs.add(plFire);ST.load();
     /* o segundo plano avisa em tempo real se um minijogo precisa desta camada aberta (sem reabrir) */
     OBR.broadcast.onMessage("ordem.hud/keep",ev=>{const d=ev.data||{};if(d.mid&&d.mid!==mid)return;KEEP=KEEP0||!!d.on;if(KEEP)clearTimeout(idleTimer);else maybeIdle()});
-    if(!standalone)startEsc();
+    if(!standalone){startEsc();startBal()}
   }
   if(qs.get("p")){try{enqueue(ENG.unb64(qs.get("p")),s0)}catch(e){maybeIdle()}}
 })();
