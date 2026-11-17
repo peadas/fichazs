@@ -1,7 +1,7 @@
 /* Peças compartilhadas da Mesa (painel, mestre e segundo plano).
    Tudo roda no mesmo domínio da ficha, então a ficha é lida direto do localStorage
    e compartilhada na sala pelos metadados do jogador do Owlbear. Sem servidor. */
-export const VER="2.15.0";
+export const VER="2.15.1";
 export const KEY="ordem.mesa/ficha";
 export const KEY_NPC="ordem.mesa/npcs";   // NPCs que o mestre mostrou na mesa (só texto e números: leve)
 export const KEY_IMG="ordem.mesa/img";    // miniatura da foto do jogador (só muda quando a foto muda)
@@ -62,7 +62,7 @@ export function liteOf(fallbackName){
 const imgSig=()=>{const i=g(LS.img)||"";return i.length+":"+i.slice(-32)};
 export async function imgOf(){
   const url=g(LS.img);if(!url)return null;
-  let th=null;                                              // v2.15.0: encolhe até a miniatura caber (foto "pesada" não estoura mais os metadados)
+  let th=null;                                              // v2.15.1: encolhe até a miniatura caber (foto "pesada" não estoura mais os metadados)
   for(const [S,q] of [[128,.55],[96,.45],[72,.4],[56,.35],[40,.3]]){th=await thumb(url,S,q);if(!th||th.length<=7000)break}
   return th&&th.length<=9000?{th}:null;
 }

@@ -166,14 +166,22 @@ h3.sec::after{content:"";flex:1;height:1px;background:var(--line)}
 .ab small{display:block;font:600 .66rem Barlow,sans-serif;letter-spacing:.04em;text-transform:none;color:var(--muted)}
 #v-eq input.t{background:#0e1213;border:1px solid var(--line);color:#eef0ee;padding:6px 8px;font:inherit;min-width:0}
 #v-eq .lbl{font:700 .72rem "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-#v-eq .cl{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
-#v-eq .cl b{flex:1;font:700 1.02rem "Barlow Condensed",sans-serif;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #t-eq{position:relative}
 #t-eq.live::after{content:"";position:absolute;top:5px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--ok,#5fd38a);box-shadow:0 0 6px #5fd38a}
-#v-eq .cl em{font-style:normal;font:700 1rem "Barlow Condensed",sans-serif;color:var(--gold)}
+#v-eq .cwhost{max-width:400px;margin:0 auto 8px}
+#v-eq .cwinfo{margin:0 0 6px;text-align:center;color:var(--gold2);font:600 .85rem Barlow,sans-serif}
+#v-eq .mode{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#v-eq .mode button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 4px;font:700 .9rem "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;background:#0e1213}
+#v-eq .mode button small{font:600 .68rem Barlow,sans-serif;letter-spacing:0;text-transform:none;color:var(--muted)}
+#v-eq .mode button svg{width:16px;height:16px}
+#v-eq .mode button.on{border-color:var(--gold);color:var(--gold);background:#202829}
+#v-eq .mode button.on small{color:#c8d0ce}
+#v-eq .res{margin:6px 0 0;padding:6px 8px;border-left:3px solid var(--gold2);background:#141a1b;font-size:.85rem}
+#v-eq .res.ok{border-color:var(--ok)}#v-eq .res.no{border-color:var(--bad)}
+#v-eq .res button{margin-left:6px;padding:1px 8px;font-size:.78rem;border-color:var(--bad);color:#ff8f8c}
 
 
-/* ===== Equilibrar (v2.15.0): cena dentro da aba ===== */
+/* ===== Equilibrar (v2.15.1): cena dentro da aba ===== */
 #v-eq .bcard{padding:10px 12px 12px}
 #v-eq .bwho{display:flex;align-items:center;gap:8px;min-height:30px;font:700 1rem/1.2 "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase}
 #v-eq .bwho i{width:26px;height:26px;border-radius:50%;border:2px solid var(--c,#e9ece7);background:#0e1213 center/cover no-repeat;flex:none;display:grid;place-items:center;font:800 .75rem Cinzel,serif;font-style:normal;color:var(--c,#e9ece7)}
@@ -298,16 +306,17 @@ h3.sec{margin:16px 0 10px;font-size:.92rem;color:var(--muted)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js?v=2.15.0"></script>
+<script src="efeitos.js?v=2.15.1"></script>
 <script type="module">
-import {localChannel} from "./canal.js?v=2.15.0";
-import {loadOBR,ready} from "./obr.js?v=2.15.0";
-import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.15.0";
-import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI,SK,testDice} from "./alcancar-lib.js?v=2.15.0";
-import {mountScale,d4Icon} from "./balanca-cena.js?v=2.15.0";
-import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET,afterAdd,afterFall,balWants,statusText} from "./equilibrio-lib.js?v=2.15.0";
-import {makeState,pickGm} from "./estado.js?v=2.15.0";
-import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.15.0";
+import {localChannel} from "./canal.js?v=2.15.1";
+import {loadOBR,ready} from "./obr.js?v=2.15.1";
+import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.15.1";
+import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI,SK,testDice,climbersOf,clWants} from "./alcancar-lib.js?v=2.15.1";
+import {mountWall} from "./alcancar-cena.js?v=2.15.1";
+import {mountScale,d4Icon} from "./balanca-cena.js?v=2.15.1";
+import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET,afterAdd,afterFall,balWants,statusText} from "./equilibrio-lib.js?v=2.15.1";
+import {makeState,pickGm} from "./estado.js?v=2.15.1";
+import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.15.1";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";
@@ -683,9 +692,7 @@ const gmP=()=>role==="GM"?self:party.find(x=>x.role==="GM");
 const cgSt=()=>{const p=gmP();return normC(ST?pickGm(ST,p,K_C):(p&&p.metadata&&p.metadata[K_C]))};
 const cpSt=x=>normCP(x&&x.metadata&&x.metadata[K_CP]);
 const setC=async patch=>{await setGM(K_C,{...cgSt(),...patch})};
-const setCP=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_CP]:{...cpSt(self),...patch}});await refresh()};
-const clShow=()=>LC.send("ordem.cl/show");
-/* ---------- Equilibrar (v2.15.0: sem janela própria; a cena é desenhada aqui e na tela do Owlbear) ----------
+/* ---------- Equilibrar (v2.15.1: sem janela própria; a cena é desenhada aqui e na tela do Owlbear) ----------
    Quem rolou os dados: a camada dos dados devolve o resultado e o SEGUNDO PLANO aplica (não depende desta aba continuar aberta). */
 const cbSt=()=>{const p=gmP();return normB(ST?pickGm(ST,p,K_B):(p&&p.metadata&&p.metadata[K_B]))};
 const bpSt=x=>normBP(x&&x.metadata&&x.metadata[K_BP]);
@@ -829,44 +836,47 @@ function renderBal(g,o){
   });
 }
 const cbOcc=()=>occupant(cbSt(),balPlayers());
-let kQl="",kBl="";
-function renderEq(){
-  const g=cgSt(),gm=role==="GM",mine=cpSt(self);
-  const ps=[...(gm?[]:[self]),...party.filter(x=>x.role!=="GM")].filter(Boolean).map(p=>({p,c:cpSt(p)})).filter(x=>g.id&&x.c.in&&x.c.id===g.id);
-  /* o formulário do mestre só é refeito quando a escalada liga/desliga (senão apagaria o que ele digita e engoliria cliques) */
-  const gb=cbSt(),ob=occupant(gb,balPlayers());
-  const key=Q.sub==="bal"?JSON.stringify([role,"bal",!!OBR]):JSON.stringify(gm?[role,Q.sub,g.on,g.id]:[role,Q.sub,g,mine]);
-  if(key!==kQ){
-    kQ=key;kQl="";kBl="";
-    const box=$("#v-eq");box.replaceChildren();
-    if(!OBR)box.append(el("div","tip","Abra esta página dentro do Owlbear Rodeo."));
-    const tiles=el("div","acts two");
-    const b1=mk("button","ab"+(Q.sub==="bal"?" on":""),null,()=>{Q.sub=Q.sub==="bal"?"":"bal";kQ="";renderEq()},"Equilibrar");b1.innerHTML=CI.scale;b1.append(el("span",null,"Equilibrar"));
-    const b2=mk("button","ab"+(Q.sub==="alc"?" on":""),null,()=>{Q.sub=Q.sub==="alc"?"":"alc";kQ="";renderEq()},"Alcançar");b2.innerHTML=CI.reach;b2.append(el("span",null,"Alcançar"));
-    tiles.append(b1,b2);box.append(tiles);
-    if(Q.sub==="bal")box.append(balWrap());
-    else if(Q.sub!=="alc")box.append(el("p","hint","Escolha uma mecânica: Equilibrar (travessia com 2d10 e dados de equilíbrio) ou Alcançar (escalada)."));
-    else if(gm)renderAlcGm(box,g);
-    else renderAlcPlayer(box,g,mine,ps);
+/* ---------- Alcançar (v2.15.1: sem janela própria; a parede com as fotos subindo é desenhada aqui e na tela do Owlbear) ----------
+   Quem rolou os dados: a camada dos dados devolve o resultado e o SEGUNDO PLANO aplica (não depende desta aba continuar aberta). */
+const sleepC=ms=>new Promise(r=>setTimeout(r,ms));
+const setCP=async patch=>{
+  if(!OBR)return;
+  const next={...cpSt(self),...patch};
+  if(self)self.metadata={...(self.metadata||{}),[K_CP]:next};      // já mostra antes do Owlbear devolver
+  store.set("cl-cp",JSON.stringify(next));                          // cópia local: restaura se a reconexão apagar a sala
+  renderEq();
+  for(let i=0;;i++){
+    try{await OBR.player.setMetadata({[K_CP]:next});break}
+    catch(e){if(i>=2){console.warn("[alcançar] não consegui salvar",e);break}await sleepC(700*(i+1))}
   }
-  if(Q.sub==="bal")renderBal(gb,ob);
-  if(gm&&Q.sub==="alc"){                         // lista "Na parede" do mestre: refeita à parte
-    const lk=JSON.stringify([g.on,g.total,ps.map(x=>[x.p.id,x.p.name,x.c.p,x.c.top])]);
-    if(lk!==kQl){kQl=lk;fillAlcList($("#eq-list"),g,ps)}
-  }
+};
+let cRoll=null,cMsg="",cOther=store.get("cl-other")||"",cMode=store.get("cl-mode")==="r"?"r":"s",dmgDone=0;
+const MAINC=["Atletismo","Acrobacia"];
+const cList=g=>climbersOf(g,balPlayers());
+const iInClimb=g=>cList(g).some(x=>OBR&&String(x.p.id)===String(OBR.player.id));
+const clViewOn=g=>clWants(store.get("cl-view"),role==="GM",iInClimb(g));
+/* manda rolar (os dados caem na mesa de todos). Se em 10 s a camada dos dados não responder, rola no automático e o segundo plano aplica igual. */
+function clRoll(sk,g){
+  if(!OBR||cRoll)return;
+  const dd=testDice(sk),id=rid(),me={rid:id,sk,mode:cMode,cid:g.id,dice:dd.map(x=>x.f)};cRoll=me;cMsg="";
+  OBR.broadcast.sendMessage("ordem.hud/quickroll",{dice:dd.map(x=>[1,x.f]),names:dd.map(x=>x.n),title:"Escalar · "+sk+" ("+(cMode==="r"?"arriscado":"seguro")+")",exp:sk,esc:{k:"climb",rid:id,cid:g.id,mode:cMode,sk},qid:"cl"+id},{destination:"LOCAL"}).catch(()=>{});
+  setTimeout(()=>{
+    if(cRoll!==me)return;cRoll=null;
+    LC.send("ordem.cl/auto",{rid:id,cid:g.id,mode:me.mode,sk,dice:me.dice.map(f=>[f,1+Math.floor(Math.random()*f)])});
+    cMsg="Os dados não responderam; rolei no automático.";setTimeout(()=>{cMsg="";renderEq()},4000);renderEq();
+  },10000);
+  renderEq();
 }
-function fillAlcList(l,g,ps){
-  if(!l)return;l.replaceChildren();l.append(el("h4",null,"Na parede"));
-  if(!g.on)l.append(el("p","hint","Ative a escalada para os jogadores entrarem."));
-  else if(!ps.length)l.append(el("p","hint","Ninguém entrou ainda."));
-  ps.forEach(({p,c:cp})=>{
-    const r=el("div","cl");r.append(el("b",null,nick(p)),el("em",null,cp.top?"TOPO":cp.p+"/"+g.total));
-    r.append(mk("button","small","Derrubar",()=>OBR.broadcast.sendMessage("ordem.cl/drop",{to:String(p.id)},{destination:"ALL"}).catch(()=>{}),"Faz o jogador cair e sair da parede"));
-    l.append(r);
-  });
+let CW=null;
+function clWrap(){
+  if(CW)return CW.root;
+  const root=el("div","bal"),form=el("div","pnl"),card=el("div","pnl bcard"),info=el("p","cwinfo"),host=el("div","cwhost"),say=el("p","bsay"),ctl=el("div","bctl"),vis=el("div");
+  form.hidden=true;card.append(info,host,say,ctl);root.append(form,card,vis);
+  CW={root,form,info,host,say,ctl,vis,k:{},wall:mountWall(host,{onDrop:id=>OBR&&OBR.broadcast.sendMessage("ordem.cl/drop",{to:String(id)},{destination:"ALL"}).catch(()=>{})})};
+  return root;
 }
-function renderAlcGm(box,g){
-  const c=el("div","pnl");c.append(el("h4",null,g.on?"Escalada ativa":"Criar escalada"));
+function buildClForm(box,g){
+  box.replaceChildren(el("h4",null,g.on?"Escalada ativa":"Criar escalada"));
   const f=(lbl,input)=>{const r=el("div","row2");r.append(el("span","lbl",lbl),input);return r};
   const nm=el("input","t");nm.value=g.name;nm.maxLength=30;nm.placeholder="Parede";nm.setAttribute("aria-label","Nome");
   const dt=el("input","t");dt.type="number";dt.min=1;dt.max=60;dt.value=g.dt;dt.style.width="70px";dt.setAttribute("aria-label","DT");
@@ -874,28 +884,93 @@ function renderAlcGm(box,g){
   const clampI=(i,lo,hi,d)=>Math.max(lo,Math.min(hi,parseInt(i.value,10)||d));
   const vals=()=>({name:nm.value.trim().slice(0,30),dt:clampI(dt,1,60,10),total:clampI(ht,1,500,20)});
   [nm,dt,ht].forEach(i=>i.onchange=()=>setC(vals()));
-  c.append(f("Nome",nm),f("DT",dt),f("Altura",ht));
+  box.append(f("Nome",nm),f("DT",dt),f("Altura",ht));
   const rv=sw("Revelar a altura aos jogadores",g.rev,()=>{const nr=!cgSt().rev;rv.querySelector(".sw").setAttribute("aria-checked",String(nr));setC({...vals(),rev:nr})});
-  c.append(rv);
-  c.append(el("p","hint","Oculta, os jogadores veem 0/??. Revelada, veem 0/altura. Seguro: dado baixo, DT normal. Arriscado: dado alto, DT +"+RISK_DT+". Sucesso sobe o valor do dado; falha dá esse valor de dano."));
+  box.append(rv);
+  box.append(el("p","hint","Oculta, os jogadores veem 0/??. Revelada, veem 0/altura. Seguro: dado baixo, DT normal. Arriscado: dado alto, DT +"+RISK_DT+". Sucesso sobe o valor do dado; falha dá esse valor de dano."));
   const row=el("div","row2");
-  if(!g.on)row.append(mk("button","go","Ativar escalada",async()=>{await setC({...vals(),on:true,id:Date.now()});setTimeout(clShow,1200)}));
-  else row.append(mk("button","small","Encerrar escalada",()=>setC({on:false})),mk("button","small","Abrir janela",clShow));
-  c.append(row);box.append(c);
-  const l=el("div","pnl");l.id="eq-list";box.append(l);
+  row.append(g.on?mk("button","small","Encerrar escalada",()=>setC({on:false})):mk("button","go","Ativar escalada",()=>setC({...vals(),on:true,id:Date.now()})));
+  box.append(row);
 }
-function renderAlcPlayer(box,g,mine,ps){
-  const c=el("div","pnl");c.append(el("h4",null,"Alcançar"));
-  if(!g.on){c.append(el("p","hint","O mestre ainda não ativou uma escalada."));box.append(c);return}
-  const inn=mine.in&&mine.id===g.id;
-  c.append(el("p","hint",(g.name?g.name+" · ":"")+"DT "+g.dt+" · altura "+(g.rev?g.total:"??")+(inn?" · você está em "+(g.rev?mine.p+"/"+g.total:mine.p+"/??"):"")));
-  if(mine.fell&&mine.id===g.id&&!inn)c.append(el("p","emsg","Você caiu!"));
-  const row=el("div","row2");
-  if(!inn)row.append(mk("button","go",mine.fell&&mine.id===g.id?"Escalar de novo":"Entrar na escalada",()=>setCP({id:g.id,in:1,p:0,top:0,fell:0,last:null})));
-  else row.append(mk("button","small","Sair da escalada",()=>setCP({in:0,p:0,top:0,fell:0})));
-  row.append(mk("button","small","Abrir janela",clShow));
-  c.append(row,el("p","hint","Os testes (Seguro ou Arriscado, Atletismo, Acrobacia…) ficam na janela da escalada, no canto da tela."));
-  box.append(c);
+function buildClCtl(g,inn){
+  const box=CW.ctl,gm=role==="GM",mine=cpSt(self);box.replaceChildren();
+  if(!g.on){box.append(el("p","hint",gm?"Ative a escalada acima para os jogadores entrarem.":"O mestre ainda não ativou uma escalada."));return}
+  if(gm){box.append(el("p","hint","Você é o mestre: use Derrubar ao lado do nome para fazer alguém cair. Os jogadores testam pelo menu deles."));return}
+  if(!inn){
+    const fell=mine.fell&&mine.id===g.id;
+    if(fell)box.append(el("p","bsay bad","Você caiu! Quer tentar de novo?"));
+    box.append(mk("button","bbig",fell?"Escalar de novo":"Entrar na escalada",()=>{cMsg="";setCP({id:g.id,in:1,p:0,top:0,fell:0,last:null})}));
+    return;
+  }
+  const out=()=>setCP({in:0,p:0,top:0,fell:0});
+  if(mine.top){box.append(el("p","bsay good","Você chegou ao topo!"),mk("button","small wide","Sair da escalada",out));return}
+  const m=el("div","mode");
+  [["s","safe","Seguro","dado baixo · DT "+g.dt],["r","risk","Arriscado","dado alto · DT "+(g.dt+RISK_DT)]].forEach(([k,ic,t,sub])=>{
+    const b=el("button",cMode===k?"on":"");b.type="button";b.innerHTML=CI[ic];b.append(el("span",null,t),el("small",null,sub));
+    b.onclick=()=>{cMode=k;store.set("cl-mode",k);CW.k.ctl="";renderEq()};m.append(b);
+  });
+  box.append(m);
+  const t=el("div","tests");
+  MAINC.concat(cOther&&!MAINC.includes(cOther)?[cOther]:[]).forEach(sk=>{
+    const dd=testDice(sk),b=mk("button","t",null,()=>clRoll(sk,g));b.disabled=!!cRoll;
+    b.append(el("span",null,sk),el("small",null,"d"+dd[0].f+" + d"+dd[1].f));t.append(b);
+  });
+  const sel=el("select");sel.setAttribute("aria-label","Outra perícia");sel.append(new Option("Outra perícia…",""));
+  SK.filter(x=>!MAINC.includes(x[0])).forEach(([n])=>{const o=new Option(n,n);if(n===cOther)o.selected=true;sel.append(o)});
+  sel.onchange=()=>{cOther=sel.value;store.set("cl-other",cOther);CW.k.ctl="";renderEq()};
+  t.append(sel);box.append(t);
+  const L=mine.last;
+  if(cRoll)box.append(el("p","res","Rolando…"));
+  else if(cMsg)box.append(el("p","bsay bad",cMsg));
+  else if(L){
+    const r=el("p","res "+(L.ok?"ok":"no"));
+    r.append(document.createTextNode(L.sk+": "+L.a+" + "+L.b+" = "+L.s+" contra DT "+L.dt+" ("+(L.m==="r"?"arriscado":"seguro")+") · "+(L.ok?"sobe "+L.amt:"falhou, dano "+L.amt)));
+    if(!L.ok&&dmgDone!==L.t){
+      r.append(mk("button",null,"Aplicar −"+L.amt+" PV",()=>{setMine("pv",mineLive().pv-L.amt);dmgDone=L.t;OBR&&OBR.broadcast.sendMessage("ordem.mesa/nudge",{},{destination:"LOCAL"}).catch(()=>{});CW.k.ctl="";renderEq()}));
+    }
+    box.append(r);
+  }
+  box.append(mk("button","small wide","Sair da escalada",out));
+}
+function renderCl(g){
+  if(!CW)return;
+  const gm=role==="GM",list=cList(g),inn=!gm&&iInClimb(g),mine=cpSt(self),K=CW.k;
+  const part=(slot,key,fn)=>{const k=JSON.stringify(key);if(K[slot]===k)return;K[slot]=k;fn()};
+  CW.form.hidden=!gm;
+  if(gm)part("form",[g.on,g.id,g.dt,g.total,g.rev,g.name],()=>buildClForm(CW.form,g));
+  CW.wall.update({g,list:list.map(x=>({id:x.p.id,name:nick(x.p),color:x.p.color,th:(entryOf(x.p)||{}).th,c:x.c})),isGm:gm});
+  CW.info.textContent=g.on?(g.name?g.name+" · ":"")+"DT "+g.dt+" · altura "+(gm||g.rev?g.total:"??")+(inn?" · você está em "+(g.rev?mine.p+"/"+g.total:mine.p+"/??"):""):"";
+  CW.say.className="bsay "+(cRoll?"":(inn&&mine.top?"good":""));
+  CW.say.textContent=cRoll?"Rolando os dados…":"";CW.say.hidden=!cRoll;
+  part("ctl",[gm,g.on,g.id,g.dt,inn,mine.top,mine.fell,mine.id,mine.last&&mine.last.t,cMode,cOther,!!cRoll,cMsg,dmgDone],()=>buildClCtl(g,inn));
+  part("vis",[clViewOn(g),g.on],()=>{
+    CW.vis.replaceChildren();
+    const on=clViewOn(g),r=sw("Mostrar a parede na tela do Owlbear",on,()=>{
+      store.set("cl-view",clViewOn(cgSt())?"0":"1");CW.k.vis="";
+      LC.send("ordem.cl/view");OBR&&OBR.broadcast.sendMessage("ordem.cl/view",{},{destination:"LOCAL"}).catch(()=>{});renderEq();
+    });
+    r.querySelector(".t").append(el("small",null,gm?"Ligado por padrão para você e para quem está na parede.":"Ligue para acompanhar a subida na tela. O mestre e quem está na parede já veem."));
+    CW.vis.append(r);
+  });
+}
+function renderEq(){
+  const g=cgSt(),gb=cbSt(),ob=occupant(gb,balPlayers());
+  /* a aba só é refeita quando troca de mecânica; o resto é atualizado por partes (não apaga o que o mestre digita nem engole cliques) */
+  const key=JSON.stringify([role,Q.sub,!!OBR]);
+  if(key!==kQ){
+    kQ=key;
+    const box=$("#v-eq");box.replaceChildren();
+    if(!OBR)box.append(el("div","tip","Abra esta página dentro do Owlbear Rodeo."));
+    const tiles=el("div","acts two");
+    const b1=mk("button","ab"+(Q.sub==="bal"?" on":""),null,()=>{Q.sub=Q.sub==="bal"?"":"bal";kQ="";renderEq()},"Equilibrar");b1.innerHTML=CI.scale;b1.append(el("span",null,"Equilibrar"));
+    const b2=mk("button","ab"+(Q.sub==="alc"?" on":""),null,()=>{Q.sub=Q.sub==="alc"?"":"alc";kQ="";renderEq()},"Alcançar");b2.innerHTML=CI.reach;b2.append(el("span",null,"Alcançar"));
+    tiles.append(b1,b2);box.append(tiles);
+    if(Q.sub==="bal")box.append(balWrap());
+    else if(Q.sub==="alc")box.append(clWrap());
+    else box.append(el("p","hint","Escolha uma mecânica: Equilibrar (travessia com 2d10 e dados de equilíbrio) ou Alcançar (escalada)."));
+  }
+  if(Q.sub==="bal")renderBal(gb,ob);
+  else if(Q.sub==="alc")renderCl(g);
 }
 
 (async()=>{
@@ -923,11 +998,12 @@ function renderAlcPlayer(box,g,mine,ps){
   OBR.party.onChange(ps=>{party=ps;renderSoon()});
   ST.subs.add(renderSoon);
   OBR.broadcast.onMessage("ordem.bal/result",ev=>{const d=ev.data||{};if(bRoll&&d.rid===bRoll.rid){bRoll=null;bMsg="";renderEq()}});
+  OBR.broadcast.onMessage("ordem.cl/result",ev=>{const d=ev.data||{};if(cRoll&&d.rid===cRoll.rid){cRoll=null;cMsg="";renderEq()}});
   setInterval(()=>{if(!document.hidden)refresh()},15000);       // garantia: a lista sempre se corrige sozinha (os eventos já atualizam na hora)
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
 })();
 
-/* v2.15.0: botão de sincronização (no lugar do F5). Mostra há quanto tempo o segundo plano conferiu a sala; clicar força tudo de novo. */
+/* v2.15.1: botão de sincronização (no lugar do F5). Mostra há quanto tempo o segundo plano conferiu a sala; clicar força tudo de novo. */
 {
   let last=0,askT=0;const b=$("#b-sync"),tx=$("#sync-t");
   const draw=()=>{const s=last?Math.round((Date.now()-last)/1000):-1;

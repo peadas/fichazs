@@ -148,9 +148,13 @@ body.arr #esc{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outli
 
 /* painel da Balança (Equilíbrio > Equilibrar): só mostra; uma zona transparente sobre o título faz o arrastar */
 #bal{position:fixed;left:0;top:0;width:400px;display:none;pointer-events:none;user-select:none;-webkit-user-select:none;transform:scale(var(--s,1));transform-origin:0 0;z-index:3;color:#eef0ee}
+#cl{position:fixed;left:0;top:0;width:400px;display:none;pointer-events:none;user-select:none;-webkit-user-select:none;transform:scale(var(--s,1));transform-origin:0 0;z-index:3;color:#eef0ee}
 #bal.on{display:block}
+#cl.on{display:block}
 body.arr #bal{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outline-offset:6px}
+body.arr #cl{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outline-offset:6px}
 #bal.drag{filter:brightness(1.12)}
+#cl.drag{filter:brightness(1.12)}
 .bh{display:flex;align-items:center;gap:10px;padding:10px 14px 8px;border-bottom:2px solid #b8c1bf;background:linear-gradient(180deg,#232c2ef2,#141a1bf2)}
 .bh b{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:800 1.3rem/1 Cinzel,serif;letter-spacing:.12em;text-transform:uppercase}
 .bh em{font:700 .9rem "Barlow Condensed",sans-serif;font-style:normal;letter-spacing:.12em;color:#a9b3b1;border:1px solid #4a5456;padding:0 7px}
@@ -160,6 +164,7 @@ body.arr #bal{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outli
 .bw u{text-decoration:none;display:flex;gap:3px}
 .bw u svg{display:block}
 .bsc2{padding:0 10px}
+.cw2{padding:8px 14px 10px}
 .bs{padding:2px 14px 8px;text-align:center;font:600 .95rem/1.3 Barlow,sans-serif;color:#a9b3b1;min-height:44px}
 .bs.good{color:#9be3b4}.bs.bad{color:#ff8f8c}
 .bg{padding:6px 14px 10px;border-top:1px solid #4a5456}
@@ -167,23 +172,26 @@ body.arr #bal{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outli
 </style>
 </head>
 <body>
-<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.15.0" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.15.0" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
+<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.15.1" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.15.1" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
 <div id="hist" aria-hidden="true"></div>
 <div id="hud" aria-hidden="true"></div>
 <div id="esc" aria-hidden="true"></div>
 <div id="bal" aria-hidden="true"></div>
+<div id="cl" aria-hidden="true"></div>
 <div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
 <div id="hbar"><span>Arraste os cartões e a mesa</span><button id="t-menos" title="Mesa menor" aria-label="Mesa menor">Mesa −</button><button id="t-mais" title="Mesa maior" aria-label="Mesa maior">Mesa +</button><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js?v=2.15.0"></script>
-<script src="dice-style.js?v=2.15.0"></script>
+<script src="engine.js?v=2.15.1"></script>
+<script src="dice-style.js?v=2.15.1"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.15.0";
-import {KEY,npcsOf,entryOf} from "./mesa-lib.js?v=2.15.0";
-import {K_P,K_G,normP,normG,MAXD,ICON} from "./esconder-lib.js?v=2.15.0";
-import {makeState,pickGm} from "./estado.js?v=2.15.0";
-import {K_B,normB,occupant,statusText,balWants} from "./equilibrio-lib.js?v=2.15.0";
-import {mountScale,d4Icon} from "./balanca-cena.js?v=2.15.0";
+import {loadOBR,ready} from "./obr.js?v=2.15.1";
+import {KEY,npcsOf,entryOf} from "./mesa-lib.js?v=2.15.1";
+import {K_P,K_G,normP,normG,MAXD,ICON} from "./esconder-lib.js?v=2.15.1";
+import {makeState,pickGm} from "./estado.js?v=2.15.1";
+import {K_B,normB,occupant,statusText,balWants} from "./equilibrio-lib.js?v=2.15.1";
+import {K_C,normC,climbersOf,clWants} from "./alcancar-lib.js?v=2.15.1";
+import {mountWall} from "./alcancar-cena.js?v=2.15.1";
+import {mountScale,d4Icon} from "./balanca-cena.js?v=2.15.1";
 const $=s=>document.querySelector(s);
 const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",ESC=qs.get("esc")==="1"&&!standalone,CL=qs.get("cl")==="1"&&!standalone;let KEEP=HUD||ESC||CL||qs.get("tray")==="1"||qs.get("warm")==="1";const KEEP0=KEEP;let ST=null;
 const CH=ENG.CH,HOLD=4000,CHIP_LIFE=9000,QMAX=12000;
@@ -585,7 +593,7 @@ function hideTray(){
 }
 function flashHit(){tray.classList.remove("hit");void tray.offsetWidth;tray.classList.add("hit")}
 /* o segundo plano põe uma zona de arrastar transparente por cima da mesa (e de cada foto): aqui só informamos onde elas estão */
-let rt=0,escRect=null,balRect=null;
+let rt=0,escRect=null,balRect=null,clRect=null;
 function reportAll(){
   clearTimeout(rt);
   rt=setTimeout(()=>{
@@ -604,6 +612,7 @@ function reportAll(){
     }
     if(!ARR&&escRect)rects.push(escRect);
     if(!ARR&&balRect)rects.push(balRect);
+    if(!ARR&&clRect)rects.push(clRect);
     OBR.broadcast.sendMessage("ordem.hud/layout",{rects},{destination:"LOCAL"}).catch(()=>{});
   },200);
 }
@@ -1036,6 +1045,80 @@ function startBal(){
   pull();
 }
 
+/* ---------- painel da Escalada (aparece para o mestre, para quem está na parede e para quem ligou "Mostrar a parede na tela") ---------- */
+function startCl(){
+  const box=$("#cl");let scale=Math.min(2,Math.max(.5,parseFloat(lsg("clw-scale"))||1)),pos=null,base=null,wall=null,sg="";
+  try{pos=JSON.parse(lsg("clw-pos")||"null")}catch(e){pos=null}
+  if(!(pos&&Number.isFinite(pos.x)&&Number.isFinite(pos.y)))pos=null;
+  const E=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+  const nick=p=>{const e=entryOf(p)||{};return String(e.nome||p.name||"Jogador").trim().slice(0,22)||"Jogador"};
+  function place(){
+    box.style.setProperty("--s",scale);
+    const w=box.offsetWidth*scale,h=box.offsetHeight*scale;
+    let x=pos?pos.x*innerWidth:innerWidth-w-12,y=pos?pos.y*innerHeight:Math.max(70,innerHeight*.12);
+    x=Math.max(0,Math.min(innerWidth-w,x));y=Math.max(0,Math.min(innerHeight-h,y));
+    box.style.left=x+"px";box.style.top=y+"px";
+  }
+  const save=()=>{pos={x:(parseFloat(box.style.left)||0)/innerWidth,y:(parseFloat(box.style.top)||0)/innerHeight};lss("clw-pos",JSON.stringify(pos))};
+  const setScale=v=>{scale=Math.min(2,Math.max(.5,Math.round(v*100)/100));lss("clw-scale",String(scale));place();report()};
+  let rt2=0;
+  function report(){
+    clearTimeout(rt2);rt2=setTimeout(()=>{
+      if(ARR||!box.classList.contains("on")){clRect=null}
+      else{const r=box.querySelector(".bh").getBoundingClientRect();clRect={id:"cl",x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)}}
+      reportAll();
+    },120);
+  }
+  function hide(){if(wall){wall.destroy();wall=null}box.classList.remove("on");box.replaceChildren();sg="";report()}
+  function pull(){
+    try{
+      const me=PL.me,all=[me,...PL.party],gmP=all.find(p=>p.role==="GM");
+      const g=normC(ST?pickGm(ST,gmP,K_C):(gmP&&gmP.metadata&&gmP.metadata[K_C]));
+      const isGm=me.role==="GM",list=g.on?climbersOf(g,all):[],inn=list.some(x=>String(x.p.id)===String(me.id));
+      if(!(g.on&&clWants(lsg("cl-view"),isGm,inn))){if(box.classList.contains("on"))hide();return}
+      let fresh=false;
+      if(!wall){
+        box.replaceChildren();
+        const b=E("div","eb"),h=E("div","bh"),pad=E("div","cw2"),host=E("div");
+        h.append(E("b"),E("em"));pad.append(host);b.append(h,pad);box.append(b);
+        wall=mountWall(host);box.classList.add("on");fresh=true;
+      }
+      const items=list.map(x=>({id:x.p.id,name:nick(x.p),color:x.p.color,th:(entryOf(x.p)||{}).th,c:x.c}));
+      wall.update({g,list:items,isGm});
+      const nsg=JSON.stringify([g.name,g.dt,list.length]);
+      if(nsg!==sg||fresh){
+        sg=nsg;
+        box.querySelector(".bh b").textContent=g.name||"Escalada";
+        box.querySelector(".bh em").textContent="DT "+g.dt;
+        place();report();
+      }
+    }catch(e){console.warn("[escalada] não consegui ler a sala",e)}
+  }
+  OBR.broadcast.onMessage("ordem.hud/drag",ev=>{
+    const m=ev.data||{};if(m.id!=="cl")return;
+    if(m.ph==="s"){base={x:parseFloat(box.style.left)||0,y:parseFloat(box.style.top)||0};box.classList.add("drag")}
+    else if(m.ph==="w")setScale(scale*((+m.dy||0)<0?1.08:1/1.08));
+    else if(!base)return;
+    else if(m.ph==="m"){
+      const w=box.offsetWidth*scale,h=box.offsetHeight*scale;
+      box.style.left=Math.max(0,Math.min(innerWidth-w,base.x+(+m.dx||0)))+"px";box.style.top=Math.max(0,Math.min(innerHeight-h,base.y+(+m.dy||0)))+"px";
+    }else if(m.ph==="e"){box.classList.remove("drag");save();base=null;report()}
+  });
+  OBR.broadcast.onMessage("ordem.cl/view",()=>pull());
+  addEventListener("storage",ev=>{if(ev.key==="cl-view")pull()});
+  if(ARR){
+    let dr=null;
+    box.addEventListener("pointerdown",e=>{if(e.button>0)return;const r=box.getBoundingClientRect();dr={dx:e.clientX-r.left,dy:e.clientY-r.top};box.classList.add("drag");try{box.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
+    box.addEventListener("pointermove",e=>{if(!dr)return;const w=box.offsetWidth*scale,h=box.offsetHeight*scale;box.style.left=Math.max(0,Math.min(innerWidth-w,e.clientX-dr.dx))+"px";box.style.top=Math.max(0,Math.min(innerHeight-h,e.clientY-dr.dy))+"px"});
+    const up=()=>{if(!dr)return;dr=null;box.classList.remove("drag");save()};
+    box.addEventListener("pointerup",up);box.addEventListener("pointercancel",up);
+    box.addEventListener("wheel",e=>{e.preventDefault();setScale(scale*(e.deltaY<0?1.08:1/1.08))},{passive:false});
+  }
+  PL.subs.add(pull);
+  addEventListener("resize",()=>{place();report()});
+  pull();
+}
+
 /* ---------- início ---------- */
 (async()=>{
   const s0=+qs.get("s")||0;
@@ -1064,7 +1147,7 @@ function startBal(){
     ST=makeState(OBR);ST.subs.add(plFire);ST.load();
     /* o segundo plano avisa em tempo real se um minijogo precisa desta camada aberta (sem reabrir) */
     OBR.broadcast.onMessage("ordem.hud/keep",ev=>{const d=ev.data||{};if(d.mid&&d.mid!==mid)return;KEEP=KEEP0||!!d.on;if(KEEP)clearTimeout(idleTimer);else maybeIdle()});
-    if(!standalone){startEsc();startBal()}
+    if(!standalone){startEsc();startBal();startCl()}
   }
   if(qs.get("p")){try{enqueue(ENG.unb64(qs.get("p")),s0)}catch(e){maybeIdle()}}
 })();

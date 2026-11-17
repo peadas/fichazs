@@ -1,7 +1,7 @@
 /* Equilíbrio > Alcançar: peças compartilhadas (menu, janela da escalada e segundo plano).
    Estado nos metadados do Owlbear: o mestre em K_C (a escalada: DT, altura, se a altura está revelada),
    cada jogador em K_CP (se entrou, quanto já subiu, último teste). O mestre derruba um jogador por mensagem (ordem.cl/drop). */
-import {sheet,ATTR} from "./esconder-lib.js?v=2.15.0";
+import {sheet,ATTR} from "./esconder-lib.js?v=2.15.1";
 export const K_C="ordem.cl/g", K_CP="ordem.cl/p";
 export const RISK_DT=3;                         // modo arriscado: DT +3
 export const FACES=[4,6,8,10,12,14,16,18,20];
@@ -36,3 +36,21 @@ export const ICON={
   risk:`<svg viewBox="0 0 24 24" ${S}><path d="M13 2.5 4.5 13.5H11L10 21.5l8.5-11H12z"/></svg>`,
   fall:`<svg viewBox="0 0 24 24" ${S}><path d="M12 3v14M6 12l6 6 6-6"/></svg>`
 };
+
+/* ---- v2.15.1: sem janela própria. As regras abaixo são puras e usadas pelo menu, pela camada da tela e pelo segundo plano ---- */
+/* quem está na parede: jogadores (sem o mestre) que entraram NESTA escalada. players = [{id,role,metadata}] */
+export function climbersOf(g,players){
+  if(!g||!g.on||!g.id)return[];
+  return(players||[]).filter(p=>p&&p.role!=="GM").map(p=>({p,c:normCP(p.metadata&&p.metadata[K_CP])})).filter(x=>x.c.in&&x.c.id===g.id);
+}
+/* a parede aparece na tela do Owlbear? pref: "1" ligado, "0" desligado, vazio = automático (mestre e quem está nela veem) */
+export const clWants=(pref,isGm,inClimb)=>pref==="1"?true:pref==="0"?false:(!!isGm||!!inClimb);
+/* resultado de um teste de escalada. R = o que foi pedido ({cid,mode,sk}); dice = [[face,valor],[face,valor]].
+   Devolve só o que muda na subida do jogador (ou null se o resultado não vale mais: escalada acabou, já está no topo...). */
+export function afterClimb(g,c,R,dice){
+  if(!g||!g.on||!R||g.id!==R.cid||!c.in||c.id!==g.id||c.top||!Array.isArray(dice)||dice.length<2)return null;
+  const a=+dice[0][1]||0,b=+dice[1][1]||0,s=a+b,md=R.mode==="r"?"r":"s",dt=g.dt+(md==="r"?RISK_DT:0);
+  const ok=s>=dt,amt=md==="r"?Math.max(a,b):Math.min(a,b);
+  const p=ok?Math.min(g.total,c.p+amt):c.p,top=p>=g.total?1:0;
+  return{p,top,fell:0,last:{sk:String(R.sk||"").slice(0,24),a,b,s,dt,ok:ok?1:0,amt,m:md,t:Date.now()}};
+}

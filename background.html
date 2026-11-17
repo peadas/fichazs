@@ -5,20 +5,20 @@
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@3.1.0/+esm" crossorigin>
 <meta charset="utf-8"><title>Ficha Ordem (segundo plano)</title></head>
 <body>
-<script src="engine.js?v=2.15.0"></script>
-<script src="dice-style.js?v=2.15.0"></script>
+<script src="engine.js?v=2.15.1"></script>
+<script src="dice-style.js?v=2.15.1"></script>
 <script type="module">
 /* Fica rodando o tempo todo na sala e cuida de:
    1) dados: quando alguém rola, abre a camada transparente (overlay.html) onde os dados caem para todos;
    2) mesa: publica o resumo da ficha de quem entrou na mesa (e os NPCs que o mestre mostrou);
    3) recebe as edições que o mestre faz na ficha do jogador. */
-import {loadOBR,ready} from "./obr.js?v=2.15.0";
-import {VER,KEY,KEY_NPC,KEY_NIMG,KEY_IMG,KEY_Z,LS,store,makePublisher,sigNpcs,sigNpcImgs,buildNpcs,buildNpcImgs,unpack} from "./mesa-lib.js?v=2.15.0";
-import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.15.0";
-import {K_C,K_CP,normC,normCP} from "./alcancar-lib.js?v=2.15.0";
-import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET,afterTest,afterSpend,balWants} from "./equilibrio-lib.js?v=2.15.0";
-import {makeState,pickGm} from "./estado.js?v=2.15.0";
-import {localChannel} from "./canal.js?v=2.15.0";
+import {loadOBR,ready} from "./obr.js?v=2.15.1";
+import {VER,KEY,KEY_NPC,KEY_NIMG,KEY_IMG,KEY_Z,LS,store,makePublisher,sigNpcs,sigNpcImgs,buildNpcs,buildNpcImgs,unpack} from "./mesa-lib.js?v=2.15.1";
+import {K_G,K_P,normG,normP,escLocal} from "./esconder-lib.js?v=2.15.1";
+import {K_C,K_CP,normC,normCP,afterClimb,climbersOf,clWants} from "./alcancar-lib.js?v=2.15.1";
+import {K_B,K_BP,normB,normBP,occupant,RESET as BRESET,afterTest,afterSpend,balWants} from "./equilibrio-lib.js?v=2.15.1";
+import {makeState,pickGm} from "./estado.js?v=2.15.1";
+import {localChannel} from "./canal.js?v=2.15.1";
 (async()=>{
   /* o SDK pode falhar ao carregar (internet instável quando o jogador entra): tenta de novo até conseguir, em vez de ficar morto até o F5 */
   let OBR=null;
@@ -42,14 +42,14 @@ import {localChannel} from "./canal.js?v=2.15.0";
 const trayOn=()=>store.get("tray-always")==="1";      // setting "mesa de dados sempre visível"
 const warmOn=()=>store.get("warm")!=="0";             // camada dos dados já aberta e pronta (rolagem aparece na hora); padrão: ligado
 let escRemote=false,amGM=false,myId="";               // Esconder: o mestre mostrou o painel para todos / eu sou o mestre
-let clRemote=false,clShown=0;                         // Equilíbrio > Alcançar: o mestre ativou uma escalada / id da escalada cuja janela já foi aberta
+let clRemote=false;                                    // Equilíbrio > Alcançar: a parede precisa aparecer na minha tela (mestre, quem está nela, ou quem ligou "Mostrar a parede")
 let balLocal=false;                                    // Equilíbrio > Equilibrar: a balança precisa aparecer na minha tela (mestre, quem está nela, ou quem ligou "Mostrar a balança")
 const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||balLocal;   // a camada dos dados fica aberta durante a escalada (os testes rolam nela)
   const feed=e=>OBR.broadcast.sendMessage(CH.feed,e,{destination:"LOCAL"}).catch(()=>{});
   async function openOverlay(e,tries=0){
     const id="ordem.ficha/overlay/"+Date.now();
     open=true;hello=false;mid=id;lastAct=Date.now();lastTry=Date.now();
-    const q="?v=2.15.0&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&warm="+(warmOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&cl="+((clRemote||balLocal)?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
+    const q="?v=2.15.1&mid="+encodeURIComponent(id)+"&hud="+(hudOn()?1:0)+"&tray="+(trayOn()?1:0)+"&warm="+(warmOn()?1:0)+"&esc="+((escLocal()||escRemote)?1:0)+"&cl="+((clRemote||balLocal)?1:0)+"&arr="+(arrange?1:0)+"&s="+(e?e.seq:seq)+(e?"&p="+ENG.b64(e.p):"");
     try{
       await OBR.modal.open({id,url:abs("overlay.html")+q,
         fullScreen:true,hidePaper:true,hideBackdrop:true,disablePointerEvents:!arrange});
@@ -65,21 +65,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   /* zonas de arrastar: um popover transparente do tamanho de cada foto (a camada dos cartões não recebe cliques) */
   const grabs=new Map(),gid=id=>"ordem.hud/grab/"+id;
   let lastRects=[];
-  /* v2.15.0: uma zona de arrastar (popover transparente) que reabria DEPOIS da janela da Escalada/Balança ficava por cima dela e roubava os cliques
-     ("a janela abre mas não dá para mexer"). Agora zona que encosta numa janela do jogo não abre enquanto a janela estiver ali. */
-  function winRects(){
-    try{
-      const vw=vpc?vpc.vw:1280,vh=vpc?vpc.vh:800,out=[];
-      for(const [on,k] of [[!!clShown&&store.get("cl-closed")!==String(clShown),"cl"]]){
-        if(!on)continue;const {W,H}=boxOf(k,vw,vh);let xy=null;try{xy=JSON.parse(store.get(k+"-xy")||"null")}catch(e){}
-        if(xy&&Number.isFinite(xy.x)&&Number.isFinite(xy.y))out.push({x:xy.x-6,y:xy.y-6,w:W+12,h:H+12});
-      }
-      return out;
-    }catch(e){return[]}
-  }
-  const hits=(r,a)=>r.x<a.x+a.w&&r.x+r.w>a.x&&r.y<a.y+a.h&&r.y+r.h>a.y;
-  const covered=r=>winRects().some(a=>hits(r,a));
-  const regrab=()=>{try{if(open&&!arrange)syncGrabs(lastRects,true)}catch(e){}};
+  const covered=()=>false;       // v2.15.1: não há mais janelas de jogo por cima das zonas de arrastar (a parede e a balança ficam no menu e na camada dos dados)
   async function openGrab(r){
     const pid=gid(r.id),g={...r,alive:Date.now(),tried:Date.now()};grabs.set(r.id,g);
     try{await OBR.popover.close(pid)}catch(e){}
@@ -166,19 +152,18 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   });
   OBR.broadcast.onMessage("ordem.hud/cfg",()=>cfg());
   OBR.broadcast.onMessage("ordem.hud/arrange",ev=>setArrange(!!(ev.data&&ev.data.on)));
-  addEventListener("storage",ev=>{if(ev.key==="hud-on"||ev.key==="tray-always"||ev.key==="esc-on"||ev.key==="warm")cfg();if(ev.key==="bal-view")readEsc()});
-  /* v2.15.0: ao voltar para a aba do Owlbear, dá um tempo de graça (os sinais de vida atrasaram só porque a aba estava escondida) */
+  addEventListener("storage",ev=>{if(ev.key==="hud-on"||ev.key==="tray-always"||ev.key==="esc-on"||ev.key==="warm")cfg();if(ev.key==="bal-view"||ev.key==="cl-view")readEsc()});
+  /* v2.15.1: ao voltar para a aba do Owlbear, dá um tempo de graça (os sinais de vida atrasaram só porque a aba estava escondida) */
   document.addEventListener("visibilitychange",()=>{
     if(document.hidden)return;
-    const n=Date.now();clAlive=n;clTry=n;lastTry=n;for(const [,g] of grabs){g.alive=n;g.tried=n}
+    const n=Date.now();lastTry=n;for(const [,g] of grabs){g.alive=n;g.tried=n}
   });
   /* garantia: se a camada parou de responder, reabre (no máximo uma vez a cada 20 s) */
   setInterval(()=>{
     if(!keepOn())return;
-    if(document.hidden)return;           // v2.15.0: aba em segundo plano: o navegador atrasa os relógios, então "sem sinal" não quer dizer "janela morta"
+    if(document.hidden)return;           // v2.15.1: aba em segundo plano: o navegador atrasa os relógios, então "sem sinal" não quer dizer "janela morta"
     dropStale();
     if(!open&&Date.now()-lastTry>20000)ensure();
-    if(clShown&&store.get("cl-closed")!==String(clShown)&&Date.now()-clAlive>12000&&Date.now()-clTry>12000)openCl();
     for(const [,g] of grabs)if(!g.hid&&Date.now()-g.alive>20000&&Date.now()-g.tried>20000)openGrab(g);   // a zona sumiu (ex.: outra janela fechou): reabre
   },5000);
 
@@ -260,7 +245,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
     const me={id:OBR.player.id,role:isGM?"GM":"PLAYER",metadata:cMeta};
     const gm=[me,...ps].find(p=>p.role==="GM"),g=normG(pickGm(ST,gm,K_G));
     if(g.on!==escRemote){escRemote=g.on;keepSync()}
-    clSync(gm);
+    clSync(gm,[me,...ps]);
     balSync(gm,[me,...ps]);
     mineKeep(gm);
     if(isGM)return;
@@ -277,73 +262,39 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
     }
   }
 
-  /* ===== contorno fantasma: mostra onde a janela vai parar enquanto o jogador arrasta (a janela de verdade só muda ao soltar) ===== */
-  const GH="ordem.ghost";
-  let ghWant=null,ghBusy=false,ghOn=false,ghT=0;
-  function boxOf(kind,vw,vh){
-    const sc=Math.min(1.7,Math.max(.7,parseFloat(store.get("cl-scale"))||1)),mn=store.get("cl-min")==="1";return{W:Math.round(Math.min(vw-16,360*sc)),H:mn?Math.round(46*sc):Math.round(Math.min(vh-16,580*sc))}
-  }
-  async function ghost(kind,p){
-    if(!p||p.off||!Number.isFinite(p.x)||!Number.isFinite(p.y)){ghWant=null;if(ghOn){ghOn=false;try{await OBR.popover.close(GH)}catch(e){}}return}
-    ghWant={kind,x:p.x,y:p.y};ghT=Date.now();
-    if(ghBusy)return;ghBusy=true;
-    try{
-      while(ghWant){
-        const w=ghWant;ghWant=null;const {vw,vh}=await viewport(),{W,H}=boxOf(w.kind,vw,vh);
-        const x=Math.round(Math.max(0,Math.min(vw-W,w.x))),y=Math.round(Math.max(0,Math.min(vh-H,w.y)));
-        try{await OBR.popover.open({id:GH,url:abs("ghost.html")+"?v="+VER,width:W,height:H,anchorReference:"POSITION",anchorPosition:{left:x,top:y},
-          anchorOrigin:{horizontal:"LEFT",vertical:"TOP"},transformOrigin:{horizontal:"LEFT",vertical:"TOP"},hidePaper:true,disableClickAway:true,marginThreshold:0});ghOn=true}
-        catch(e){console.warn("[fantasma]",e)}
-      }
-    }finally{ghBusy=false}
-  }
-  LC.on("ordem.cl/ghost",p=>ghost("cl",p));
-  setInterval(()=>{if(ghOn&&Date.now()-ghT>4000)ghost("cl",null)},2000);   // segurança: se o "soltou" se perdeu, o contorno some sozinho
-  /* ===== Equilíbrio > Alcançar: a janela da escalada abre sozinha para todos quando o mestre ativa ===== */
-  const CLW="ordem.cl/win";
-  let clAlive=0,clTry=0;
-  /* posição absoluta (canto de cima-esquerda) em "cl-xy"; sem ela, usa o canto escolhido em "cl-pos". Arrastar muda "cl-xy". */
-  let clBusy=false,clAgain=false,vpc=null;
-  /* tamanho da tela do Owlbear em cache (pedir a cada movimento do mouse era o que deixava o arrastar das janelas "pesado") */
-  async function viewport(){
-    if(vpc&&Date.now()-vpc.t<3000)return vpc;
-    let vw=1280,vh=800;try{vw=await OBR.viewport.getWidth();vh=await OBR.viewport.getHeight()}catch(e){}
-    return vpc={vw,vh,t:Date.now()};
-  }
-  async function openCl(fresh=true){
-    if(clBusy){clAgain=true;return}                // já tem uma chamada em andamento: só guarda que precisa repetir com a posição mais nova
-    clBusy=true;
-    try{await openClNow(fresh)}finally{clBusy=false;if(clAgain){clAgain=false;openCl(false)}}
-  }
-  async function openClNow(fresh){
-    const {vw,vh}=await viewport();
-    const sc=Math.min(1.7,Math.max(.7,parseFloat(store.get("cl-scale"))||1)),pos=(+store.get("cl-pos")||0)%4;   // 0 baixo-direita, 1 baixo-esquerda, 2 cima-esquerda, 3 cima-direita
-    const mn=store.get("cl-min")==="1";                                                                       // minimizada: só o cabeçalho
-    const W=Math.round(Math.min(vw-16,360*sc)),H=mn?Math.round(46*sc):Math.round(Math.min(vh-16,580*sc));
-    let xy=null;try{xy=JSON.parse(store.get("cl-xy")||"null")}catch(e){}
-    if(!xy||!Number.isFinite(xy.x)||!Number.isFinite(xy.y))xy={x:(pos===1||pos===2)?12:vw-12-W,y:(pos===2||pos===3)?12:vh-12-H};
-    xy={x:Math.round(Math.max(0,Math.min(vw-W,xy.x))),y:Math.round(Math.max(0,Math.min(vh-H,xy.y)))};
-    store.set("cl-xy",JSON.stringify(xy));clTry=Date.now();
-    if(fresh)try{await OBR.popover.close(CLW)}catch(e){}
-    try{await OBR.popover.open({id:CLW,url:abs("alcancar.html")+"?v="+VER+"&pop="+encodeURIComponent(CLW),width:W,height:H,
-      anchorReference:"POSITION",anchorPosition:{left:xy.x,top:xy.y},
-      anchorOrigin:{horizontal:"LEFT",vertical:"TOP"},transformOrigin:{horizontal:"LEFT",vertical:"TOP"},hidePaper:true,disableClickAway:true,marginThreshold:0});
-    }catch(e){console.warn("[alcançar] não consegui abrir a janela",e)}
-    ghost("cl",null);regrab();
-  }
-  const closeCl=()=>OBR.popover.close(CLW).catch(()=>{}).then(()=>setTimeout(regrab,50));
-  function clSync(gm){                         // chamada a cada leitura do estado do mestre
+  /* ===== Equilíbrio > Alcançar (v2.15.1): SEM janela própria =====
+     A parede com as fotos subindo é desenhada no menu (aba) e na camada dos dados, que já estão abertas e conectadas; antes ela abria uma
+     janela separada que carregava o SDK do zero para cada pessoa (lag e "Conectando…"). Aqui ficam só: manter a camada aberta quando a
+     parede precisa aparecer, e APLICAR o resultado dos dados (assim não depende da aba do menu continuar aberta). */
+  function clSync(gm,all){                        // chamada a cada leitura do estado da sala
     const g=normC(pickGm(ST,gm,K_C));
-    if(g.on!==clRemote){clRemote=g.on;keepSync()}
-    if(g.on){if(clShown!==g.id){clShown=g.id;if(store.get("cl-closed")!==String(g.id))openCl()}}
-    else if(clShown){clShown=0;closeCl()}
+    const inn=!!(g.on&&climbersOf(g,all).some(x=>String(x.p.id)===myId));
+    const need=g.on&&(isGM||inn||clWants(store.get("cl-view"),isGM,inn));
+    if(need!==clRemote){clRemote=need;keepSync()}
   }
-  LC.on("ordem.cl/stuck",()=>{if(clShown&&store.get("cl-closed")!==String(clShown)&&Date.now()-clTry>6000)openCl()});
-  LC.on("ordem.cl/place",()=>{if(clShown)openCl(false)});
-  LC.on("ordem.cl/move",()=>{if(clShown)openCl(false)});                 // arrastando: atualiza a posição sem fechar
-  LC.on("ordem.cl/alive",()=>{clAlive=Date.now()});                     // mudou tamanho ou canto
-  LC.on("ordem.cl/close",()=>{if(clShown)store.set("cl-closed",String(clShown));closeCl()});
-  LC.on("ordem.cl/show",()=>{if(!clShown)return;store.set("cl-closed",null);openCl()});
+  const clSeen=[];let clChain=Promise.resolve();
+  function clApply(d){
+    const rid=String((d&&d.rid)||"");
+    if(!rid||isGM||clSeen.includes(rid))return;
+    clSeen.push(rid);if(clSeen.length>40)clSeen.shift();
+    clChain=clChain.then(()=>clDo(d)).catch(e=>console.warn("[alcançar] resultado não aplicado",e));
+  }
+  async function clDo(d){
+    const m=(await OBR.player.getMetadata())||{};cMeta=m;
+    const c=normCP(m[K_CP]);
+    const all=[{id:OBR.player.id,role:"PLAYER",metadata:m},...cParty],gm=all.find(p=>p.role==="GM"),g=normC(pickGm(ST,gm,K_C));
+    const patch=afterClimb(g,c,d,d.dice);                                      // null = não vale mais (escalada acabou, já no topo...)
+    if(!patch)return;
+    const next={...c,...patch};
+    store.set("cl-cp",JSON.stringify(next));                                  // cópia local (restaura se a reconexão apagar a sala)
+    for(let i=0;;i++){
+      try{await OBR.player.setMetadata({[K_CP]:next});cMeta={...cMeta,[K_CP]:next};return}
+      catch(e){if(i>=2)throw e;await new Promise(r=>setTimeout(r,700*(i+1)))}
+    }
+  }
+  OBR.broadcast.onMessage("ordem.cl/result",ev=>clApply(ev&&ev.data));         // vem da camada dos dados quando o dado para de girar
+  LC.on("ordem.cl/auto",d=>clApply(d));                                        // o menu rolou no automático porque os dados não responderam
+  LC.on("ordem.cl/view",()=>readEsc());                                        // ligou/desligou "Mostrar a parede na tela"
   /* o mestre derrubou este jogador da parede: só vale se quem mandou for mesmo o mestre */
   OBR.broadcast.onMessage("ordem.cl/drop",async ev=>{
     try{
@@ -355,7 +306,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
       await OBR.player.setMetadata({[K_CP]:{...cp,in:0,p:0,top:0,fell:1}});
     }catch(e){console.warn("[alcançar] queda ignorada",e)}
   });
-  /* ===== Equilíbrio > Equilibrar (v2.15.0): SEM janela própria =====
+  /* ===== Equilíbrio > Equilibrar (v2.15.1): SEM janela própria =====
      A cena da balança é desenhada no menu (aba) e na camada dos dados, que já estão abertos e conectados; antes ela abria uma janela
      separada que carregava o SDK do zero (era ela que "não conectava" e travava). Aqui ficam só: manter a camada aberta quando a balança
      precisa aparecer, e APLICAR o resultado dos dados (assim não depende da aba do menu continuar aberta). */
@@ -427,7 +378,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
   readEsc();
   setInterval(async()=>{try{cMeta=(await OBR.player.getMetadata())||{};cParty=await OBR.party.getPlayers()}catch(e){}readEsc()},15000);   // garantia
 
-  /* ===== v2.15.0: CENTRAL DE RESSINCRONIZAÇÃO (o que antes só o F5 resolvia) =====
+  /* ===== v2.15.1: CENTRAL DE RESSINCRONIZAÇÃO (o que antes só o F5 resolvia) =====
      Por que o jogador "some" ou recebe a informação atrasada sem F5:
      1) o Owlbear APAGA os metadados de quem reconecta (internet que oscila, notebook que dorme) e o publicador achava que já tinha enviado -> agora confere a sala e republica;
      2) aba escondida/em segundo plano: eventos e relógios chegam atrasados -> ao voltar (ou ao ganhar foco / a internet voltar) relê tudo na hora;
@@ -444,7 +395,7 @@ const keepOn=()=>warmOn()||hudOn()||trayOn()||escLocal()||escRemote||clRemote||b
       try{cMeta=(await OBR.player.getMetadata())||{};cParty=await OBR.party.getPlayers()}catch(e){}
       try{await ST.load()}catch(e){}
       await healMine();
-      if(force){pub.reset();lastN=null;lastNI=null;await publish(true);if(clShown&&store.get("cl-closed")!==String(clShown))openCl();}
+      if(force){pub.reset();lastN=null;lastNI=null;await publish(true);}
       readEsc();syncLast=Date.now();
     }catch(e){console.warn("[sync]",e)}
     finally{syncBusy=false;LC.send("ordem.sync/state",{t:syncLast,ok:1})}
