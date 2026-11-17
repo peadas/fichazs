@@ -27,6 +27,7 @@ button:hover{border-color:var(--gold2);color:var(--gold)}
 .logo svg{width:24px;height:24px;transform:rotate(-45deg)}
 .top h1{margin:0;font:800 1.7rem/1 Cinzel,serif;color:var(--gold);letter-spacing:.08em}
 .top p{margin:3px 0 0;color:var(--muted);font-size:.9rem}
+.hbtn.bad{border-color:#e0524f!important;color:#ff9a97!important}
 .hbtn{margin-left:auto;padding:7px 14px;font:800 .9rem "Barlow Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;border-color:var(--gold2);color:var(--gold);background:#141a1b}
 .hbtn:hover{background:var(--gold2);color:#15191a}
 .chip{font:700 .75rem "Barlow Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border:1px solid var(--line);color:var(--muted)}
@@ -225,7 +226,8 @@ h3.sec{margin:16px 0 10px;font-size:.92rem;color:var(--muted)}
     <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#e9ece7" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path d="M12 2.5 20.5 7.5v9L12 21.5 3.5 16.5v-9z"/><path d="M12 2.5v6.5m0 0-8.5-1.5M12 9l8.5-1.5M12 9v12.5M12 9l-5.5 8.5M12 9l5.5 8.5"/></svg></div>
     <div class="tt"><h1>Mesa</h1><p id="sub"></p></div>
     <span class="chip" id="role"></span>
-    <button class="hbtn" id="b-ficha" title="Abrir a minha ficha"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg>Ficha</button>
+    <button class="hbtn" id="b-sync" title="Ressincronizar (use no lugar do F5)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg><span id="sync-t">Sincronizado</span></button>
+  <button class="hbtn" id="b-ficha" title="Abrir a minha ficha"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg>Ficha</button>
   </header>
   <nav class="tabs" id="tabs" role="tablist" aria-label="Seções" hidden>
     <button role="tab" data-t="mesa" class="on"><i class="ti" data-i="mesa"></i><span>Mesa</span></button>
@@ -259,17 +261,19 @@ h3.sec{margin:16px 0 10px;font-size:.92rem;color:var(--muted)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js?v=2.14.0"></script>
+<script src="efeitos.js?v=2.14.3"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.14.0";
-import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.14.0";
-import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI} from "./alcancar-lib.js?v=2.14.0";
-import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET} from "./equilibrio-lib.js?v=2.14.0";
-import {makeState,pickGm} from "./estado.js?v=2.14.0";
-import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.14.0";
+import {localChannel} from "./canal.js?v=2.14.3";
+import {loadOBR,ready} from "./obr.js?v=2.14.3";
+import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.14.3";
+import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI} from "./alcancar-lib.js?v=2.14.3";
+import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET} from "./equilibrio-lib.js?v=2.14.3";
+import {makeState,pickGm} from "./estado.js?v=2.14.3";
+import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.14.3";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";
+const LC=localChannel(()=>OBR);
 let ST=null;   // estado do mestre (Esconder/Escalada/Balança) nos metadados da sala
 const stOK=storageOk();
 /* "estou na mesa?": o que eu cliquei agora manda; senão vale a marca salva ou a minha ficha já estar publicada na sala */
@@ -642,13 +646,13 @@ const cgSt=()=>{const p=gmP();return normC(ST?pickGm(ST,p,K_C):(p&&p.metadata&&p
 const cpSt=x=>normCP(x&&x.metadata&&x.metadata[K_CP]);
 const setC=async patch=>{await setGM(K_C,{...cgSt(),...patch})};
 const setCP=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_CP]:{...cpSt(self),...patch}});await refresh()};
-const clShow=()=>OBR&&OBR.broadcast.sendMessage("ordem.cl/show",{},{destination:"LOCAL"}).catch(()=>{});
+const clShow=()=>LC.send("ordem.cl/show");
 /* Equilibrar: estado do mestre (K_B) e de cada jogador (K_BP) */
 const cbSt=()=>{const p=gmP();return normB(ST?pickGm(ST,p,K_B):(p&&p.metadata&&p.metadata[K_B]))};
 const bpSt=x=>normBP(x&&x.metadata&&x.metadata[K_BP]);
 const setB=async patch=>{await setGM(K_B,{...cbSt(),...patch})};
 const setBP=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_BP]:{...bpSt(self),...patch}});await refresh()};
-const balShow=()=>OBR&&OBR.broadcast.sendMessage("ordem.bal/show",{},{destination:"LOCAL"}).catch(()=>{});
+const balShow=()=>LC.send("ordem.bal/show");
 const balPlayers=()=>[...(role==="GM"?[]:[self]),...party.filter(x=>x.role!=="GM")].filter(Boolean);
 const nick=p=>{const e=p.metadata&&p.metadata[KEY];return String((e&&e.nome)||p.name||"Jogador").trim().slice(0,24)||"Jogador"};
 let kQl="",kBl="";
@@ -787,6 +791,19 @@ function renderAlcPlayer(box,g,mine,ps){
   setInterval(()=>{if(!document.hidden)refresh()},15000);       // garantia: a lista sempre se corrige sozinha (os eventos já atualizam na hora)
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
 })();
+
+/* v2.14.3: botão de sincronização (no lugar do F5). Mostra há quanto tempo o segundo plano conferiu a sala; clicar força tudo de novo. */
+{
+  let last=0,askT=0;const b=$("#b-sync"),tx=$("#sync-t");
+  const draw=()=>{const s=last?Math.round((Date.now()-last)/1000):-1;
+    const bad=s<0||s>25;b.classList.toggle("bad",bad);
+    tx.textContent=bad?(s<0?"Conectando…":"Sem sinal · tocar"):"Sincronizado";
+    b.title=bad?"Parece desatualizado: toque para ressincronizar":"Tudo em dia (use este botão no lugar do F5)"};
+  LC.on("ordem.sync/state",d=>{last=(d&&d.t)||Date.now();draw()});
+  b.onclick=()=>{tx.textContent="Sincronizando…";LC.send("ordem.sync/now");setTimeout(()=>LC.send("ordem.sync/ask"),1500)};
+  setInterval(draw,2000);setInterval(()=>LC.send("ordem.sync/ask"),8000);
+  setTimeout(()=>LC.send("ordem.sync/ask"),600);
+}
 </script>
 </body>
 </html>

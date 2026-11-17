@@ -95,6 +95,7 @@ header .tools svg{width:14px;height:14px}
       <button id="b-fold" title="Minimizar / expandir (duplo clique no título)" aria-label="Minimizar ou expandir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
       <button id="b-min" title="Diminuir" aria-label="Diminuir">−</button>
       <button id="b-max" title="Aumentar" aria-label="Aumentar">+</button>
+      <button id="b-sync" title="Ressincronizar (atualiza tudo sem precisar de F5)" aria-label="Ressincronizar">↻</button>
       <button id="b-x" title="Fechar a janela" aria-label="Fechar a janela">✕</button>
     </div>
   </header>
@@ -104,13 +105,15 @@ header .tools svg{width:14px;height:14px}
   <div id="ctl"></div>
 </div>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.14.0";
-import {KEY,entryOf,store,mineLive,setMine} from "./mesa-lib.js?v=2.14.0";
-import {K_C,K_CP,RISK_DT,SK,MAIN,normC,normCP,testDice,ICON} from "./alcancar-lib.js?v=2.14.0";
-import {makeState,pickGm} from "./estado.js?v=2.14.0";
+import {loadOBR,ready} from "./obr.js?v=2.14.3";
+import {KEY,entryOf,store,mineLive,setMine} from "./mesa-lib.js?v=2.14.3";
+import {K_C,K_CP,RISK_DT,SK,MAIN,normC,normCP,testDice,ICON} from "./alcancar-lib.js?v=2.14.3";
+import {makeState,pickGm} from "./estado.js?v=2.14.3";
+import {localChannel} from "./canal.js?v=2.14.3";
 const $=s=>document.querySelector(s);
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",myId="";
+const LC=localChannel(()=>OBR);
 let ST=null;const POP=new URLSearchParams(location.search).get("pop")||"";
 const gm=()=>role==="GM";
 let mode=store.get("cl-mode")==="r"?"r":"s",other=store.get("cl-other")||"",rolling=null,msg="",msgCls="",dmgDone=0,kCtl="";
@@ -122,8 +125,23 @@ const climbers=g=>{
   const all=[...(gm()?[]:[self]),...party.filter(x=>x.role!=="GM")].filter(Boolean);
   return all.map(p=>({p,c:normCP(p.metadata&&p.metadata[K_CP])})).filter(x=>x.c.in&&x.c.id===g.id&&g.id);
 };
-const place=()=>OBR&&OBR.broadcast.sendMessage("ordem.cl/place",{},{destination:"LOCAL"}).catch(()=>{});
-const setCP=async patch=>{if(!OBR)return;await OBR.player.setMetadata({[K_CP]:{...mineCP(),...patch}})};
+const place=()=>LC.send("ordem.cl/place");
+/* salva a minha subida: já mostra na hora (sem esperar o Owlbear devolver), grava em fila (duas gravações seguidas não se atropelam) e tenta de novo se falhar */
+let cpQ=Promise.resolve();
+const setCP=patch=>{
+  if(!OBR)return Promise.resolve();
+  const next={...mineCP(),...patch};
+  if(self)self.metadata={...(self.metadata||{}),[K_CP]:next};
+  store.set("cl-cp",JSON.stringify(next));          // v2.14.3: cópia na hora (se a reconexão apagar a sala antes do segundo plano copiar, ainda dá para restaurar)
+  cpQ=cpQ.then(async()=>{
+    for(let i=0;i<3;i++){
+      try{await OBR.player.setMetadata({[K_CP]:next});return}
+      catch(e){console.warn("[alcançar] não consegui salvar, tentando de novo",e);await new Promise(r=>setTimeout(r,700*(i+1)))}
+    }
+    msg="Não consegui salvar sua subida. Toque em ↻ no cabeçalho.";kCtl="";render();
+  });
+  return cpQ;
+};
 
 /* ---------- janela: tamanho e canto ---------- */
 const sc=()=>Math.min(1.7,Math.max(.7,parseFloat(store.get("cl-scale"))||1));
@@ -132,22 +150,28 @@ const setScale=v=>{store.set("cl-scale",String(Math.round(Math.min(1.7,Math.max(
 $("#b-min").onclick=()=>setScale(sc()-.15);
 $("#b-max").onclick=()=>setScale(sc()+.15);
 $("#b-pos").onclick=()=>{store.set("cl-pos",String(((+store.get("cl-pos")||0)+1)%4));store.set("cl-xy",null);place()};
-/* arrastar pelo cabeçalho: a janela do Owlbear é reposicionada enquanto o mouse anda (usa a tela, não a janela, como referência) */
+/* arrastar pelo cabeçalho: v2.14.3 — a janela NÃO é mexida enquanto o mouse anda (se o Owlbear recria a janela, o mouse ficava "preso").
+   Em vez disso aparece um contorno fantasma que segue o mouse; ao soltar, a janela vai para lá de uma vez. */
 {
   const h=$("header");let d=null,t=0;
+  const xyOf=e=>({x:d.x+e.screenX-d.sx,y:d.y+e.screenY-d.sy});
+  const fin=()=>{
+    if(!d)return;const p=d.last;d=null;h.classList.remove("drag");
+    LC.send("ordem.cl/ghost",{off:1});
+    if(p){store.set("cl-xy",JSON.stringify(p));LC.send("ordem.cl/move")}
+  };
   h.addEventListener("pointerdown",e=>{
     if(e.button>0||e.target.closest("button"))return;
     let xy=null;try{xy=JSON.parse(store.get("cl-xy")||"null")}catch(_){}
-    if(!xy)return;d={sx:e.screenX,sy:e.screenY,x:xy.x,y:xy.y};h.classList.add("drag");
+    if(!xy)return;d={sx:e.screenX,sy:e.screenY,x:xy.x,y:xy.y,last:null};h.classList.add("drag");
     try{h.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();
   });
   h.addEventListener("pointermove",e=>{
-    if(!d||Date.now()-t<45)return;t=Date.now();
-    store.set("cl-xy",JSON.stringify({x:d.x+e.screenX-d.sx,y:d.y+e.screenY-d.sy}));
-    OBR&&OBR.broadcast.sendMessage("ordem.cl/move",{},{destination:"LOCAL"}).catch(()=>{});
+    if(!d)return;d.last=xyOf(e);if(Date.now()-t<50)return;t=Date.now();
+    LC.send("ordem.cl/ghost",d.last);
   });
-  const end=e=>{if(!d)return;store.set("cl-xy",JSON.stringify({x:d.x+e.screenX-d.sx,y:d.y+e.screenY-d.sy}));d=null;h.classList.remove("drag");OBR&&OBR.broadcast.sendMessage("ordem.cl/move",{},{destination:"LOCAL"}).catch(()=>{})};
-  h.addEventListener("pointerup",end);h.addEventListener("pointercancel",end);
+  h.addEventListener("pointerup",e=>{if(d&&e.screenX!=null)d.last=xyOf(e);fin()});
+  h.addEventListener("pointercancel",fin);h.addEventListener("lostpointercapture",fin);addEventListener("blur",fin);
 }
 /* minimizar: a janela do Owlbear encolhe para só o cabeçalho (o segundo plano lê "cl-min") */
 {
@@ -160,7 +184,7 @@ $("#b-pos").onclick=()=>{store.set("cl-pos",String(((+store.get("cl-pos")||0)+1)
 $("#b-x").onclick=()=>{
   try{const id=curG().id;if(id)store.set("cl-closed",String(id))}catch(_){}
   if(!OBR)return;
-  OBR.broadcast.sendMessage("ordem.cl/close",{},{destination:"LOCAL"}).catch(()=>{});
+  LC.send("ordem.cl/close");
   setTimeout(()=>{if(POP)OBR.popover.close(POP).catch(()=>{})},150);
 };
 addEventListener("wheel",e=>{e.preventDefault();setScale(sc()+(e.deltaY<0?.1:-.1))},{passive:false});
@@ -272,7 +296,8 @@ function roll(sk,g){
   OBR.broadcast.sendMessage("ordem.hud/quickroll",{dice:dd.map(x=>[1,x.f]),names:dd.map(x=>x.n),title:"Escalar · "+sk+" ("+(mode==="r"?"arriscado":"seguro")+")",exp:sk,
     esc:{k:"climb",rid,cid:g.id,mode,sk},qid:"cl"+rid},{destination:"LOCAL"}).catch(()=>{});
   const mine=rolling;
-  setTimeout(()=>{if(rolling===mine){rolling=null;msg="Os dados não responderam. Tente de novo.";kCtl="";render()}},15000);
+  /* se a camada dos dados não devolver o resultado em 9 s (reiniciando, internet lenta), rola no automático em vez de travar a escalada */
+  setTimeout(()=>{if(rolling===mine){const rnd=f=>1+Math.floor(Math.random()*f);console.info("[alcançar] dados 3D sem resposta: rolagem automática");onResult({rid,dice:[[dd[0].f,rnd(dd[0].f)],[dd[1].f,rnd(dd[1].f)]]})}},9000);
   kCtl="";render();
 }
 function onResult(d){
@@ -296,12 +321,26 @@ function onResult(d){
   const refresh=async()=>{try{role=await OBR.player.getRole();self=await me();party=await OBR.party.getPlayers();render()}catch(e){}};
   await refresh();
   ST.subs.add(()=>render());
+  /* ↻: relê a sala e a lista de jogadores e republica a minha subida (o que antes só o F5 resolvia) */
+  $("#b-sync").onclick=async()=>{
+    const b=$("#b-sync");b.disabled=true;
+    try{
+      await ST.load();await refresh();
+      if(!gm()){const raw=store.get("cl-cp");let v=null;try{v=JSON.parse(raw||"null")}catch(_){}const g=curG(),cur=self&&self.metadata&&self.metadata[K_CP];
+        if(!cur&&v&&v.id&&g.on&&v.id===g.id)await OBR.player.setMetadata({[K_CP]:v})}
+      msg="";kCtl="";render();
+    }catch(e){console.warn("[alcançar] ressincronizar falhou",e)}
+    setTimeout(()=>{b.disabled=false},600);
+  };
   OBR.player.onChange(p=>{self={id:p.id||self.id,name:p.name,color:p.color,metadata:p.metadata};role=p.role||role;render()});
   OBR.party.onChange(ps=>{party=ps;render()});
   OBR.broadcast.onMessage("ordem.cl/result",ev=>onResult(ev.data||{}));
-  const alive=()=>OBR.broadcast.sendMessage("ordem.cl/alive",{},{destination:"LOCAL"}).catch(()=>{});
+  const alive=()=>LC.send("ordem.cl/alive");
   alive();setInterval(alive,4000);
   setInterval(refresh,4000);
+  /* v2.14.3: voltou para a aba / ganhou foco / a internet voltou: relê a sala e mostra que está viva na hora */
+  const wake=()=>{if(document.hidden)return;try{ST.load()}catch(e){}refresh();alive()};
+  document.addEventListener("visibilitychange",wake);addEventListener("focus",wake);addEventListener("online",wake);
   addEventListener("resize",()=>render());
 })();
 </script>

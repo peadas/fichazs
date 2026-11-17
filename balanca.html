@@ -125,16 +125,18 @@ header .tools button{padding:0;width:24px;height:22px;line-height:1;font-size:.9
   <div id="ctl"></div>
 </div>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.14.0";
-import {KEY,entryOf,store} from "./mesa-lib.js?v=2.14.0";
-import {SK,testDice} from "./alcancar-lib.js?v=2.14.0";
-import {K_B,K_BP,normB,normBP,occupant,diceCount,balOK,afterTest,afterSpend,afterAdd,RESET} from "./equilibrio-lib.js?v=2.14.0";
-import {makeState,pickGm} from "./estado.js?v=2.14.0";
+import {loadOBR,ready} from "./obr.js?v=2.14.3";
+import {KEY,entryOf,store} from "./mesa-lib.js?v=2.14.3";
+import {SK,testDice} from "./alcancar-lib.js?v=2.14.3";
+import {K_B,K_BP,normB,normBP,occupant,diceCount,balOK,afterTest,afterSpend,afterAdd,RESET} from "./equilibrio-lib.js?v=2.14.3";
+import {makeState,pickGm} from "./estado.js?v=2.14.3";
+import {localChannel} from "./canal.js?v=2.14.3";
 const $=s=>document.querySelector(s);
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 const NS="http://www.w3.org/2000/svg";
 const sv=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e};
 let OBR=null,self=null,party=[],role="PLAYER",myId="";
+const LC=localChannel(()=>OBR);
 let ST=null;const POP=new URLSearchParams(location.search).get("pop")||"";
 const gm=()=>role==="GM";
 const MAINB=["Acrobacia","Atletismo"];
@@ -146,12 +148,16 @@ const mineBP=()=>normBP(self&&self.metadata&&self.metadata[K_BP]);
 const occ=()=>occupant(curG(),players());
 const iAm=o=>!!(o&&String(o.p.id)===myId);
 const nick=p=>{const e=p.metadata&&p.metadata[KEY];return String((e&&e.nome)||p.name||"Jogador").trim().slice(0,22)||"Jogador"};
-const bcast=(n)=>OBR&&OBR.broadcast.sendMessage(n,{},{destination:"LOCAL"}).catch(()=>{});
+const bcast=(n,d)=>LC.send(n,d);
 const setBP=async patch=>{
   if(!OBR)return;
   const next={...mineBP(),...patch};
   if(self)self.metadata={...(self.metadata||{}),[K_BP]:next};      // já mostra antes do Owlbear devolver
-  await OBR.player.setMetadata({[K_BP]:next});
+  store.set("bal-bp",JSON.stringify(next));                         // v2.14.3: cópia na hora (restaura se a reconexão apagar a sala)
+  for(let i=0;;i++){                                                // v2.14.3: tenta de novo se o Owlbear não aceitar (antes falhava calado)
+    try{await OBR.player.setMetadata({[K_BP]:next});return}
+    catch(e){if(i>=2)throw e;console.warn("[balança] não consegui salvar, tentando de novo",e);await new Promise(r=>setTimeout(r,700*(i+1)))}
+  }
 };
 
 /* ---------- janela: tamanho e posição (arrastar pelo cabeçalho) ---------- */
@@ -160,20 +166,27 @@ let wt=0;
 const setScale=v=>{store.set("bal-scale",String(Math.round(Math.min(1.7,Math.max(.7,v))*100)/100));clearTimeout(wt);wt=setTimeout(()=>bcast("ordem.bal/place"),220)};
 $("#b-min").onclick=()=>setScale(sc()-.15);
 $("#b-max").onclick=()=>setScale(sc()+.15);
+/* arrastar (v2.14.3): contorno fantasma enquanto o mouse anda; a janela só muda de lugar ao soltar */
 {
   const h=$("header");let d=null,t=0;
+  const xyOf=e=>({x:d.x+e.screenX-d.sx,y:d.y+e.screenY-d.sy});
+  const fin=()=>{
+    if(!d)return;const p=d.last;d=null;h.classList.remove("drag");
+    bcast("ordem.bal/ghost",{off:1});
+    if(p){store.set("bal-xy",JSON.stringify(p));bcast("ordem.bal/move")}
+  };
   h.addEventListener("pointerdown",e=>{
     if(e.button>0||e.target.closest("button"))return;
     let xy=null;try{xy=JSON.parse(store.get("bal-xy")||"null")}catch(_){}
-    if(!xy)return;d={sx:e.screenX,sy:e.screenY,x:xy.x,y:xy.y};h.classList.add("drag");
+    if(!xy)return;d={sx:e.screenX,sy:e.screenY,x:xy.x,y:xy.y,last:null};h.classList.add("drag");
     try{h.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();
   });
   h.addEventListener("pointermove",e=>{
-    if(!d||Date.now()-t<45)return;t=Date.now();
-    store.set("bal-xy",JSON.stringify({x:d.x+e.screenX-d.sx,y:d.y+e.screenY-d.sy}));bcast("ordem.bal/move");
+    if(!d)return;d.last=xyOf(e);if(Date.now()-t<50)return;t=Date.now();
+    bcast("ordem.bal/ghost",d.last);
   });
-  const end=e=>{if(!d)return;store.set("bal-xy",JSON.stringify({x:d.x+e.screenX-d.sx,y:d.y+e.screenY-d.sy}));d=null;h.classList.remove("drag");bcast("ordem.bal/move")};
-  h.addEventListener("pointerup",end);h.addEventListener("pointercancel",end);
+  h.addEventListener("pointerup",e=>{if(d&&e.screenX!=null)d.last=xyOf(e);fin()});
+  h.addEventListener("pointercancel",fin);h.addEventListener("lostpointercapture",fin);addEventListener("blur",fin);
 }
 /* minimizar: a janela do Owlbear encolhe para só o cabeçalho (o segundo plano lê "bal-min") */
 {
@@ -390,6 +403,9 @@ const leave=()=>setBP({in:0,...RESET}).then(()=>{kCtl="";render()});
   const alive=()=>bcast("ordem.bal/alive");
   alive();setInterval(alive,4000);
   setInterval(refresh,4000);
+  /* v2.14.3: voltou para a aba / ganhou foco / a internet voltou: relê a sala e mostra que está viva na hora */
+  const wake=()=>{if(document.hidden)return;try{ST.load()}catch(e){}refresh();alive()};
+  document.addEventListener("visibilitychange",wake);addEventListener("focus",wake);addEventListener("online",wake);
 })();
 </script>
 </body>

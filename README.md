@@ -3,6 +3,20 @@
 Ficha de personagem com dados 3D que caem na mesa de todos, mais a **Mesa** (foto, PV e PD de quem entrou; só o mestre abre as fichas).
 Tudo estático: **sem Netlify, sem banco, sem servidor**. Funciona direto no GitHub Pages.
 
+## v2.14.3 — estabilidade das janelas (Escalada e Balança)
+- **Canal local direto** (`canal.js`): os avisos entre a janela, o menu e o segundo plano agora vão por BroadcastChannel + localStorage + Owlbear (o que chegar primeiro vale). Se o Owlbear perder ou atrasar a mensagem, a janela continua obedecendo.
+- **Arrastar sem travar**: a janela não é mexida enquanto o mouse anda (era isso que prendia o mouse se o Owlbear recriasse a janela). Aparece um contorno tracejado (`ghost.html`) e a janela vai para lá ao soltar.
+- **Aba em segundo plano**: com a aba do Owlbear escondida o navegador atrasa os relógios; a garantia que reabre janelas "sem sinal" agora fica quieta enquanto a aba está escondida e dá tempo de graça ao voltar. Os avisos locais também ignoram outras abas do mesmo navegador.
+- Testado com um Owlbear simulado (mestre + 2 jogadores, F5, janela recriada a cada movimento, mensagens locais perdidas, duas abas no mesmo navegador): 24/24 nos cenários.
+
+## v2.14.3 — sem F5 (ressincronização automática)
+- **Reconexão não derruba mais ninguém**: o Owlbear apaga os metadados de quem reconecta (internet que oscila, notebook que dorme). Antes o publicador achava que já tinha enviado e o jogador ficava invisível até o F5. Agora o segundo plano confere a sala e republica sozinho (ficha, NPCs do mestre, subida e balança).
+- **Voltar para a aba / ganhar foco / internet voltar** relê a sala, a lista de jogadores e o estado do mestre na hora (menu, janela da Escalada e da Balança).
+- **Sala relida a cada 6 s**: se um evento do Owlbear se perder, o estado se corrige sozinho.
+- **Botão "Sincronizado" no menu** (no lugar do F5): fica vermelho ("Sem sinal · tocar") se a conferência atrasar; tocar força tudo de novo e reabre as janelas.
+- **Metadados cheios não travam o jogo**: se o Owlbear recusar por tamanho, a extensão tira a ficha completa/foto (só o mestre usa) e grava o jogo; a foto agora encolhe até caber.
+- Balança agora tenta de novo se a gravação falhar (antes falhava calada); a cópia da subida/balança é guardada na hora para poder restaurar.
+
 ## Publicar no GitHub Pages
 1. Crie um repositório público e envie **todos** os arquivos desta pasta (inclusive o `.nojekyll`), na raiz.
 2. Settings > Pages > Source: *Deploy from a branch* > `main` / `(root)` > Save.
@@ -136,3 +150,9 @@ Embaixo dos atributos há um cartão com a habilidade do **Perfil** escolhido no
 - Vigia das janelas menos nervoso: só reabre depois de 30 s sem sinal (antes 15 s; em conexão lenta a janela reiniciava em loop e parecia travada).
 - **Cartões dos jogadores na tela (avatar, nome, PV/PD) ~35% menores**, e o tamanho inicial se adapta à tela (monitor menor = um pouco menor). Quem já ajustou com − / + mantém o próprio tamanho.
 - Versão dos arquivos: `?v=2.14.0` (força o navegador a baixar tudo de novo). Lembre de enviar também o novo `estado.js`.
+
+## v2.14.3: Alcançar mais firme
+- **Não some mais da parede**: o Owlbear apaga os metadados do jogador quando ele recarrega ou reconecta. Agora cada navegador guarda a sua subida (e a posição na balança) e, se ela sumir durante a MESMA escalada/balança, republica sozinha.
+- **Salvar a subida** é imediato na tela, em fila (duas gravações seguidas não se atropelam) e tenta de novo até 3 vezes se o Owlbear falhar.
+- **Dados 3D que não respondem**: se o resultado não voltar em 9 s, a escalada rola no automático em vez de travar.
+- Botão **↻** no cabeçalho da janela da escalada: relê a sala e os jogadores sem precisar de F5.
