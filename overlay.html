@@ -177,7 +177,7 @@ body.arr #cl{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outlin
 </style>
 </head>
 <body>
-<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.16.3" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.16.3" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
+<div id="tray" aria-hidden="true"><img class="tbg" id="tb1" src="mesa.webp?v=2.16.4" alt=""><img class="tbg" id="tb2" src="mesa2x.webp?v=2.16.4" alt="" hidden><canvas id="cv"></canvas><canvas id="cv2" hidden></canvas></div>
 <div id="hist" aria-hidden="true"></div>
 <div id="hud" aria-hidden="true"></div>
 <div id="esc" aria-hidden="true"></div>
@@ -187,19 +187,19 @@ body.arr #cl{pointer-events:auto;cursor:grab;outline:1px dashed #ffffffaa;outlin
 <div id="hvazio">Ninguém entrou na mesa ainda: os cartões aparecem aqui quando entrarem.</div>
 <div id="hbar"><span>Arraste os cartões e a mesa</span><button id="t-menos" title="Mesa menor" aria-label="Mesa menor">Mesa −</button><button id="t-mais" title="Mesa maior" aria-label="Mesa maior">Mesa +</button><button id="h-menos" title="Menores" aria-label="Menores">−</button><button id="h-mais" title="Maiores" aria-label="Maiores">+</button><button id="h-reset" title="Voltar à posição original">Restaurar</button><button class="ok" id="h-ok">Concluir</button></div>
 <div id="chips" aria-live="polite"></div>
-<script src="engine.js?v=2.16.3"></script>
-<script src="dice-style.js?v=2.16.3"></script>
+<script src="engine.js?v=2.16.4"></script>
+<script src="dice-style.js?v=2.16.4"></script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.16.3";
-import {KEY,npcsOf,entryOf} from "./mesa-lib.js?v=2.16.3";
-import {K_P,K_G,normP,normG,MAXD,ICON} from "./esconder-lib.js?v=2.16.3";
-import {makeState,pickGm} from "./estado.js?v=2.16.3";
-import {K_B,normB,occupant,statusText,balWants} from "./equilibrio-lib.js?v=2.16.3";
-import {K_C,normC,climbersOf,clWants} from "./alcancar-lib.js?v=2.16.3";
-import {mountWall} from "./alcancar-cena.js?v=2.16.3";
-import {mountScale,d4Icon} from "./balanca-cena.js?v=2.16.3";
-import {K_F,normF,normFP,occupant as occupantF,lockState,status as statusF,statusText as statusTextF,fechWants,sceneView} from "./fechadura-lib.js?v=2.16.3";
-import {mountLock} from "./fechadura-cena.js?v=2.16.3";
+import {loadOBR,ready} from "./obr.js?v=2.16.4";
+import {KEY,npcsOf,entryOf} from "./mesa-lib.js?v=2.16.4";
+import {K_P,K_G,normP,normG,MAXD,ICON} from "./esconder-lib.js?v=2.16.4";
+import {makeState,pickGm} from "./estado.js?v=2.16.4";
+import {K_B,normB,occupant,statusText,balWants} from "./equilibrio-lib.js?v=2.16.4";
+import {K_C,normC,climbersOf,clWants} from "./alcancar-lib.js?v=2.16.4";
+import {mountWall} from "./alcancar-cena.js?v=2.16.4";
+import {mountScale,d4Icon} from "./balanca-cena.js?v=2.16.4";
+import {K_F,normF,normFP,occupant as occupantF,lockState,status as statusF,statusText as statusTextF,fechWants,sceneView} from "./fechadura-lib.js?v=2.16.4";
+import {mountLock} from "./fechadura-cena.js?v=2.16.4";
 const $=s=>document.querySelector(s);
 const qs=new URLSearchParams(location.search),standalone=qs.has("standalone"),mid=qs.get("mid")||"",HUD=qs.get("hud")==="1"&&!standalone,ARR=HUD&&qs.get("arr")==="1",ESC=qs.get("esc")==="1"&&!standalone,CL=qs.get("cl")==="1"&&!standalone;let KEEP=HUD||ESC||CL||qs.get("tray")==="1"||qs.get("warm")==="1";const KEEP0=KEEP;let ST=null;
 const CH=ENG.CH,HOLD=4000,CHIP_LIFE=9000,QMAX=12000;

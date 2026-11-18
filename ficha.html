@@ -51,6 +51,16 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .bars{display:flex;flex-wrap:wrap;gap:4px;max-width:560px}
 .bx{width:14px;height:10px;padding:0;border:1px solid var(--die);background:transparent;transform:skewX(-14deg);cursor:pointer}
 .bx.on{background:var(--ink)}
+.armi{width:1.7rem;height:1.7rem;display:block;color:var(--ink)}
+.arm .ab{width:17px;height:17px;padding:0;border:1.5px solid var(--die);border-radius:50%;background:transparent;cursor:pointer;transition:background .15s,box-shadow .15s}
+.arm .ab:hover{border-color:var(--hi)}
+.arm .ab.on{background:#a9cdf0;border-color:#a9cdf0;box-shadow:0 0 6px rgba(169,205,240,.55)}
+.arm-c{font:800 1.1rem Cinzel,serif;color:var(--muted)}
+#armmsg{margin:-6px 0 0;font:600 .9rem "Barlow Condensed",sans-serif;letter-spacing:.03em;color:#a9cdf0}
+.r.alerta .armi{animation:armpulse .7s ease-in-out 4}
+.r.alerta .ab.on{animation:armpulse .7s ease-in-out 4}
+@keyframes armpulse{0%,100%{transform:scale(1);filter:none}50%{transform:scale(1.35);filter:drop-shadow(0 0 7px #a9cdf0)}}
+@media (prefers-reduced-motion:reduce){.r.alerta .armi,.r.alerta .ab.on{animation:none}}
 .mid{display:grid;grid-template-columns:minmax(280px,380px) minmax(0,1fr);gap:28px;margin-top:22px}
 h2{margin:0 0 10px}
 .sk{display:grid;grid-template-columns:1fr auto auto auto 4.4ch;gap:5px;align-items:center;padding:2px 0;font:600 .95rem "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.04em}
@@ -296,6 +306,8 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
         <div class="res">
           <div class="r"><span class="rl">PV</span><div class="rn"><input type="number" data-k="pv" value="10" aria-label="PV atuais"><i>/</i><input type="number" data-k="pvmax" value="10" aria-label="PV máximos"></div><div class="bars" id="b-pv"></div></div>
           <div class="r"><span class="rl">PD</span><div class="rn"><input type="number" data-k="pd" value="10" aria-label="PD atuais"><i>/</i><input type="number" data-k="pdmax" value="10" aria-label="PD máximos"></div><div class="bars" id="b-pd"></div></div>
+          <div class="r" id="arm-row"><span class="rl" title="Pontos de armadura (máx. 4)" role="img" aria-label="Pontos de armadura"><svg class="armi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M12 2.6 4.6 5.4v6c0 4.7 3.1 8.4 7.4 10 4.3-1.6 7.4-5.3 7.4-10v-6z" fill="rgba(169,205,240,.12)"/><path d="M12 6.4v11.2M7.8 9.4h8.4" opacity=".75"/></svg></span><span class="arm-c" id="arm-c">0/4</span><div class="bars arm" id="b-arm"></div></div>
+          <p id="armmsg" role="status" hidden></p>
         </div>
       </div>
       <section class="cls" id="cls" aria-label="Habilidade do perfil">
@@ -441,9 +453,9 @@ html.npc body::after{content:"FICHA DE NPC";position:fixed;right:12px;top:8px;fo
 })();
 </script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s)"></script>
-<script src="engine.js?v=2.16.3"></script>
-<script src="dice-style.js?v=2.16.3"></script>
-<script src="efeitos.js?v=2.16.3"></script>
+<script src="engine.js?v=2.16.4"></script>
+<script src="dice-style.js?v=2.16.4"></script>
+<script src="efeitos.js?v=2.16.4"></script>
 <input type="file" id="file" accept="image/*" hidden>
 
 <script>
@@ -473,15 +485,37 @@ function dice(){
   pavor();
 }
 function bars(){
+  const pvNow=+d.pv||0;if(pvNow<pvPrev&&armLive)armAviso();pvPrev=pvNow;
   ["pv","pd"].forEach(p=>{
     const m=Math.min(60,Math.max(0,+d[p+"max"]||0)),c=+d[p]||0;
     $("#b-"+p).innerHTML=Array.from({length:m},(_,i)=>`<button class="bx${i<c?" on":""}" data-p="${p}" data-i="${i}" aria-label="${p.toUpperCase()} ${i+1}"></button>`).join("");
   });
 }
+/* Armadura (playtest): até 4 bolinhas. Só lembra: quando o PV cai e ainda há armadura, avisa que dá para gastar 1 (reduz o dano em 10). */
+const ARM_MAX=4;let pvPrev=+d.pv||0,armT=0,armLive=false;
+function armor(){
+  const c=Math.min(ARM_MAX,Math.max(0,+d.arm||0));
+  $("#b-arm").innerHTML=Array.from({length:ARM_MAX},(_,i)=>`<button type="button" class="ab${i<c?" on":""}" data-a="${i}" aria-pressed="${i<c}" aria-label="Armadura ${i+1}"></button>`).join("");
+  $("#arm-c").textContent=c+"/"+ARM_MAX;
+}
+function armAviso(){
+  const c=Math.min(ARM_MAX,Math.max(0,+d.arm||0)),row=$("#arm-row"),m=$("#armmsg");
+  clearTimeout(armT);row.classList.remove("alerta");
+  if(!c){m.hidden=true;return}
+  void row.offsetWidth;row.classList.add("alerta");
+  m.textContent="Você ainda tem "+c+" de armadura: gaste 1 (ação livre) para reduzir esse dano em 10.";m.hidden=false;
+  armT=setTimeout(()=>{m.hidden=true;row.classList.remove("alerta")},12000);
+}
+$("#b-arm").addEventListener("click",e=>{
+  const b=e.target.closest(".ab");if(!b)return;
+  const i=+b.dataset.a,c=Math.min(ARM_MAX,Math.max(0,+d.arm||0));
+  d.arm=(i+1===c)?i:i+1;save();armor();
+  clearTimeout(armT);$("#armmsg").hidden=true;$("#arm-row").classList.remove("alerta");
+});
 function bind(){
   document.querySelectorAll("[data-k]").forEach(el=>{const k=el.dataset.k;if(k in d)el.value=d[k];else d[k]=el.value});
 }
-bind();dice();bars();
+bind();dice();bars();armor();armLive=true;
 /* painel grande: Habilidades / Equipamento */
 const NOTAS={hab:"Nenhuma habilidade ainda. Clique para escrever.",equip:"Nenhum item ainda. Clique para escrever."};
 function notasPrev(){
@@ -1330,13 +1364,13 @@ window.fichaRecarregar=()=>{
     if(el.tagName==="SELECT"){const o=[...el.options].find(o=>o.defaultSelected)||el.options[0];if(o)el.value=o.value}
     else el.value=el.defaultValue;
   });
-  bind();dice();bars();renderRels();notasPrev();applyJJ();renderCls();
+  bind();dice();bars();armor();renderRels();notasPrev();applyJJ();renderCls();
   try{setImg(localStorage.getItem("ficha-ordem-img"))}catch(e){}
 };
 </script>
 <script type="module">
-import {loadOBR,ready} from "./obr.js?v=2.16.3";
-import {LS,unpack} from "./mesa-lib.js?v=2.16.3";
+import {loadOBR,ready} from "./obr.js?v=2.16.4";
+import {LS,unpack} from "./mesa-lib.js?v=2.16.4";
 (async()=>{
   if(document.documentElement.classList.contains("view"))return;
   const OBR=await loadOBR();

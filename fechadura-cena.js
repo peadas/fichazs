@@ -174,7 +174,7 @@ export function mountLock(host,opts){
     }
     host.classList.toggle("cracks",!!v.cracks);
     if(open!==shown.open){
-      if(shown.open===false&&open&&anim&&v.sound&&sfx.open)later(80,()=>sfx.open());
+      if(shown.open===false&&open&&anim&&v.sound){const sf=v.how==="force"&&sfx.force?sfx.force:sfx.open;if(sf)later(80,()=>sf())}
       shown.open=open;host.classList.toggle("open",open);
       css1(boltEl,"translateX("+(open?TRAVEL:0)+"px)");
       gears.forEach(g=>css1(g,"rotate("+(open?f1(TRAVEL/GR*180/Math.PI):0)+"deg)"));

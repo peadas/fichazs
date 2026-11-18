@@ -3,7 +3,7 @@
    e cada jogador em K_FP (se entrou, os dados que escolheu, pinos certos, tentativas...). Só UM jogador fica na fechadura por vez
    (vale quem entrou primeiro). O progresso fica com a fechadura: quem entra depois herda os pinos já abertos.
    Sem janela própria: a cena é desenhada na aba do menu; o resultado dos dados do arrombamento é aplicado pelo segundo plano. */
-import {sheet} from "./esconder-lib.js?v=2.16.3";
+import {sheet} from "./esconder-lib.js?v=2.16.4";
 export const K_F="ordem.fech/g", K_FP="ordem.fech/p";
 export const FACES=[4,6,8,10,12,20];
 export const NMIN=3, NMAX=10;

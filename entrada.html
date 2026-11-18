@@ -395,20 +395,20 @@ h3.sec{margin:16px 0 10px;font-size:.92rem;color:var(--muted)}
     <div id="nlist"></div>
   </section>
 </div></main>
-<script src="efeitos.js?v=2.16.3"></script>
+<script src="efeitos.js?v=2.16.4"></script>
 <script type="module">
-import {localChannel} from "./canal.js?v=2.16.3";
-import {loadOBR,ready} from "./obr.js?v=2.16.3";
-import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.16.3";
-import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI,SK,testDice,climbersOf,clWants} from "./alcancar-lib.js?v=2.16.3";
-import {mountWall} from "./alcancar-cena.js?v=2.16.3";
-import {mountScale,d4Icon} from "./balanca-cena.js?v=2.16.3";
-import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET,afterAdd,afterFall,balWants,statusText} from "./equilibrio-lib.js?v=2.16.3";
-import {K_F,K_FP,NMIN,NMAX,FACES as FACESF,normF,normFP,crimeFace,triesPerRound,triesLeft as triesLeftF,replaysLeft as replaysLeftF,replaysPerRound,occupant as occupantF,lockState as lockStateF,status as statusF,enterPatch as enterPatchF,setDie as setDieF,tryOpen as tryOpenF,rollSecret as rollSecretF,kindName as kindNameF,statusText as statusTextF,fechWants,sceneView,bagItem,bagLoad} from "./fechadura-lib.js?v=2.16.3";
-import {mountLock} from "./fechadura-cena.js?v=2.16.3";
-import {sfx} from "./fechadura-som.js?v=2.16.3";
-import {makeState,pickGm} from "./estado.js?v=2.16.3";
-import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.16.3";
+import {localChannel} from "./canal.js?v=2.16.4";
+import {loadOBR,ready} from "./obr.js?v=2.16.4";
+import {K_P,K_G,normP,normG,FACES,MAXD,SKILLS,DSKILLS,DEX,DT0,DTSTEP,WAYS,EVENTS,ICON,skillDice} from "./esconder-lib.js?v=2.16.4";
+import {K_C,K_CP,RISK_DT,normC,normCP,ICON as CI,SK,testDice,climbersOf,clWants} from "./alcancar-lib.js?v=2.16.4";
+import {mountWall} from "./alcancar-cena.js?v=2.16.4";
+import {mountScale,d4Icon} from "./balanca-cena.js?v=2.16.4";
+import {K_B,K_BP,normB,normBP,occupant,diceCount,RESET as BRESET,afterAdd,afterFall,balWants,statusText} from "./equilibrio-lib.js?v=2.16.4";
+import {K_F,K_FP,NMIN,NMAX,FACES as FACESF,normF,normFP,crimeFace,triesPerRound,triesLeft as triesLeftF,replaysLeft as replaysLeftF,replaysPerRound,occupant as occupantF,lockState as lockStateF,status as statusF,enterPatch as enterPatchF,setDie as setDieF,tryOpen as tryOpenF,rollSecret as rollSecretF,kindName as kindNameF,statusText as statusTextF,fechWants,sceneView,bagItem,bagLoad} from "./fechadura-lib.js?v=2.16.4";
+import {mountLock} from "./fechadura-cena.js?v=2.16.4";
+import {sfx} from "./fechadura-som.js?v=2.16.4";
+import {makeState,pickGm} from "./estado.js?v=2.16.4";
+import {KEY,KEY_IMG,entryOf,LS,store,npcs,saveNpcs,npcSheet,setNpcSheet,npcImg,npcDel,npcInfo,npcAdjust,npcSet,npcOlho,npcsOf,mineLive,setMine,openFicha,openGm,publishMine,unpublishMine,storageOk} from "./mesa-lib.js?v=2.16.4";
 const $=s=>document.querySelector(s),abs=p=>new URL(p,location.href).href;
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 let OBR=null,self=null,party=[],role="PLAYER",tab="mesa",armed="",wantJoin=null,pubErr="";

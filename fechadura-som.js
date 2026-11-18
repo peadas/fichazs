@@ -26,35 +26,65 @@ function tone(c,t,type,f0,f1,dur,peak,lp){
   let n=o;if(lp){const f=c.createBiquadFilter();f.type="lowpass";f.frequency.value=lp;o.connect(f);n=f}
   n.connect(out(c,peak,0.004,dur,t));o.start(t);o.stop(t+dur+0.05);
 }
-/* v2.16.3: alto/baixo agora usam o áudio real da gazua (tic-alto.mp3 mais agudo, toc-baixo.mp3 mais grave).
-   Se o arquivo não carregar, cai no som sintetizado de antes. */
-const SAMP={alto:{f:"tic-alto.mp3",g:0.8},baixo:{f:"toc-baixo.mp3",g:0.9}};
+/* v2.16.4: sons reais de ferro (gravados offline com modelagem física de aço, ferro e porta), no lugar do synth "retrô".
+   Cada som tem variações (alto/baixo/clic têm 3) e um leve ajuste de tom a cada toque, para nunca soar repetido.
+   Se um arquivo não carregar, cai no som sintetizado de antes. */
+const VER="2.16.4";
+const SAMP={
+  alto:{f:["som-alto-1.mp3","som-alto-2.mp3","som-alto-3.mp3"],g:0.8,j:0.05},
+  baixo:{f:["som-baixo-1.mp3","som-baixo-2.mp3","som-baixo-3.mp3"],g:0.95,j:0.05},
+  click:{f:["som-click-1.mp3","som-click-2.mp3","som-click-3.mp3"],g:0.9,j:0.03},
+  open:{f:["som-abrir.mp3"],g:1,j:0.015},
+  force:{f:["som-arrombar.mp3"],g:1,j:0.015},
+  broke:{f:["som-quebrou.mp3"],g:1,j:0.02}
+};
 function loadSamples(c){
   Object.keys(SAMP).forEach(k=>{
-    const x=SAMP[k];if(x.b||x.l)return;x.l=1;
-    fetch(new URL(x.f,import.meta.url).href+"?v=2.16.3").then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(a=>new Promise((ok,no)=>c.decodeAudioData(a,ok,no))).then(b=>{x.b=b}).catch(()=>{x.l=0});
+    const x=SAMP[k];if(x.l)return;x.l=1;x.b=[];
+    x.f.forEach((f,i)=>{
+      fetch(new URL(f,import.meta.url).href+"?v="+VER).then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(a=>new Promise((ok,no)=>c.decodeAudioData(a,ok,no))).then(b=>{x.b[i]=b}).catch(()=>{x.l=0});
+    });
   });
 }
+let last={};
 function sample(k){
   const x=SAMP[k],c=ac();if(!c||!x)return false;
-  loadSamples(c);if(!x.b)return false;
-  try{const s=c.createBufferSource(),g=c.createGain();s.buffer=x.b;g.gain.value=x.g;s.connect(g);g.connect(c.destination);s.start();return true}catch(e){return false}
+  loadSamples(c);
+  const ok=x.b?x.b.map((b,i)=>b?i:-1).filter(i=>i>=0):[];if(!ok.length)return false;
+  /* sorteia uma variação, sem repetir a que acabou de tocar */
+  let i=ok[Math.floor(Math.random()*ok.length)];if(ok.length>1&&i===last[k]){i=ok[(ok.indexOf(i)+1)%ok.length]}last[k]=i;
+  try{
+    const s=c.createBufferSource(),g=c.createGain();s.buffer=x.b[i];s.playbackRate.value=1+(Math.random()*2-1)*x.j;
+    g.gain.value=x.g;s.connect(g);g.connect(c.destination);s.start();return true;
+  }catch(e){return false}
 }
 const play=fn=>{if(!soundOn())return;const c=ac();if(!c)return;try{fn(c,c.currentTime+0.01)}catch(e){}};
 /* metal de verdade: vários tons "desafinados" entre si (como uma barra de aço) que somem rápido */
 const metal=(c,t,f,parts,dur,peak)=>parts.forEach(([r,g,d])=>tone(c,t,"sine",f*r,f*r,dur*d,peak*g));
 const TIC=[[1,1,1],[2.76,.55,.6],[5.4,.3,.35],[8.9,.15,.2]];
 const TOC=[[1,1,1],[2.32,.6,.7],[4.1,.3,.45]];
-export const sfx={
+const syn={
   unlock:()=>{const c=ac();if(c)loadSamples(c)},
   /* número ALTO: "tic" agudo, seco, de pino de aço */
-  alto:()=>{if(soundOn()&&sample("alto"))return;play((c,t)=>{metal(c,t,2350,TIC,0.17,0.2);burst(c,t,6500,1.5,0.012,0.32,"highpass")})},
+  alto:()=>{play((c,t)=>{metal(c,t,2350,TIC,0.17,0.2);burst(c,t,6500,1.5,0.012,0.32,"highpass")})},
   /* número BAIXO: "toc" grave e abafado, de peça pesada de latão */
-  baixo:()=>{if(soundOn()&&sample("baixo"))return;play((c,t)=>{metal(c,t,520,TOC,0.24,0.34);tone(c,t,"sine",170,95,0.1,0.34);burst(c,t,800,1,0.03,0.3)})},
+  baixo:()=>{play((c,t)=>{metal(c,t,520,TOC,0.24,0.34);tone(c,t,"sine",170,95,0.1,0.34);burst(c,t,800,1,0.03,0.3)})},
   /* pino certo: o tambor encaixa (clic-clac) */
   click:()=>play((c,t)=>{burst(c,t,3300,3,0.02,0.4);metal(c,t,1450,TIC,0.08,0.2);tone(c,t+0.055,"sine",240,150,0.07,0.32);burst(c,t+0.055,1800,2,0.025,0.3);metal(c,t+0.06,1900,TIC,0.1,0.14)}),
   /* abriu: chave girando (catraca) e a trava deslizando com um baque */
   open:()=>play((c,t)=>{[0,0.07,0.14,0.21].forEach((d,i)=>{burst(c,t+d,2600+i*250,4,0.02,0.3);metal(c,t+d,1700+i*150,TIC,0.06,0.1)});tone(c,t+0.3,"sine",120,55,0.3,0.5);burst(c,t+0.3,650,0.8,0.22,0.16);metal(c,t+0.32,880,TOC,0.32,0.14);burst(c,t+0.6,3000,4,0.03,0.2)}),
   /* quebrou: metal estalando */
   broke:()=>play((c,t)=>{burst(c,t,3800,1,0.1,0.5,"highpass");burst(c,t,450,0.5,0.45,0.5,"lowpass");tone(c,t,"square",150,40,0.35,0.22,600);metal(c,t+0.02,1240,TIC,0.3,0.14);[0.1,0.2,0.33].forEach((d,i)=>metal(c,t+d,2100+i*700,TIC,0.12,0.1))})
+};
+/* toca o som de ferro; se o arquivo não estiver pronto, usa o sintetizado de antes */
+const go=(k,fb)=>()=>{if(!soundOn())return;if(sample(k))return;fb&&fb()};
+export const sfx={
+  unlock:syn.unlock,
+  alto:go("alto",syn.alto),
+  baixo:go("baixo",syn.baixo),
+  click:go("click",syn.click),
+  open:go("open",syn.open),
+  /* arrombar (força bruta): pé de cabra, estouro e a porta cedendo */
+  force:go("force",syn.open),
+  broke:go("broke",syn.broke)
 };
