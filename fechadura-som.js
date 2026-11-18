@@ -26,14 +26,14 @@ function tone(c,t,type,f0,f1,dur,peak,lp){
   let n=o;if(lp){const f=c.createBiquadFilter();f.type="lowpass";f.frequency.value=lp;o.connect(f);n=f}
   n.connect(out(c,peak,0.004,dur,t));o.start(t);o.stop(t+dur+0.05);
 }
-/* v2.16.4: sons reais de ferro (gravados offline com modelagem física de aço, ferro e porta), no lugar do synth "retrô".
+/* v2.16.4: sons montados a partir de gravações REAIS de gazua (UseLockPick01/02/03), no lugar do synth "retrô".
    Cada som tem variações (alto/baixo/clic têm 3) e um leve ajuste de tom a cada toque, para nunca soar repetido.
    Se um arquivo não carregar, cai no som sintetizado de antes. */
 const VER="2.16.4";
 const SAMP={
-  alto:{f:["som-alto-1.mp3","som-alto-2.mp3","som-alto-3.mp3"],g:0.8,j:0.05},
-  baixo:{f:["som-baixo-1.mp3","som-baixo-2.mp3","som-baixo-3.mp3"],g:0.95,j:0.05},
-  click:{f:["som-click-1.mp3","som-click-2.mp3","som-click-3.mp3"],g:0.9,j:0.03},
+  alto:{f:["som-alto-1.mp3","som-alto-2.mp3","som-alto-3.mp3"],g:0.95,j:0.03},
+  baixo:{f:["som-baixo-1.mp3","som-baixo-2.mp3","som-baixo-3.mp3"],g:1,j:0.03},
+  click:{f:["som-click-1.mp3","som-click-2.mp3","som-click-3.mp3"],g:1,j:0.02},
   open:{f:["som-abrir.mp3"],g:1,j:0.015},
   force:{f:["som-arrombar.mp3"],g:1,j:0.015},
   broke:{f:["som-quebrou.mp3"],g:1,j:0.02}
